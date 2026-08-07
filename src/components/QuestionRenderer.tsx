@@ -1,0 +1,14 @@
+import type { Question, UserAnswer } from '../types/quiz'
+import { CodeQuestion } from './CodeQuestion'
+import { OrderingQuestion } from './OrderingQuestion'
+import { QCMQuestion } from './QCMQuestion'
+import { TextQuestion } from './TextQuestion'
+
+export function QuestionRenderer({ question, answer, onChange }: { question: Question; answer?: UserAnswer; onChange: (answer: UserAnswer) => void }) {
+  switch (question.type) {
+    case 'qcm': return <QCMQuestion question={question} answer={answer} onChange={onChange} />
+    case 'text': return <TextQuestion question={question} answer={answer} onChange={onChange} />
+    case 'code': return <CodeQuestion question={question} answer={answer} onChange={onChange} />
+    case 'ordering': return <OrderingQuestion question={question} answer={answer} onChange={onChange} />
+  }
+}

@@ -1,0 +1,768 @@
+{
+  "version": "1.0",
+  "metadata": { "title": "Les fondamentaux du web", "author": "Équipe Quiz", "createdAt": "2026-08-07" },
+  "themes": [
+    { "id": "javascript", "label": "JavaScript" },
+    { "id": "react", "label": "React" },
+    { "id": "web", "label": "Web" },
+    { "id": "git", "label": "Git" },
+    { "id": "java", "label": "Java" },
+    { "id": "spring", "label": "Spring" },
+    { "id": "html-css", "label": "HTML & CSS" },
+    { "id": "software-design", "label": "Conception logicielle" },
+    { "id": "tooling", "label": "Outillage JavaScript" },
+    { "id": "testing", "label": "Tests" }
+  ],
+  "questions": [
+    {
+      "id": "js-const", "type": "qcm", "theme": "javascript", "difficulty": "easy",
+      "question": "Que protège principalement le mot-clé const ?", "tags": ["variables"],
+      "explanation": "const empêche la réaffectation de la variable. Un objet déclaré avec const peut encore être modifié.", "points": 2,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "La réaffectation de la variable", "isCorrect": true },
+        { "id": "b", "label": "Toute modification d'un objet", "isCorrect": false },
+        { "id": "c", "label": "La création de la variable", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "react-state", "type": "code", "theme": "react", "difficulty": "medium",
+      "question": "Quelle valeur sera affichée après le clic ?", "tags": ["hooks", "state"],
+      "explanation": "La mise à jour fonctionnelle reçoit toujours l'état précédent le plus récent.", "points": 3,
+      "content": { "language": "tsx", "snippet": "const [count, setCount] = useState(0);\n\nfunction increment() {\n  setCount(previous => previous + 1);\n}", "answers": [
+        { "id": "a", "label": "1", "isCorrect": true },
+        { "id": "b", "label": "0", "isCorrect": false },
+        { "id": "c", "label": "Une erreur", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "http-text", "type": "text", "theme": "web", "difficulty": "easy",
+      "question": "Quel code HTTP indique qu'une ressource a été créée avec succès ?", "tags": ["http"],
+      "explanation": "201 Created indique que la requête a abouti et qu'une nouvelle ressource a été créée.", "points": 2,
+      "content": { "expectedAnswers": ["201", "201 created"], "caseSensitive": false }
+    },
+    {
+      "id": "render-order", "type": "ordering", "theme": "react", "difficulty": "hard",
+      "question": "Placez les étapes du cycle de rendu React dans l'ordre général.", "tags": ["render", "effects"],
+      "explanation": "React calcule d'abord le rendu, applique les changements au DOM, puis exécute les effets passifs.", "points": 4,
+      "content": { "items": [
+        { "id": "effects", "label": "Exécution de useEffect" },
+        { "id": "render", "label": "Calcul du rendu" },
+        { "id": "commit", "label": "Mise à jour du DOM" }
+      ], "correctOrder": ["render", "commit", "effects"] }
+    },
+    {
+      "id": "js-typeof-null",
+      "type": "qcm",
+      "theme": "javascript",
+      "difficulty": "easy",
+      "question": "Que retourne typeof null ?",
+      "tags": ["types"],
+      "explanation": "C’est un bug historique en JavaScript.",
+      "points": 1,
+      "content": {
+        "multiple": false,
+        "answers": [
+          { "id": "a", "label": "null", "isCorrect": false },
+          { "id": "b", "label": "object", "isCorrect": true },
+          { "id": "c", "label": "undefined", "isCorrect": false }
+        ]
+      }
+    },
+    {
+      "id": "js-map-return",
+      "type": "qcm",
+      "theme": "javascript",
+      "difficulty": "easy",
+      "question": "Que retourne Array.prototype.map() ?",
+      "tags": ["array"],
+      "explanation": "map retourne toujours un nouveau tableau.",
+      "points": 1,
+      "content": {
+        "multiple": false,
+        "answers": [
+          { "id": "a", "label": "Un nouveau tableau", "isCorrect": true },
+          { "id": "b", "label": "Le même tableau modifié", "isCorrect": false },
+          { "id": "c", "label": "undefined", "isCorrect": false }
+        ]
+      }
+    },
+    {
+      "id": "js-hoisting-var",
+      "type": "code",
+      "theme": "javascript",
+      "difficulty": "easy",
+      "question": "Quel est le résultat ?",
+      "tags": ["hoisting"],
+      "explanation": "La déclaration est hoistée mais pas l'initialisation.",
+      "points": 1,
+      "content": {
+        "language": "javascript",
+        "snippet": "console.log(a); var a = 10;",
+        "answers": [
+          { "id": "a", "label": "undefined", "isCorrect": true },
+          { "id": "b", "label": "10", "isCorrect": false },
+          { "id": "c", "label": "ReferenceError", "isCorrect": false }
+        ]
+      }
+    },
+    {
+      "id": "js-closure-definition",
+      "type": "text",
+      "theme": "javascript",
+      "difficulty": "medium",
+      "question": "Qu'est-ce qu'une closure ?",
+      "tags": ["closure"],
+      "explanation": "Une closure permet de capturer l’environnement lexical.",
+      "points": 2,
+      "content": {
+        "expectedAnswers": [
+          "fonction qui capture son environnement",
+          "accès aux variables du scope parent"
+        ],
+        "caseSensitive": false
+      }
+    },
+    {
+      "id": "js-event-loop-order",
+      "type": "ordering",
+      "theme": "javascript",
+      "difficulty": "medium",
+      "question": "Classe dans l'ordre d'exécution",
+      "tags": ["async"],
+      "explanation": "Sync > microtasks > macrotasks.",
+      "points": 2,
+      "content": {
+        "items": [
+          { "id": "a", "label": "console.log('sync')" },
+          { "id": "b", "label": "Promise.then" },
+          { "id": "c", "label": "setTimeout" }
+        ],
+        "correctOrder": ["a", "b", "c"]
+      }
+    },
+    {
+      "id": "js-001-typeof-null",
+      "type": "qcm",
+      "theme": "javascript",
+      "difficulty": "easy",
+      "question": "Que retourne typeof null ?",
+      "tags": ["types"],
+      "explanation": "Bug historique : typeof null retourne 'object'.",
+      "points": 1,
+      "content": {
+        "multiple": false,
+        "answers": [
+          { "id": "a", "label": "null", "isCorrect": false },
+          { "id": "b", "label": "object", "isCorrect": true },
+          { "id": "c", "label": "undefined", "isCorrect": false }
+        ]
+      }
+    },
+    {
+      "id": "js-002-strict-equality",
+      "type": "qcm",
+      "theme": "javascript",
+      "difficulty": "easy",
+      "question": "Que fait === ?",
+      "tags": ["comparison"],
+      "explanation": "Compare valeur ET type.",
+      "points": 1,
+      "content": {
+        "multiple": false,
+        "answers": [
+          { "id": "a", "label": "Compare valeur uniquement", "isCorrect": false },
+          { "id": "b", "label": "Compare valeur et type", "isCorrect": true },
+          { "id": "c", "label": "Convertit toujours en string", "isCorrect": false }
+        ]
+      }
+    },
+    {
+      "id": "js-003-hoisting-var",
+      "type": "code",
+      "theme": "javascript",
+      "difficulty": "easy",
+      "question": "Quel est le résultat ?",
+      "tags": ["hoisting"],
+      "explanation": "var est hoisté mais initialisé à undefined.",
+      "points": 1,
+      "content": {
+        "language": "javascript",
+        "snippet": "console.log(a); var a = 5;",
+        "answers": [
+          { "id": "a", "label": "undefined", "isCorrect": true },
+          { "id": "b", "label": "5", "isCorrect": false },
+          { "id": "c", "label": "ReferenceError", "isCorrect": false }
+        ]
+      }
+    },
+    {
+      "id": "js-004-let-temporal-dead-zone",
+      "type": "code",
+      "theme": "javascript",
+      "difficulty": "medium",
+      "question": "Quel est le résultat ?",
+      "tags": ["let"],
+      "explanation": "let n'est pas accessible avant déclaration.",
+      "points": 2,
+      "content": {
+        "language": "javascript",
+        "snippet": "console.log(a); let a = 5;",
+        "answers": [
+          { "id": "a", "label": "undefined", "isCorrect": false },
+          { "id": "b", "label": "ReferenceError", "isCorrect": true },
+          { "id": "c", "label": "5", "isCorrect": false }
+        ]
+      }
+    },
+    {
+      "id": "js-005-map-return",
+      "type": "qcm",
+      "theme": "javascript",
+      "difficulty": "easy",
+      "question": "Que retourne map() ?",
+      "tags": ["array"],
+      "explanation": "Retourne un nouveau tableau.",
+      "points": 1,
+      "content": {
+        "multiple": false,
+        "answers": [
+          { "id": "a", "label": "Un nouveau tableau", "isCorrect": true },
+          { "id": "b", "label": "Le même tableau", "isCorrect": false },
+          { "id": "c", "label": "undefined", "isCorrect": false }
+        ]
+      }
+    },
+
+    {
+      "id": "js-006-closure-definition",
+      "type": "text",
+      "theme": "javascript",
+      "difficulty": "medium",
+      "question": "Définis une closure.",
+      "tags": ["closure"],
+      "explanation": "Une closure capture son scope lexical.",
+      "points": 2,
+      "content": {
+        "expectedAnswers": [
+          "fonction qui capture son environnement",
+          "acces aux variables du scope parent"
+        ],
+        "caseSensitive": false
+      }
+    },
+
+    {
+      "id": "js-007-event-loop-order",
+      "type": "ordering",
+      "theme": "javascript",
+      "difficulty": "medium",
+      "question": "Ordre d'exécution ?",
+      "tags": ["async"],
+      "explanation": "Sync > microtasks > macrotasks.",
+      "points": 2,
+      "content": {
+        "items": [
+          { "id": "a", "label": "console.log('sync')" },
+          { "id": "b", "label": "Promise.then" },
+          { "id": "c", "label": "setTimeout" }
+        ],
+        "correctOrder": ["a", "b", "c"]
+      }
+    },
+
+    {
+      "id": "js-008-array-filter",
+      "type": "code",
+      "theme": "javascript",
+      "difficulty": "easy",
+      "question": "Quel est le résultat ?",
+      "tags": ["array"],
+      "explanation": "filter garde les valeurs vraies.",
+      "points": 1,
+      "content": {
+        "language": "javascript",
+        "snippet": "[1,2,3].filter(n => n > 1)",
+        "answers": [
+          { "id": "a", "label": "[2,3]", "isCorrect": true },
+          { "id": "b", "label": "[1,2]", "isCorrect": false },
+          { "id": "c", "label": "[1,2,3]", "isCorrect": false }
+        ]
+      }
+    },
+    {
+      "id": "js-009-array-filter",
+      "type": "qcm",
+      "theme": "javascript",
+      "difficulty": "easy",
+      "question": "Que fait filter() ?",
+      "tags": ["array"],
+      "explanation": "filter retourne un nouveau tableau avec les éléments validés.",
+      "points": 1,
+      "content": {
+        "multiple": false,
+        "answers": [
+          { "id": "a", "label": "Modifie le tableau", "isCorrect": false },
+          { "id": "b", "label": "Retourne un nouveau tableau filtré", "isCorrect": true },
+          { "id": "c", "label": "Retourne un boolean", "isCorrect": false }
+        ]
+      }
+    },
+    {
+      "id": "js-010-array-foreach",
+      "type": "qcm",
+      "theme": "javascript",
+      "difficulty": "easy",
+      "question": "Que retourne forEach() ?",
+      "tags": ["array"],
+      "explanation": "forEach retourne undefined.",
+      "points": 1,
+      "content": {
+        "multiple": false,
+        "answers": [
+          { "id": "a", "label": "Un tableau", "isCorrect": false },
+          { "id": "b", "label": "undefined", "isCorrect": true },
+          { "id": "c", "label": "Un nombre", "isCorrect": false }
+        ]
+      }
+    },
+    {
+      "id": "js-011-const-mutation",
+      "type": "qcm",
+      "theme": "javascript",
+      "difficulty": "easy",
+      "question": "Peut-on modifier un objet déclaré avec const ?",
+      "tags": ["const"],
+      "explanation": "const empêche la réassignation, pas la mutation.",
+      "points": 1,
+      "content": {
+        "multiple": false,
+        "answers": [
+          { "id": "a", "label": "Non jamais", "isCorrect": false },
+          { "id": "b", "label": "Oui", "isCorrect": true },
+          { "id": "c", "label": "Seulement avec let", "isCorrect": false }
+        ]
+      }
+    },
+    {
+      "id": "js-012-arrow-this",
+      "type": "qcm",
+      "theme": "javascript",
+      "difficulty": "medium",
+      "question": "Comment fonctionne this dans une arrow function ?",
+      "tags": ["this"],
+      "explanation": "this est lexical (hérité du scope parent).",
+      "points": 2,
+      "content": {
+        "multiple": false,
+        "answers": [
+          { "id": "a", "label": "Dynamique", "isCorrect": false },
+          { "id": "b", "label": "Lexical", "isCorrect": true },
+          { "id": "c", "label": "Toujours window", "isCorrect": false }
+        ]
+      }
+    },
+    {
+      "id": "js-013-promise-basic",
+      "type": "text",
+      "theme": "javascript",
+      "difficulty": "medium",
+      "question": "Qu'est-ce qu'une Promise ?",
+      "tags": ["async"],
+      "explanation": "Objet représentant une valeur future.",
+      "points": 2,
+      "content": {
+        "expectedAnswers": [
+          "valeur future",
+          "operation asynchrone",
+          "promesse"
+        ],
+        "caseSensitive": false
+      }
+    },
+    {
+      "id": "js-014-array-reduce",
+      "type": "qcm",
+      "theme": "javascript",
+      "difficulty": "medium",
+      "question": "Que fait reduce() ?",
+      "tags": ["array"],
+      "explanation": "Permet de réduire un tableau en une seule valeur.",
+      "points": 2,
+      "content": {
+        "multiple": false,
+        "answers": [
+          { "id": "a", "label": "Filtrer", "isCorrect": false },
+          { "id": "b", "label": "Transformer en une valeur", "isCorrect": true },
+          { "id": "c", "label": "Trier", "isCorrect": false }
+        ]
+      }
+    },
+    {
+      "id": "js-015-array-find",
+      "type": "qcm",
+      "theme": "javascript",
+      "difficulty": "easy",
+      "question": "Que retourne find() ?",
+      "tags": ["array"],
+      "explanation": "Retourne le premier élément correspondant.",
+      "points": 1,
+      "content": {
+        "multiple": false,
+        "answers": [
+          { "id": "a", "label": "Tous les éléments", "isCorrect": false },
+          { "id": "b", "label": "Le premier élément", "isCorrect": true },
+          { "id": "c", "label": "Un tableau", "isCorrect": false }
+        ]
+      }
+    },
+    {
+      "id": "js-016-async-await",
+      "type": "text",
+      "theme": "javascript",
+      "difficulty": "medium",
+      "question": "À quoi sert async/await ?",
+      "tags": ["async"],
+      "explanation": "Simplifie l'utilisation des Promises.",
+      "points": 2,
+      "content": {
+        "expectedAnswers": [
+          "simplifier promise",
+          "asynchrone",
+          "attendre resultat"
+        ],
+        "caseSensitive": false
+      }
+    },
+
+    {
+      "id": "js-017-code-scope",
+      "type": "code",
+      "theme": "javascript",
+      "difficulty": "medium",
+      "question": "Quel est le résultat ?",
+      "tags": ["scope"],
+      "explanation": "let est block scoped.",
+      "points": 2,
+      "content": {
+        "language": "javascript",
+        "snippet": "if(true){let a=5;} console.log(a);",
+        "answers": [
+          { "id": "a", "label": "5", "isCorrect": false },
+          { "id": "b", "label": "undefined", "isCorrect": false },
+          { "id": "c", "label": "ReferenceError", "isCorrect": true }
+        ]
+      }
+    },
+
+    {
+      "id": "js-018-event-loop-order",
+      "type": "ordering",
+      "theme": "javascript",
+      "difficulty": "hard",
+      "question": "Ordre d'exécution ?",
+      "tags": ["event-loop"],
+      "explanation": "Sync → microtasks → macrotasks.",
+      "points": 3,
+      "content": {
+        "items": [
+          { "id": "a", "label": "console.log('A')" },
+          { "id": "b", "label": "Promise.then" },
+          { "id": "c", "label": "setTimeout" }
+        ],
+        "correctOrder": ["a", "b", "c"]
+      }
+    },
+
+    {
+      "id": "js-019-array-slice",
+      "type": "qcm",
+      "theme": "javascript",
+      "difficulty": "easy",
+      "question": "slice() modifie-t-il le tableau ?",
+      "tags": ["array"],
+      "explanation": "slice ne modifie pas le tableau.",
+      "points": 1,
+      "content": {
+        "multiple": false,
+        "answers": [
+          { "id": "a", "label": "Oui", "isCorrect": false },
+          { "id": "b", "label": "Non", "isCorrect": true }
+        ]
+      }
+    },
+
+    {
+      "id": "js-020-array-splice",
+      "type": "qcm",
+      "theme": "javascript",
+      "difficulty": "easy",
+      "question": "splice() modifie-t-il le tableau ?",
+      "tags": ["array"],
+      "explanation": "splice modifie le tableau.",
+      "points": 1,
+      "content": {
+        "multiple": false,
+        "answers": [
+          { "id": "a", "label": "Oui", "isCorrect": true },
+          { "id": "b", "label": "Non", "isCorrect": false }
+        ]
+      }
+    },
+    {
+      "id": "git-readme", "type": "qcm", "theme": "git", "difficulty": "easy",
+      "question": "Quel fichier, placé à la racine d'un dépôt, est utilisé par GitHub pour afficher la documentation du projet ?", "tags": ["repository", "documentation"], "explanation": "GitHub reconnaît notamment README.md pour présenter un dépôt.", "points": 2,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "README.md", "isCorrect": true }, { "id": "b", "label": "README.doc", "isCorrect": false }, { "id": "c", "label": "introduction.doc", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "git-commit-local", "type": "qcm", "theme": "git", "difficulty": "easy",
+      "question": "Que fait la commande git commit ?", "tags": ["commit", "staging"], "explanation": "git commit enregistre dans le dépôt local les changements déjà présents dans la zone de préparation.", "points": 2,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "Elle envoie la staging area vers le dépôt distant", "isCorrect": false }, { "id": "b", "label": "Elle enregistre la staging area dans le dépôt local", "isCorrect": true }, { "id": "c", "label": "Elle ajoute les fichiers à la staging area", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "git-status", "type": "text", "theme": "git", "difficulty": "easy",
+      "question": "Quelle commande affiche les fichiers modifiés localement avant un commit ?", "tags": ["status"], "explanation": "git status décrit l'état de la copie de travail et de la zone de préparation.", "points": 2,
+      "content": { "expectedAnswers": ["git status", "status"], "caseSensitive": false }
+    },
+    {
+      "id": "java-integer-division", "type": "code", "theme": "java", "difficulty": "easy",
+      "question": "Quelle est la valeur de i3 après l'exécution de ce code ?", "tags": ["operators", "numbers"], "explanation": "La division de deux int conserve uniquement la partie entière.", "points": 2,
+      "content": { "language": "java", "snippet": "int i1 = 5;\nint i2 = 2;\nint i3 = i1 / i2;", "answers": [
+        { "id": "a", "label": "3", "isCorrect": false }, { "id": "b", "label": "2.5", "isCorrect": false }, { "id": "c", "label": "2", "isCorrect": true }
+      ] }
+    },
+    {
+      "id": "java-primitives", "type": "qcm", "theme": "java", "difficulty": "easy",
+      "question": "Parmi ces types, lesquels sont des types primitifs Java ?", "tags": ["types"], "explanation": "int et float sont primitifs ; bool et uint ne sont pas des types primitifs Java.", "points": 2,
+      "content": { "multiple": true, "answers": [
+        { "id": "a", "label": "int", "isCorrect": true }, { "id": "b", "label": "bool", "isCorrect": false }, { "id": "c", "label": "float", "isCorrect": true }, { "id": "d", "label": "uint", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "java-completable-future", "type": "qcm", "theme": "java", "difficulty": "medium",
+      "question": "Quelle classe représente le résultat potentiellement incomplet d'un calcul asynchrone en Java ?", "tags": ["concurrency", "async"], "explanation": "CompletableFuture représente un résultat qui sera disponible ultérieurement.", "points": 3,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "java.util.concurrent.Task<T>", "isCorrect": false }, { "id": "b", "label": "java.util.concurrent.CompletableFuture<T>", "isCorrect": true }, { "id": "c", "label": "java.util.concurrent.Phaser<T>", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "spring-rest-controller", "type": "qcm", "theme": "spring", "difficulty": "easy",
+      "question": "Quelle annotation déclare une classe qui expose des endpoints REST dans Spring ?", "tags": ["rest", "annotations"], "explanation": "@RestController combine @Controller et @ResponseBody pour les endpoints REST.", "points": 2,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "@RestEndpoint", "isCorrect": false }, { "id": "b", "label": "@RestController", "isCorrect": true }, { "id": "c", "label": "@REST", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "spring-after-returning", "type": "qcm", "theme": "spring", "difficulty": "medium",
+      "question": "Quelle annotation AOP exécute un advice après un point de jointure seulement si aucune exception n'est levée ?", "tags": ["aop", "annotations"], "explanation": "@AfterReturning s'exécute après le retour normal de la méthode visée.", "points": 3,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "@After", "isCorrect": false }, { "id": "b", "label": "@AfterReturning", "isCorrect": true }, { "id": "c", "label": "@AfterThrowing", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "spring-jpa-repository", "type": "text", "theme": "spring", "difficulty": "medium",
+      "question": "Quelle interface Spring Data faut-il étendre pour un repository JPA d'entités avec un identifiant Long ?", "tags": ["data", "jpa"], "explanation": "JpaRepository fournit les opérations CRUD et la pagination pour les entités JPA.", "points": 3,
+      "content": { "expectedAnswers": ["JpaRepository", "org.springframework.data.jpa.repository.JpaRepository"], "caseSensitive": false }
+    },
+    {
+      "id": "html-label-for", "type": "qcm", "theme": "html-css", "difficulty": "easy",
+      "question": "Quel couple d'attributs lie sémantiquement un label HTML à un champ de formulaire ?", "tags": ["html", "forms"], "explanation": "La valeur de for sur le label doit correspondre à l'id du champ.", "points": 2,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "to / name", "isCorrect": false }, { "id": "b", "label": "rel / id", "isCorrect": false }, { "id": "c", "label": "for / id", "isCorrect": true }
+      ] }
+    },
+    {
+      "id": "html-progress", "type": "qcm", "theme": "html-css", "difficulty": "easy",
+      "question": "Quelle balise HTML5 représente une barre de progression à 25 % ?", "tags": ["html", "elements"], "explanation": "L'élément progress utilise value pour la progression actuelle et max pour la valeur maximale.", "points": 2,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "<progress value=\"25\" max=\"100\">25%</progress>", "isCorrect": true }, { "id": "b", "label": "<input type=\"progress\" value=\"0.25\">", "isCorrect": false }, { "id": "c", "label": "<progressbar value=\"25\">25%</progressbar>", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "css-flex-direction", "type": "text", "theme": "html-css", "difficulty": "easy",
+      "question": "Quelle propriété Flexbox permet d'organiser les éléments flex verticalement ?", "tags": ["css", "flexbox"], "explanation": "flex-direction contrôle l'axe principal ; la valeur column le rend vertical.", "points": 2,
+      "content": { "expectedAnswers": ["flex-direction", "flex-direction: column", "flex-direction: column;"], "caseSensitive": false }
+    },
+    {
+      "id": "solid-single-responsibility", "type": "qcm", "theme": "software-design", "difficulty": "easy",
+      "question": "Que signifie le S de l'acronyme SOLID ?", "tags": ["solid", "architecture"], "explanation": "Single Responsibility Principle : une classe ne devrait avoir qu'une seule responsabilité, donc une seule raison de changer.", "points": 2,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "Single Responsibility Principle", "isCorrect": true }, { "id": "b", "label": "Simple Reuse Principle", "isCorrect": false }, { "id": "c", "label": "Software Reliability Principle", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "solid-dependency-inversion", "type": "text", "theme": "software-design", "difficulty": "medium",
+      "question": "Quel principe SOLID préconise de dépendre des abstractions plutôt que des implémentations concrètes ?", "tags": ["solid", "dependencies"], "explanation": "Le Dependency Inversion Principle permet de réduire le couplage entre les modules.", "points": 3,
+      "content": { "expectedAnswers": ["Dependency Inversion Principle", "DIP", "D"], "caseSensitive": false }
+    },
+    {
+      "id": "ddd-meaning", "type": "qcm", "theme": "software-design", "difficulty": "easy",
+      "question": "Que signifie DDD dans le contexte de la conception logicielle ?", "tags": ["ddd", "architecture"], "explanation": "DDD signifie Domain-Driven Design : l'architecture est guidée par le domaine métier.", "points": 2,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "Domain-Driven Design", "isCorrect": true }, { "id": "b", "label": "Data-Driven Development", "isCorrect": false }, { "id": "c", "label": "Distributed Domain Definition", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "typescript-compiler", "type": "text", "theme": "tooling", "difficulty": "easy",
+      "question": "Quel compilateur transforme le code TypeScript en JavaScript ?", "tags": ["typescript", "compiler"], "explanation": "tsc est l'abréviation de TypeScript Compiler.", "points": 2,
+      "content": { "expectedAnswers": ["tsc", "TypeScript Compiler"], "caseSensitive": false }
+    },
+    {
+      "id": "node-package-json", "type": "qcm", "theme": "tooling", "difficulty": "easy",
+      "question": "Quel fichier contient la configuration de base d'un projet Node.js, notamment ses scripts et dépendances ?", "tags": ["node", "npm"], "explanation": "package.json est le manifeste du projet : il recense entre autres les dépendances et scripts npm.", "points": 2,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "package.json", "isCorrect": true }, { "id": "b", "label": "node.config", "isCorrect": false }, { "id": "c", "label": "tsconfig.json", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "react-useref", "type": "code", "theme": "react", "difficulty": "medium",
+      "question": "Quel hook faut-il utiliser ici pour conserver une référence mutable sans déclencher de rendu lors de sa modification ?", "tags": ["hooks", "references"], "explanation": "useRef conserve une valeur entre les rendus sans que sa modification ne déclenche un nouveau rendu.", "points": 3,
+      "content": { "language": "tsx", "snippet": "function SearchBox() {\n  const inputRef = ___(null);\n  return <input ref={inputRef} />;\n}", "answers": [
+        { "id": "a", "label": "useState", "isCorrect": false }, { "id": "b", "label": "useRef", "isCorrect": true }, { "id": "c", "label": "useEffect", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "cors-allowed-origin", "type": "code", "theme": "web", "difficulty": "medium",
+      "question": "Quel en-tête HTTP de réponse le serveur doit-il renvoyer pour déclarer les origines autorisées en CORS ?", "tags": ["http", "cors", "security"], "explanation": "Access-Control-Allow-Origin indique quelles origines peuvent lire la réponse dans le navigateur.", "points": 3,
+      "content": { "language": "http", "snippet": "HTTP/1.1 200 OK\n___: https://frontend.example.com", "answers": [
+        { "id": "a", "label": "Access-Control-Allow-Origin", "isCorrect": true }, { "id": "b", "label": "Access-Control-Allow-Methods", "isCorrect": false }, { "id": "c", "label": "Origin", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "git-soft-reset", "type": "qcm", "theme": "git", "difficulty": "medium",
+      "question": "Quelle commande annule le dernier commit tout en conservant les modifications dans la zone de préparation ?", "tags": ["reset", "history"], "explanation": "git reset --soft HEAD~1 déplace HEAD d'un commit sans modifier l'index ni la copie de travail.", "points": 3,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "git reset --soft HEAD~1", "isCorrect": true }, { "id": "b", "label": "git reset --hard HEAD~1", "isCorrect": false }, { "id": "c", "label": "git clean -f", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "java-transient", "type": "qcm", "theme": "java", "difficulty": "medium",
+      "question": "Quel mot-clé Java empêche la sérialisation d'une variable membre ?", "tags": ["serialization"], "explanation": "Un champ transient est ignoré lors de la sérialisation par défaut.", "points": 3,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "volatile", "isCorrect": false }, { "id": "b", "label": "transient", "isCorrect": true }, { "id": "c", "label": "final", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "java-treeset-comparable", "type": "code", "theme": "java", "difficulty": "hard",
+      "question": "Pour que ce code puisse ordonner les objets A sans Comparator externe, que doit implémenter A ?", "tags": ["collections", "ordering"], "explanation": "TreeSet a besoin d'un ordre. Sans Comparator fourni au constructeur, les éléments doivent implémenter Comparable.", "points": 4,
+      "content": { "language": "java", "snippet": "TreeSet<A> set = new TreeSet<>();\nset.add(new A());", "answers": [
+        { "id": "a", "label": "java.io.Serializable", "isCorrect": false }, { "id": "b", "label": "java.lang.Comparable<A>", "isCorrect": true }, { "id": "c", "label": "java.lang.Cloneable", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "junit-os-condition", "type": "qcm", "theme": "testing", "difficulty": "medium",
+      "question": "Dans JUnit 5, quelle annotation permet de désactiver ou activer un test selon le système d'exploitation ?", "tags": ["junit", "conditions"], "explanation": "@DisabledOnOs et @EnabledOnOs permettent de conditionner l'exécution d'un test à un ou plusieurs OS.", "points": 3,
+      "content": { "multiple": true, "answers": [
+        { "id": "a", "label": "@DisabledOnOs", "isCorrect": true }, { "id": "b", "label": "@EnabledOnOs", "isCorrect": true }, { "id": "c", "label": "@Disabled", "isCorrect": false }, { "id": "d", "label": "@OnlyOnOs", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "spring-batch-flow", "type": "ordering", "theme": "spring", "difficulty": "medium",
+      "question": "Dans une étape Spring Batch de type chunk, placez les composants dans l'ordre logique du traitement des données.", "tags": ["spring-batch", "chunks"], "explanation": "ItemReader lit les éléments, ItemProcessor les transforme, puis ItemWriter les persiste ou les émet.", "points": 3,
+      "content": { "items": [
+        { "id": "writer", "label": "ItemWriter écrit les données" }, { "id": "reader", "label": "ItemReader lit les données" }, { "id": "processor", "label": "ItemProcessor transforme les données" }
+      ], "correctOrder": ["reader", "processor", "writer"] }
+    },
+    {
+      "id": "spring-batch-job", "type": "qcm", "theme": "spring", "difficulty": "easy",
+      "question": "Comment s'appelle un traitement batch complet dans Spring Batch ?", "tags": ["spring-batch"], "explanation": "Un Job représente un traitement batch complet et est constitué d'une ou plusieurs Step.", "points": 2,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "Job", "isCorrect": true }, { "id": "b", "label": "ItemReader", "isCorrect": false }, { "id": "c", "label": "Chunk", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "npm-npx-local-binary", "type": "qcm", "theme": "tooling", "difficulty": "easy",
+      "question": "À quoi sert principalement npx dans un projet Node.js ?", "tags": ["node", "npm", "npx"], "explanation": "npx permet notamment d'exécuter le binaire d'une dépendance du projet sans l'installer globalement. Son développement suit aujourd'hui celui de npm.", "points": 2,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "Exécuter un binaire de dépendance, notamment locale", "isCorrect": true }, { "id": "b", "label": "Compiler automatiquement tout projet TypeScript", "isCorrect": false }, { "id": "c", "label": "Publier un package sur npm", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "react-layout-effect", "type": "code", "theme": "react", "difficulty": "medium",
+      "question": "Quel hook est approprié lorsqu'une mesure du DOM doit être prise et appliquée avant le prochain affichage du navigateur ?", "tags": ["hooks", "dom", "performance"], "explanation": "useLayoutEffect s'exécute après les mutations du DOM mais avant le paint. Il peut bloquer l'affichage : useEffect reste le choix par défaut lorsque cette synchronisation n'est pas requise.", "points": 3,
+      "content": { "language": "tsx", "snippet": "function Tooltip() {\n  const ref = useRef<HTMLDivElement>(null);\n  ___(() => {\n    // mesurer ref.current avant l'affichage\n  }, []);\n}", "answers": [
+        { "id": "a", "label": "useEffect", "isCorrect": false }, { "id": "b", "label": "useLayoutEffect", "isCorrect": true }, { "id": "c", "label": "useMemo", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "react-insertion-effect", "type": "qcm", "theme": "react", "difficulty": "hard",
+      "question": "Dans quel cas useInsertionEffect est-il principalement destiné à être utilisé ?", "tags": ["hooks", "css-in-js"], "explanation": "useInsertionEffect est conçu surtout pour les auteurs de bibliothèques CSS-in-JS qui doivent insérer des styles avant les effets de layout. Il ne remplace pas useEffect dans un composant applicatif courant.", "points": 4,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "Insérer des styles dynamiques dans une bibliothèque CSS-in-JS", "isCorrect": true }, { "id": "b", "label": "Charger des données depuis une API", "isCorrect": false }, { "id": "c", "label": "Mémoriser un calcul coûteux", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "cors-same-origin", "type": "qcm", "theme": "web", "difficulty": "medium",
+      "question": "Sans en-têtes CORS adaptés, que se passe-t-il lorsqu'une application exécutée sur https://frontend.example appelle une API sur https://api.example depuis le navigateur ?", "tags": ["cors", "same-origin", "security"], "explanation": "Les deux origines sont différentes. Le navigateur applique la Same-Origin Policy et bloque l'accès JavaScript à la réponse si le serveur n'autorise pas cette origine via CORS.", "points": 3,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "Le navigateur bloque l'accès à la réponse", "isCorrect": true }, { "id": "b", "label": "La requête est toujours autorisée car les deux URL utilisent HTTPS", "isCorrect": false }, { "id": "c", "label": "CORS est configuré uniquement côté client", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "git-clean-warning", "type": "code", "theme": "git", "difficulty": "medium",
+      "question": "Quel est l'effet de cette commande, à utiliser avec précaution ?", "tags": ["cleanup", "destructive"], "explanation": "git clean -f supprime les fichiers non suivis. Ils ne passent pas par la corbeille ; il est prudent de simuler d'abord avec git clean -n.", "points": 3,
+      "content": { "language": "bash", "snippet": "git clean -f", "answers": [
+        { "id": "a", "label": "Elle supprime les fichiers non suivis", "isCorrect": true }, { "id": "b", "label": "Elle annule le dernier commit", "isCorrect": false }, { "id": "c", "label": "Elle supprime uniquement les fichiers déjà suivis", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "git-reset-hard-warning", "type": "code", "theme": "git", "difficulty": "hard",
+      "question": "Quel est l'effet principal de cette commande sur la branche courante ?", "tags": ["reset", "history", "destructive"], "explanation": "git reset --hard déplace HEAD, réinitialise l'index et la copie de travail. Les changements non commités concernés sont perdus : cette commande doit être utilisée avec précaution.", "points": 4,
+      "content": { "language": "bash", "snippet": "git reset --hard HEAD~1", "answers": [
+        { "id": "a", "label": "Elle revient d'un commit et abandonne les modifications non commités concernées", "isCorrect": true }, { "id": "b", "label": "Elle crée un commit inverse sans modifier les fichiers", "isCorrect": false }, { "id": "c", "label": "Elle remet la branche exactement sur le dépôt distant", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "java-wait-monitor", "type": "qcm", "theme": "java", "difficulty": "hard",
+      "question": "Lorsqu'un thread appelle wait() sur un objet alors qu'il détient son moniteur, que libère-t-il pendant l'attente ?", "tags": ["concurrency", "synchronization"], "explanation": "wait() libère le moniteur de l'objet sur lequel il est appelé, puis le thread doit le réacquérir avant de reprendre. Il ne libère pas tous les verrous que le thread pourrait détenir.", "points": 4,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "Le moniteur de l'objet concerné", "isCorrect": true }, { "id": "b", "label": "Tous les verrous détenus par le thread", "isCorrect": false }, { "id": "c", "label": "Aucun verrou", "isCorrect": false }
+      ] }
+    },
+    {
+      "id": "java-reflect-proxy", "type": "text", "theme": "java", "difficulty": "hard",
+      "question": "Quelle classe de l'API J2SE permet de créer dynamiquement des implémentations d'interfaces Java ?", "tags": ["reflection", "proxy"], "explanation": "java.lang.reflect.Proxy fournit le mécanisme standard de proxy dynamique fondé sur des interfaces.", "points": 4,
+      "content": { "expectedAnswers": ["java.lang.reflect.Proxy", "Proxy"], "caseSensitive": false }
+    },
+    {
+      "id": "html-ie-conditional-comments", "type": "qcm", "theme": "html-css", "difficulty": "hard",
+      "question": "Historiquement, comment commençaient les commentaires conditionnels destinés uniquement à Internet Explorer ?", "tags": ["html", "legacy", "internet-explorer"], "explanation": "Les commentaires conditionnels étaient une fonctionnalité historique d'Internet Explorer et ne doivent pas être utilisés dans du code web moderne.", "points": 4,
+      "content": { "multiple": false, "answers": [
+        { "id": "a", "label": "<!--[if IE]>", "isCorrect": true }, { "id": "b", "label": "<!--[if not Firefox]>", "isCorrect": false }, { "id": "c", "label": "<ie-only>", "isCorrect": false }
+      ] }
+    },
+    {"id":"js-nullish","type":"code","theme":"javascript","difficulty":"medium","question":"Quelle valeur est affichée ?","tags":["operators"],"explanation":"?? ne remplace que null et undefined, contrairement à ||.","points":2,"content":{"language":"javascript","snippet":"console.log(0 ?? 42);","answers":[{"id":"a","label":"0","isCorrect":true},{"id":"b","label":"42","isCorrect":false},{"id":"c","label":"undefined","isCorrect":false}]}},
+    {"id":"js-destructuring","type":"qcm","theme":"javascript","difficulty":"easy","question":"Quelle syntaxe extrait la propriété name de l'objet user ?","tags":["objects"],"explanation":"La déstructuration d'objet extrait des propriétés dans des variables.","points":1,"content":{"multiple":false,"answers":[{"id":"a","label":"const { name } = user;","isCorrect":true},{"id":"b","label":"const [name] = user;","isCorrect":false},{"id":"c","label":"const name := user.name;","isCorrect":false}]}},
+    {"id":"js-optional-chaining","type":"code","theme":"javascript","difficulty":"medium","question":"Quel est le résultat si user vaut null ?","tags":["operators"],"explanation":"L'opérateur ?. court-circuite l'accès et retourne undefined.","points":2,"content":{"language":"javascript","snippet":"const city = user?.address?.city;","answers":[{"id":"a","label":"undefined","isCorrect":true},{"id":"b","label":"null","isCorrect":false},{"id":"c","label":"TypeError","isCorrect":false}]}},
+    {"id":"react-keys","type":"qcm","theme":"react","difficulty":"easy","question":"Pourquoi React demande-t-il une prop key stable pour les éléments d'une liste ?","tags":["rendering","lists"],"explanation":"Elle permet à React d'identifier les éléments entre deux rendus.","points":2,"content":{"multiple":false,"answers":[{"id":"a","label":"Pour identifier chaque élément entre les rendus","isCorrect":true},{"id":"b","label":"Pour rendre les styles CSS obligatoires","isCorrect":false},{"id":"c","label":"Pour chiffrer les données","isCorrect":false}]}},
+    {"id":"react-memo","type":"code","theme":"react","difficulty":"medium","question":"Quel hook mémorise cette valeur calculée tant que items ne change pas ?","tags":["hooks","performance"],"explanation":"useMemo mémorise le résultat d'un calcul ; il ne doit être employé que lorsqu'il apporte un bénéfice mesurable.","points":3,"content":{"language":"tsx","snippet":"const total = ___(() => items.reduce((sum, item) => sum + item.price, 0), [items]);","answers":[{"id":"a","label":"useMemo","isCorrect":true},{"id":"b","label":"useEffect","isCorrect":false},{"id":"c","label":"useRef","isCorrect":false}]}},
+    {"id":"react-controlled-input","type":"qcm","theme":"react","difficulty":"medium","question":"Qu'est-ce qui caractérise un champ contrôlé en React ?","tags":["forms","state"],"explanation":"Sa valeur est pilotée par l'état React et mise à jour par un gestionnaire d'événement.","points":2,"content":{"multiple":false,"answers":[{"id":"a","label":"Sa valeur provient de l'état React","isCorrect":true},{"id":"b","label":"Il ne possède jamais de onChange","isCorrect":false},{"id":"c","label":"Il ne peut pas être un input texte","isCorrect":false}]}},
+    {"id":"web-http-204","type":"qcm","theme":"web","difficulty":"easy","question":"Que signifie le statut HTTP 204 ?","tags":["http","status"],"explanation":"204 No Content indique le succès de la requête sans corps de réponse.","points":1,"content":{"multiple":false,"answers":[{"id":"a","label":"Succès sans contenu de réponse","isCorrect":true},{"id":"b","label":"Ressource créée","isCorrect":false},{"id":"c","label":"Accès interdit","isCorrect":false}]}},
+    {"id":"web-cookie-flags","type":"qcm","theme":"web","difficulty":"medium","question":"Quels attributs de cookie réduisent l'exposition aux attaques XSS et aux envois cross-site non souhaités ?","tags":["security","cookies"],"explanation":"HttpOnly bloque l'accès JavaScript au cookie et SameSite contrôle son envoi dans les contextes cross-site.","points":3,"content":{"multiple":true,"answers":[{"id":"a","label":"HttpOnly","isCorrect":true},{"id":"b","label":"SameSite","isCorrect":true},{"id":"c","label":"Content-Type","isCorrect":false},{"id":"d","label":"Accept","isCorrect":false}]}},
+    {"id":"web-etag","type":"qcm","theme":"web","difficulty":"hard","question":"À quoi sert principalement l'en-tête HTTP ETag ?","tags":["http","cache"],"explanation":"ETag identifie une version de ressource et permet aux clients de faire des requêtes conditionnelles de cache.","points":4,"content":{"multiple":false,"answers":[{"id":"a","label":"Valider qu'une ressource en cache est toujours à jour","isCorrect":true},{"id":"b","label":"Chiffrer automatiquement la réponse","isCorrect":false},{"id":"c","label":"Définir le type MIME","isCorrect":false}]}},
+    {"id":"git-ignore","type":"qcm","theme":"git","difficulty":"easy","question":"À quoi sert le fichier .gitignore ?","tags":["repository"],"explanation":"Il définit des motifs de fichiers que Git ne doit pas suivre lorsqu'ils ne sont pas déjà indexés.","points":1,"content":{"multiple":false,"answers":[{"id":"a","label":"Ignorer certains fichiers non suivis","isCorrect":true},{"id":"b","label":"Supprimer les fichiers suivis","isCorrect":false},{"id":"c","label":"Masquer les commits distants","isCorrect":false}]}},
+    {"id":"git-rebase","type":"qcm","theme":"git","difficulty":"medium","question":"Quel est l'objectif de git rebase ?","tags":["history","branches"],"explanation":"Rebase rejoue les commits d'une branche sur une nouvelle base et réécrit leur historique ; prudence sur les branches partagées.","points":3,"content":{"multiple":false,"answers":[{"id":"a","label":"Rejouer des commits sur une autre base","isCorrect":true},{"id":"b","label":"Supprimer tous les commits de la branche","isCorrect":false},{"id":"c","label":"Créer un dépôt distant","isCorrect":false}]}},
+    {"id":"git-conflict-order","type":"ordering","theme":"git","difficulty":"medium","question":"Placez les étapes classiques de résolution d'un conflit Git dans l'ordre.","tags":["merge","conflicts"],"explanation":"On résout le contenu, on l'indexe, puis on finalise le merge ou le rebase en cours.","points":3,"content":{"items":[{"id":"finish","label":"Finaliser le merge ou rebase"},{"id":"stage","label":"Ajouter les fichiers résolus avec git add"},{"id":"resolve","label":"Modifier les fichiers pour résoudre le conflit"}],"correctOrder":["resolve","stage","finish"]}},
+    {"id":"java-finally","type":"qcm","theme":"java","difficulty":"easy","question":"À quoi sert généralement un bloc finally ?","tags":["exceptions"],"explanation":"finally est typiquement utilisé pour le nettoyage qui doit être tenté après le bloc try, qu'une exception soit levée ou non.","points":2,"content":{"multiple":false,"answers":[{"id":"a","label":"Exécuter du nettoyage après try/catch","isCorrect":true},{"id":"b","label":"Déclarer une constante","isCorrect":false},{"id":"c","label":"Créer un thread","isCorrect":false}]}},
+    {"id":"java-optional","type":"qcm","theme":"java","difficulty":"medium","question":"Quel est l'objectif principal de Optional en Java ?","tags":["api","null"],"explanation":"Optional représente explicitement la possible absence d'une valeur et encourage un traitement contrôlé.","points":2,"content":{"multiple":false,"answers":[{"id":"a","label":"Représenter une valeur possiblement absente","isCorrect":true},{"id":"b","label":"Remplacer toutes les collections","isCorrect":false},{"id":"c","label":"Rendre un objet automatiquement sérialisable","isCorrect":false}]}},
+    {"id":"java-try-resources","type":"code","theme":"java","difficulty":"medium","question":"Quelle construction ferme automatiquement une ressource qui implémente AutoCloseable ?","tags":["resources","exceptions"],"explanation":"Le try-with-resources ferme les ressources à la fin du bloc, y compris en cas d'exception.","points":3,"content":{"language":"java","snippet":"try (BufferedReader reader = Files.newBufferedReader(path)) {\n  return reader.readLine();\n}","answers":[{"id":"a","label":"try-with-resources","isCorrect":true},{"id":"b","label":"synchronized","isCorrect":false},{"id":"c","label":"assert","isCorrect":false}]}},
+    {"id":"spring-constructor-injection","type":"qcm","theme":"spring","difficulty":"easy","question":"Pourquoi l'injection par constructeur est-elle souvent préférée dans un composant Spring ?","tags":["dependency-injection"],"explanation":"Elle rend les dépendances explicites et permet de les rendre immuables.","points":2,"content":{"multiple":false,"answers":[{"id":"a","label":"Elle rend les dépendances explicites et immuables","isCorrect":true},{"id":"b","label":"Elle évite tout test unitaire","isCorrect":false},{"id":"c","label":"Elle remplace les interfaces Java","isCorrect":false}]}},
+    {"id":"spring-profiles","type":"qcm","theme":"spring","difficulty":"medium","question":"À quoi servent les profils Spring ?","tags":["configuration","profiles"],"explanation":"Les profils activent des configurations ou beans selon l'environnement, par exemple développement ou production.","points":2,"content":{"multiple":false,"answers":[{"id":"a","label":"Activer une configuration selon l'environnement","isCorrect":true},{"id":"b","label":"Créer des utilisateurs de base de données","isCorrect":false},{"id":"c","label":"Remplacer le serveur HTTP","isCorrect":false}]}},
+    {"id":"spring-transactional","type":"qcm","theme":"spring","difficulty":"hard","question":"Quelle limitation importante faut-il connaître avec @Transactional par défaut dans Spring ?","tags":["transactions","aop"],"explanation":"L'annotation est généralement appliquée via un proxy : un appel interne de méthode à méthode dans la même instance ne passe pas par ce proxy.","points":4,"content":{"multiple":false,"answers":[{"id":"a","label":"L'auto-invocation peut contourner le proxy transactionnel","isCorrect":true},{"id":"b","label":"Elle interdit toute transaction en lecture seule","isCorrect":false},{"id":"c","label":"Elle ne fonctionne qu'avec des contrôleurs REST","isCorrect":false}]}},
+    {"id":"html-semantic-nav","type":"qcm","theme":"html-css","difficulty":"easy","question":"Quelle balise HTML sémantique convient à un bloc de navigation principal ?","tags":["html","semantics"],"explanation":"nav représente une section de navigation majeure.","points":1,"content":{"multiple":false,"answers":[{"id":"a","label":"<nav>","isCorrect":true},{"id":"b","label":"<span>","isCorrect":false},{"id":"c","label":"<canvas>","isCorrect":false}]}},
+    {"id":"css-box-sizing","type":"qcm","theme":"html-css","difficulty":"medium","question":"Avec box-sizing: border-box, que comprend la largeur déclarée d'un élément ?","tags":["css","layout"],"explanation":"La largeur inclut le contenu, le padding et la bordure.","points":2,"content":{"multiple":false,"answers":[{"id":"a","label":"Contenu, padding et bordure","isCorrect":true},{"id":"b","label":"Uniquement le contenu","isCorrect":false},{"id":"c","label":"Uniquement les marges","isCorrect":false}]}},
+    {"id":"css-specificity","type":"code","theme":"html-css","difficulty":"hard","question":"Quelle couleur est appliquée à l'élément <p id=\"intro\" class=\"note\"> ?","tags":["css","specificity"],"explanation":"Un sélecteur d'identifiant est plus spécifique qu'un sélecteur de classe ou de balise.","points":4,"content":{"language":"css","snippet":"p { color: blue; }\n.note { color: green; }\n#intro { color: red; }","answers":[{"id":"a","label":"red","isCorrect":true},{"id":"b","label":"green","isCorrect":false},{"id":"c","label":"blue","isCorrect":false}]}},
+    {"id":"design-liskov","type":"qcm","theme":"software-design","difficulty":"medium","question":"Quel principe SOLID exige qu'un sous-type puisse remplacer son type de base sans casser le comportement attendu ?","tags":["solid","liskov"],"explanation":"Le Liskov Substitution Principle concerne la substituabilité des sous-types.","points":3,"content":{"multiple":false,"answers":[{"id":"a","label":"Liskov Substitution Principle","isCorrect":true},{"id":"b","label":"Open/Closed Principle","isCorrect":false},{"id":"c","label":"Interface Segregation Principle","isCorrect":false}]}},
+    {"id":"design-composition","type":"qcm","theme":"software-design","difficulty":"medium","question":"Quel avantage donne souvent la composition par rapport à l'héritage ?","tags":["architecture","composition"],"explanation":"La composition permet d'assembler des comportements avec un couplage souvent plus faible.","points":2,"content":{"multiple":false,"answers":[{"id":"a","label":"Assembler des comportements plus souplement","isCorrect":true},{"id":"b","label":"Éviter tout objet","isCorrect":false},{"id":"c","label":"Supprimer le besoin de tests","isCorrect":false}]}},
+    {"id":"design-interface-segregation","type":"text","theme":"software-design","difficulty":"hard","question":"Quel principe SOLID recommande plusieurs interfaces spécifiques plutôt qu'une grande interface généraliste ?","tags":["solid","interfaces"],"explanation":"L'Interface Segregation Principle évite de forcer les clients à dépendre de méthodes qu'ils n'utilisent pas.","points":4,"content":{"expectedAnswers":["Interface Segregation Principle","ISP","I"],"caseSensitive":false}},
+    {"id":"tooling-semver","type":"qcm","theme":"tooling","difficulty":"medium","question":"Dans une version sémantique 2.4.1, quel nombre désigne la version majeure ?","tags":["semver","versions"],"explanation":"Semantic Versioning suit le format MAJOR.MINOR.PATCH.","points":2,"content":{"multiple":false,"answers":[{"id":"a","label":"2","isCorrect":true},{"id":"b","label":"4","isCorrect":false},{"id":"c","label":"1","isCorrect":false}]}},
+    {"id":"tooling-npm-ci","type":"qcm","theme":"tooling","difficulty":"medium","question":"Dans quel contexte npm ci est-il particulièrement adapté ?","tags":["npm","ci"],"explanation":"npm ci installe exactement les versions du lockfile et est adapté aux installations reproductibles en intégration continue.","points":3,"content":{"multiple":false,"answers":[{"id":"a","label":"Une installation reproductible en CI","isCorrect":true},{"id":"b","label":"La publication d'un package","isCorrect":false},{"id":"c","label":"La création d'un composant React","isCorrect":false}]}},
+    {"id":"tooling-env-order","type":"ordering","theme":"tooling","difficulty":"easy","question":"Placez les étapes courantes pour ajouter une dépendance de développement à un projet Node.js.","tags":["npm","workflow"],"explanation":"On initialise le manifeste, on installe la dépendance de développement, puis on l'utilise dans un script ou le code.","points":2,"content":{"items":[{"id":"use","label":"Utiliser la dépendance dans le projet"},{"id":"init","label":"Initialiser le projet avec npm init"},{"id":"install","label":"Installer la dépendance avec npm install --save-dev"}],"correctOrder":["init","install","use"]}},
+    {"id":"testing-aaa","type":"ordering","theme":"testing","difficulty":"easy","question":"Placez les phases du patron de test Arrange-Act-Assert dans l'ordre.","tags":["unit-tests","aaa"],"explanation":"On prépare les données, on exécute l'action, puis on vérifie le résultat.","points":2,"content":{"items":[{"id":"assert","label":"Vérifier le résultat"},{"id":"arrange","label":"Préparer le contexte"},{"id":"act","label":"Exécuter l'action testée"}],"correctOrder":["arrange","act","assert"]}},
+    {"id":"testing-mock","type":"qcm","theme":"testing","difficulty":"medium","question":"Pourquoi utilise-t-on souvent un mock dans un test unitaire ?","tags":["unit-tests","mocks"],"explanation":"Un mock isole l'unité testée de ses dépendances et permet de contrôler ou vérifier les interactions.","points":3,"content":{"multiple":false,"answers":[{"id":"a","label":"Isoler et contrôler une dépendance","isCorrect":true},{"id":"b","label":"Remplacer définitivement le code de production","isCorrect":false},{"id":"c","label":"Éviter toute assertion","isCorrect":false}]}},
+    {"id":"testing-pyramid","type":"qcm","theme":"testing","difficulty":"hard","question":"Quel niveau de tests est généralement le plus nombreux dans la pyramide des tests ?","tags":["strategy","test-pyramid"],"explanation":"La pyramide recommande une base large de tests unitaires, avec moins de tests d'intégration et de bout en bout.","points":4,"content":{"multiple":false,"answers":[{"id":"a","label":"Les tests unitaires","isCorrect":true},{"id":"b","label":"Les tests end-to-end","isCorrect":false},{"id":"c","label":"Les tests manuels","isCorrect":false}]}}
+  ]
+}
