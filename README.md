@@ -1,6 +1,6 @@
-# Quiz technique
+# Oliver Quiz
 
-Application web de quiz technique construite avec React, TypeScript et Vite. Elle permet de s'entraîner sur des questions à choix multiples, du code, du texte libre ou du réordonnancement, filtrées par thème et niveau de difficulté.
+Application web de quiz construite avec React, TypeScript et Vite. Elle permet de s'entraîner sur des questions à choix multiples, du code, du texte libre ou du réordonnancement, filtrées par thème et niveau de difficulté.
 
 ## Fonctionnalités
 
