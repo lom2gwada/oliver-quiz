@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import type { AnswersByQuestion, Difficulty, Question, Theme } from '../types/quiz'
 import { formatDuration } from '../utils/time'
+import { Confetti } from './Confetti'
 import { PieChart } from './PieChart'
 
 const DIFFICULTY_LABELS: Record<Difficulty, string> = { easy: 'Facile', medium: 'Intermédiaire', hard: 'Difficile' }
@@ -33,6 +35,23 @@ function correctnessBreakdown<T extends string>(questions: Question[], answers: 
   })
 }
 
+function useAnimatedNumber(target: number, duration = 900): number {
+  const [value, setValue] = useState(0)
+  useEffect(() => {
+    const start = performance.now()
+    let frame: number
+    const tick = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1)
+      const eased = 1 - (1 - progress) ** 3
+      setValue(Math.round(eased * target))
+      if (progress < 1) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [target, duration])
+  return value
+}
+
 function mention(score: number): { emoji: string; label: string } {
   if (score >= 90) return { emoji: '🏆', label: 'Excellent' }
   if (score >= 75) return { emoji: '👏', label: 'Très bien' }
@@ -56,10 +75,12 @@ export function ResultPage({ questions, answers, themes, elapsedSeconds, onResta
   const { emoji, label } = mention(score)
   const byTheme = correctnessBreakdown(questions, answers, (question) => question.theme, (id) => themes.find((theme) => theme.id === id)?.label ?? id)
   const byDifficulty = correctnessBreakdown(questions, answers, (question) => question.difficulty, (difficulty) => DIFFICULTY_LABELS[difficulty])
+  const displayScore = useAnimatedNumber(score)
   return <section className="results">
+    {score >= 90 && <Confetti />}
     <div className="score">
       <p>Votre score</p>
-      <strong>{score}%</strong>
+      <strong>{displayScore}%</strong>
       <span>{earned} / {total} points</span>
       <p className="mention">{emoji} {label}</p>
       <p className="duration">⏱ Temps : {formatDuration(elapsedSeconds)}</p>

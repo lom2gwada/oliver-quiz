@@ -25,9 +25,12 @@ export function QuizPage({ quiz, questions, onFinish }: QuizPageProps) {
   const theme = quiz.themes.find((item) => item.id === question.theme)?.label ?? question.theme
   return <section className="quiz-card">
     <div className="question-meta"><span>{theme}</span><span>{question.difficulty}</span><span>{question.points} pts</span><span>⏱ {formatDuration(elapsed)}</span></div>
+    <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${((current + 1) / questions.length) * 100}%` }} /></div>
     <p className="progress">Question {current + 1} / {questions.length}</p>
-    <h2>{question.question}</h2>
-    <QuestionRenderer question={question} answer={answers[question.id]} onChange={updateAnswer} />
+    <div className="question-body" key={question.id}>
+      <h2>{question.question}</h2>
+      <QuestionRenderer question={question} answer={answers[question.id]} onChange={updateAnswer} />
+    </div>
     <div className="quiz-actions">
       <button type="button" className="secondary" onClick={() => setCurrent((value) => value - 1)} disabled={current === 0}>Précédente</button>
       {current === questions.length - 1
