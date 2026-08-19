@@ -2,20 +2,24 @@ import type { Difficulty, Theme } from '../types/quiz'
 
 interface FilterPanelProps {
   themes: Theme[]
-  theme: string
+  selectedThemes: string[]
   difficulty: Difficulty | ''
-  onThemeChange: (value: string) => void
+  onThemeToggle: (themeId: string) => void
   onDifficultyChange: (value: Difficulty | '') => void
 }
 
-export function FilterPanel({ themes, theme, difficulty, onThemeChange, onDifficultyChange }: FilterPanelProps) {
+export function FilterPanel({ themes, selectedThemes, difficulty, onThemeToggle, onDifficultyChange }: FilterPanelProps) {
   return <section className="filter-panel" aria-label="Filtres du quiz">
-    <label>Thème
-      <select value={theme} onChange={(event) => onThemeChange(event.target.value)}>
-        <option value="">Tous les thèmes</option>
-        {themes.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-      </select>
-    </label>
+    <fieldset className="theme-filter">
+      <legend>Thèmes</legend>
+      <div className="theme-checkboxes">
+        {themes.map((item) => <label key={item.id} className="theme-checkbox">
+          <input type="checkbox" checked={selectedThemes.includes(item.id)} onChange={() => onThemeToggle(item.id)} />
+          {item.label}
+        </label>)}
+      </div>
+      <p className="theme-hint">{selectedThemes.length ? `${selectedThemes.length} thème${selectedThemes.length > 1 ? 's' : ''} sélectionné${selectedThemes.length > 1 ? 's' : ''}` : 'Tous les thèmes'}</p>
+    </fieldset>
     <label>Difficulté
       <select value={difficulty} onChange={(event) => onDifficultyChange(event.target.value as Difficulty | '')}>
         <option value="">Toutes les difficultés</option>
