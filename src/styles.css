@@ -12,7 +12,13 @@ p { color: #94a3b8; } .eyebrow { margin: 0; color: #38bdf8; letter-spacing: .14e
 .file-input { background: #1e293b; border: 1px solid #475569; padding: .65rem .8rem; border-radius: .55rem; cursor: pointer; white-space: nowrap; } .file-input input { display: none; }
 .alert { padding: 1rem; background: #451a1a; color: #fecaca; border-radius: .5rem; }
 .start-page, .quiz-card, .results { background: rgba(15, 23, 42, .8); border: 1px solid #334155; border-radius: 1rem; padding: clamp(1.2rem, 4vw, 2.5rem); box-shadow: 0 20px 45px rgba(0, 0, 0, .15); }
-.filter-panel { display: flex; gap: 1rem; flex-wrap: wrap; } .filter-panel label { color: #cbd5e1; display: grid; gap: .4rem; flex: 1; min-width: 180px; }
+.filter-panel { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start; } .filter-panel > label { color: #cbd5e1; display: grid; gap: .4rem; flex: 1; min-width: 180px; }
+.theme-filter { border: 0; margin: 0; padding: 0; color: #cbd5e1; display: grid; gap: .5rem; flex: 2; min-width: 260px; } .theme-filter legend { padding: 0; }
+.theme-checkboxes { display: flex; flex-wrap: wrap; gap: .4rem; }
+.theme-checkbox { display: inline-flex; align-items: center; gap: .35rem; padding: .32rem .65rem; background: #1e293b; border: 1px solid #334155; border-radius: 999px; cursor: pointer; font-size: .78rem; color: #cbd5e1; white-space: nowrap; }
+.theme-checkbox input { width: .8rem; height: .8rem; accent-color: #38bdf8; }
+.theme-checkbox:has(input:checked) { border-color: #38bdf8; background: #0c2e45; color: #e2e8f0; }
+.theme-hint { margin: 0; font-size: .78rem; }
 select, .text-answer { width: 100%; background: #0f172a; color: #e2e8f0; border: 1px solid #475569; border-radius: .45rem; padding: .7rem; }
 .start-page > p { margin: 2rem 0 1rem; } .start-page button { width: 100%; }
 .question-count { display: grid; gap: .4rem; margin-top: 1.2rem; color: #cbd5e1; max-width: 280px; }
