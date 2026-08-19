@@ -1,0 +1,39 @@
+import type { Difficulty, Quiz } from '../types/quiz'
+import { PieChart } from './PieChart'
+
+const THEME_COLORS = ['#38bdf8', '#a78bfa', '#34d399', '#fbbf24', '#fb7185', '#22d3ee', '#f472b6', '#94a3b8']
+const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard']
+const DIFFICULTY_COLORS: Record<Difficulty, string> = { easy: '#34d399', medium: '#38bdf8', hard: '#fb7185' }
+const DIFFICULTY_LABELS: Record<Difficulty, string> = { easy: 'Facile', medium: 'Intermédiaire', hard: 'Difficile' }
+
+export function StatsPage({ quiz, onBack }: { quiz: Quiz; onBack: () => void }) {
+  const byTheme = quiz.themes
+    .map((theme, index) => ({
+      label: theme.label,
+      value: quiz.questions.filter((question) => question.theme === theme.id).length,
+      color: THEME_COLORS[index % THEME_COLORS.length],
+    }))
+    .filter((slice) => slice.value > 0)
+
+  return <section className="stats-page">
+    <div className="stats-header">
+      <h2>Répartition des questions</h2>
+      <button type="button" className="secondary" onClick={onBack}>Retour</button>
+    </div>
+    <div className="stats-grid">
+      <PieChart title={`Thèmes — ${quiz.questions.length} questions`} data={byTheme} />
+      {quiz.themes.map((theme) => {
+        const themeQuestions = quiz.questions.filter((question) => question.theme === theme.id)
+        if (!themeQuestions.length) return null
+        const byDifficulty = DIFFICULTIES
+          .map((difficulty) => ({
+            label: DIFFICULTY_LABELS[difficulty],
+            value: themeQuestions.filter((question) => question.difficulty === difficulty).length,
+            color: DIFFICULTY_COLORS[difficulty],
+          }))
+          .filter((slice) => slice.value > 0)
+        return <PieChart key={theme.id} title={`${theme.label} — ${themeQuestions.length} questions`} data={byDifficulty} />
+      })}
+    </div>
+  </section>
+}
