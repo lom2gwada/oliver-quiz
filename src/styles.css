@@ -10,7 +10,7 @@ button:hover:not(:disabled) { filter: brightness(1.08); } button:active:not(:dis
 header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; border-bottom: 1px solid #334155; padding-bottom: 1.8rem; margin-bottom: 2rem; }
 h1 { margin: .25rem 0; font-size: clamp(2rem, 6vw, 3.5rem); letter-spacing: -.05em; color: #f8fafc; } h2 { color: #f8fafc; line-height: 1.3; } h3 { margin-top: 0; font-size: 1rem; }
 p { color: #94a3b8; } .eyebrow { margin: 0; color: #38bdf8; letter-spacing: .14em; font-size: .72rem; font-weight: 800; }
-.header-actions { display: flex; align-items: center; gap: .7rem; }
+.header-actions { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; }
 .file-input { background: #1e293b; border: 1px solid #475569; padding: .65rem .8rem; border-radius: .55rem; cursor: pointer; white-space: nowrap; } .file-input input { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; } .file-input:has(input:focus-visible) { outline: 2px solid #f8fafc; outline-offset: 2px; }
 .alert { padding: 1rem; background: #451a1a; color: #fecaca; border-radius: .5rem; }
 .start-page, .quiz-card, .results { position: relative; background: rgba(15, 23, 42, .8); border: 1px solid #334155; border-radius: 1rem; padding: clamp(1.2rem, 4vw, 2.5rem); box-shadow: 0 20px 45px rgba(0, 0, 0, .15); }
