@@ -4,6 +4,7 @@ dist-ssr/
 
 *.local
 *.bak
+.claude/settings.local.json
 
 .vscode/*
 !.vscode/extensions.json
