@@ -1,5 +1,5 @@
 export type Difficulty = 'easy' | 'medium' | 'hard'
-export type QuestionType = 'qcm' | 'text' | 'code' | 'ordering' | 'boolean' | 'cloze' | 'matching'
+export type QuestionType = 'qcm' | 'text' | 'code' | 'ordering' | 'boolean' | 'cloze' | 'matching' | 'numeric'
 
 export interface Theme {
   id: string
@@ -56,6 +56,15 @@ export interface MatchingContent {
   correctPairs: Record<string, string>
 }
 
+export interface NumericContent {
+  min: number
+  max: number
+  step: number
+  target: number
+  tolerance: number
+  unit?: string
+}
+
 export interface BaseQuestion {
   id: string
   theme: string
@@ -101,7 +110,12 @@ export interface MatchingQuestion extends BaseQuestion {
   content: MatchingContent
 }
 
-export type Question = QCMQuestion | TextQuestion | CodeQuestion | OrderingQuestion | BooleanQuestion | ClozeQuestion | MatchingQuestion
+export interface NumericQuestion extends BaseQuestion {
+  type: 'numeric'
+  content: NumericContent
+}
+
+export type Question = QCMQuestion | TextQuestion | CodeQuestion | OrderingQuestion | BooleanQuestion | ClozeQuestion | MatchingQuestion | NumericQuestion
 
 export interface Quiz {
   version: string

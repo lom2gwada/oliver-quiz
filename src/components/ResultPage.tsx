@@ -15,6 +15,11 @@ export function isCorrect(question: Question, answer: AnswersByQuestion[string])
     const normalize = (value: string) => question.content.caseSensitive ? value.trim() : value.trim().toLocaleLowerCase()
     return question.content.expectedAnswers.map(normalize).includes(normalize(answer))
   }
+  if (question.type === 'numeric') {
+    if (typeof answer !== 'string' || answer === '') return false
+    const value = Number(answer)
+    return Number.isFinite(value) && Math.abs(value - question.content.target) <= question.content.tolerance
+  }
   if (!Array.isArray(answer)) return false
   if (question.type === 'ordering') return answer.every((id, index) => id === question.content.correctOrder[index]) && answer.length === question.content.correctOrder.length
   if (question.type === 'boolean') return answer[0] === String(question.content.isTrue)
@@ -116,6 +121,11 @@ export function ResultPage({ questions, answers, themes, elapsedSeconds, onResta
 
 function correctAnswer(question: Question): string {
   if (question.type === 'text' || question.type === 'cloze') return question.content.expectedAnswers.join(' ou ')
+  if (question.type === 'numeric') {
+    const { target, tolerance, unit } = question.content
+    const suffix = unit ? ` ${unit}` : ''
+    return tolerance > 0 ? `${target}${suffix} (± ${tolerance}${suffix})` : `${target}${suffix}`
+  }
   if (question.type === 'ordering') return question.content.correctOrder.map((id) => question.content.items.find((item) => item.id === id)?.label).join(' → ')
   if (question.type === 'boolean') return question.content.isTrue ? 'Vrai' : 'Faux'
   if (question.type === 'matching') {
