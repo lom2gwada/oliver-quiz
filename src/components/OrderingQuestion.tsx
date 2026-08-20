@@ -1,4 +1,5 @@
 import type { OrderingQuestion as Question, UserAnswer } from '../types/quiz'
+import { playClick } from '../utils/sound'
 
 export function OrderingQuestion({ question, answer, onChange }: { question: Question; answer?: UserAnswer; onChange: (value: string[]) => void }) {
   const order = Array.isArray(answer) && answer.length ? answer : question.content.items.map((item) => item.id)
@@ -7,6 +8,7 @@ export function OrderingQuestion({ question, answer, onChange }: { question: Que
     const target = index + direction
     if (target < 0 || target >= next.length) return
     ;[next[index], next[target]] = [next[target], next[index]]
+    playClick()
     onChange(next)
   }
   return <ol className="ordering-list">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { AnswersByQuestion, Difficulty, Question, Theme } from '../types/quiz'
 import { formatDuration } from '../utils/time'
+import { playFinish, playVictory } from '../utils/sound'
 import { Confetti } from './Confetti'
 import { PieChart } from './PieChart'
 
@@ -76,6 +77,7 @@ export function ResultPage({ questions, answers, themes, elapsedSeconds, onResta
   const byTheme = correctnessBreakdown(questions, answers, (question) => question.theme, (id) => themes.find((theme) => theme.id === id)?.label ?? id)
   const byDifficulty = correctnessBreakdown(questions, answers, (question) => question.difficulty, (difficulty) => DIFFICULTY_LABELS[difficulty])
   const displayScore = useAnimatedNumber(score)
+  useEffect(() => { score >= 90 ? playVictory() : playFinish() }, [])
   return <section className="results">
     {score >= 90 && <Confetti />}
     <div className="score">
