@@ -1,8 +1,10 @@
 import type { QCMQuestion as Question, UserAnswer } from '../types/quiz'
+import { playClick } from '../utils/sound'
 
 export function QCMQuestion({ question, answer, onChange }: { question: Question; answer?: UserAnswer; onChange: (value: string[]) => void }) {
   const selected = Array.isArray(answer) ? answer : []
   const toggle = (id: string) => {
+    playClick()
     onChange(question.content.multiple ? (selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id]) : [id])
   }
   return <div className="answers">
