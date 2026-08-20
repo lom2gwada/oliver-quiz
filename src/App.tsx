@@ -7,20 +7,15 @@ import { StatsPage } from './components/StatsPage'
 import type { AnswersByQuestion, Difficulty, Quiz } from './types/quiz'
 import { parseQuiz } from './utils/quizValidation'
 import { isSoundMuted, playClick, setSoundMuted } from './utils/sound'
+import { shuffle } from './utils/shuffle'
 
 type View = 'start' | 'quiz' | 'results' | 'stats'
 
 const initialQuiz = parseQuiz(sampleQuiz)
 const questionCounts = [5, 10, 20, 30, 50]
 
-/** Mélange Fisher-Yates : une session garde son ordre, chaque nouvelle session change. */
 function pickRandomQuestions<T>(questions: T[], count: number): T[] {
-  const shuffled = [...questions]
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1))
-    ;[shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]]
-  }
-  return shuffled.slice(0, Math.min(count, shuffled.length))
+  return shuffle(questions).slice(0, Math.min(count, questions.length))
 }
 
 export default function App() {
