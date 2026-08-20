@@ -20,6 +20,20 @@ Application web de quiz construite avec React, TypeScript et Vite. Elle permet d
 npm install
 ```
 
+## Authentification
+
+L'accès au site est protégé par [Supabase Auth](https://supabase.com/docs/guides/auth) (connexion par email/mot de passe uniquement, pas d'inscription publique).
+
+1. Crée un projet sur [supabase.com](https://supabase.com).
+2. Dans **Authentication > Users**, crée manuellement un compte pour chaque personne autorisée.
+3. Copie `.env.local.example` vers `.env.local` et renseigne l'URL du projet et la clé `anon` (**Project Settings > API**) :
+   ```bash
+   cp .env.local.example .env.local
+   ```
+4. Pour un déploiement (ex. GitHub Actions), définis `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` comme secrets du dépôt et passe-les à l'étape de build.
+
+La clé `anon` est prévue pour être publique (elle finit de toute façon dans le bundle JS envoyé au navigateur) ; elle n'accorde par elle-même aucun accès aux données, elle sert uniquement à parler à l'API Supabase.
+
 ## Scripts disponibles
 
 | Commande          | Description                                      |
