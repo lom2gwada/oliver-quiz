@@ -1,5 +1,5 @@
 export type Difficulty = 'easy' | 'medium' | 'hard'
-export type QuestionType = 'qcm' | 'text' | 'code' | 'ordering' | 'boolean' | 'cloze'
+export type QuestionType = 'qcm' | 'text' | 'code' | 'ordering' | 'boolean' | 'cloze' | 'matching'
 
 export interface Theme {
   id: string
@@ -45,6 +45,17 @@ export interface BooleanContent {
 /** Le champ `question` doit contenir un marqueur de trou (`___`) que ClozeQuestion remplace par un champ de saisie. */
 export type ClozeContent = TextContent
 
+export interface MatchingItem {
+  id: string
+  label: string
+}
+
+export interface MatchingContent {
+  left: MatchingItem[]
+  right: MatchingItem[]
+  correctPairs: Record<string, string>
+}
+
 export interface BaseQuestion {
   id: string
   theme: string
@@ -85,7 +96,12 @@ export interface ClozeQuestion extends BaseQuestion {
   content: ClozeContent
 }
 
-export type Question = QCMQuestion | TextQuestion | CodeQuestion | OrderingQuestion | BooleanQuestion | ClozeQuestion
+export interface MatchingQuestion extends BaseQuestion {
+  type: 'matching'
+  content: MatchingContent
+}
+
+export type Question = QCMQuestion | TextQuestion | CodeQuestion | OrderingQuestion | BooleanQuestion | ClozeQuestion | MatchingQuestion
 
 export interface Quiz {
   version: string
