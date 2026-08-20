@@ -36,6 +36,21 @@
     ] } },
     { "id": "hist-6", "type": "boolean", "theme": "histoire", "difficulty": "easy", "question": "Napoléon Bonaparte est né en Corse.", "tags": ["france"], "explanation": "Napoléon Bonaparte est né à Ajaccio, en Corse, en 1769.", "points": 1, "content": { "isTrue": true } },
     { "id": "hist-7", "type": "cloze", "theme": "histoire", "difficulty": "easy", "question": "La ___ française a éclaté en 1789.", "tags": ["france"], "explanation": "La Révolution française a débuté en 1789 avec la prise de la Bastille.", "points": 1, "content": { "expectedAnswers": ["Révolution"], "caseSensitive": false } },
+    { "id": "hist-8", "type": "matching", "theme": "histoire", "difficulty": "medium", "question": "Associez chaque personnage historique à son fait marquant.", "tags": ["personnages"], "explanation": "Napoléon fut sacré empereur en 1804, César fut général et homme d'État romain, Louis XIV est surnommé le Roi Soleil, et Léonard de Vinci a peint la Joconde.", "points": 2, "content": {
+      "left": [
+        { "id": "napoleon", "label": "Napoléon Bonaparte" },
+        { "id": "cesar", "label": "Jules César" },
+        { "id": "louis14", "label": "Louis XIV" },
+        { "id": "vinci", "label": "Léonard de Vinci" }
+      ],
+      "right": [
+        { "id": "r-vinci", "label": "Peintre de la Joconde" },
+        { "id": "r-louis14", "label": "Roi Soleil" },
+        { "id": "r-napoleon", "label": "Empereur des Français" },
+        { "id": "r-cesar", "label": "Général romain" }
+      ],
+      "correctPairs": { "napoleon": "r-napoleon", "cesar": "r-cesar", "louis14": "r-louis14", "vinci": "r-vinci" }
+    } },
 
     { "id": "geo-1", "type": "qcm", "theme": "geographie", "difficulty": "easy", "question": "Quelle est la capitale de l'Australie ?", "tags": ["capitales"], "explanation": "Canberra est la capitale de l'Australie, bien que Sydney soit la ville la plus peuplée.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Sydney", "isCorrect": false },
@@ -61,6 +76,21 @@
     ], "correctOrder": ["everest", "k2", "kilimandjaro", "montblanc"] } },
     { "id": "geo-6", "type": "boolean", "theme": "geographie", "difficulty": "easy", "question": "L'Everest se trouve en Amérique du Sud.", "tags": ["montagnes"], "explanation": "L'Everest culmine dans la chaîne de l'Himalaya, en Asie, à la frontière entre le Népal et la Chine.", "points": 1, "content": { "isTrue": false } },
     { "id": "geo-7", "type": "cloze", "theme": "geographie", "difficulty": "easy", "question": "Le fleuve ___ traverse la ville de Paris.", "tags": ["fleuves"], "explanation": "La Seine traverse Paris avant de se jeter dans la Manche.", "points": 1, "content": { "expectedAnswers": ["Seine", "la Seine"], "caseSensitive": false } },
+    { "id": "geo-8", "type": "matching", "theme": "geographie", "difficulty": "easy", "question": "Associez chaque pays à son continent.", "tags": ["continents"], "explanation": "L'Égypte est en Afrique, le Brésil en Amérique du Sud, le Japon en Asie et le Canada en Amérique du Nord.", "points": 1, "content": {
+      "left": [
+        { "id": "egypte", "label": "Égypte" },
+        { "id": "bresil", "label": "Brésil" },
+        { "id": "japon", "label": "Japon" },
+        { "id": "canada", "label": "Canada" }
+      ],
+      "right": [
+        { "id": "r-asie", "label": "Asie" },
+        { "id": "r-afrique", "label": "Afrique" },
+        { "id": "r-an", "label": "Amérique du Nord" },
+        { "id": "r-as", "label": "Amérique du Sud" }
+      ],
+      "correctPairs": { "egypte": "r-afrique", "bresil": "r-as", "japon": "r-asie", "canada": "r-an" }
+    } },
 
     { "id": "sci-1", "type": "qcm", "theme": "sciences", "difficulty": "easy", "question": "Quel est le symbole chimique de l'or ?", "tags": ["chimie"], "explanation": "Au vient du latin \"aurum\", qui signifie or.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Ag", "isCorrect": false },
@@ -85,6 +115,21 @@
     ] } },
     { "id": "sci-6", "type": "boolean", "theme": "sciences", "difficulty": "medium", "question": "La lumière se déplace plus vite que le son.", "tags": ["physique"], "explanation": "La lumière voyage à environ 300 000 km/s dans le vide, bien plus vite que le son (environ 340 m/s dans l'air).", "points": 2, "content": { "isTrue": true } },
     { "id": "sci-7", "type": "cloze", "theme": "sciences", "difficulty": "medium", "question": "L'eau (H2O) est composée d'hydrogène et d'___.", "tags": ["chimie"], "explanation": "La molécule d'eau est formée de deux atomes d'hydrogène et d'un atome d'oxygène.", "points": 2, "content": { "expectedAnswers": ["oxygène", "oxygene"], "caseSensitive": false } },
+    { "id": "sci-8", "type": "matching", "theme": "sciences", "difficulty": "medium", "question": "Associez chaque élément chimique à son symbole.", "tags": ["chimie"], "explanation": "Chaque élément possède un symbole issu du tableau périodique : Au (or), Fe (fer), O (oxygène), C (carbone).", "points": 2, "content": {
+      "left": [
+        { "id": "or", "label": "Or" },
+        { "id": "fer", "label": "Fer" },
+        { "id": "oxygene", "label": "Oxygène" },
+        { "id": "carbone", "label": "Carbone" }
+      ],
+      "right": [
+        { "id": "r-fe", "label": "Fe" },
+        { "id": "r-o", "label": "O" },
+        { "id": "r-au", "label": "Au" },
+        { "id": "r-c", "label": "C" }
+      ],
+      "correctPairs": { "or": "r-au", "fer": "r-fe", "oxygene": "r-o", "carbone": "r-c" }
+    } },
 
     { "id": "cine-1", "type": "qcm", "theme": "cinema", "difficulty": "easy", "question": "Qui a réalisé le film \"Titanic\" (1997) ?", "tags": ["realisateurs"], "explanation": "James Cameron a réalisé Titanic, qui a remporté 11 Oscars.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Steven Spielberg", "isCorrect": false },
@@ -110,6 +155,21 @@
     ], "correctOrder": ["espoir", "empire", "jedi", "menace"] } },
     { "id": "cine-6", "type": "boolean", "theme": "cinema", "difficulty": "medium", "question": "Le film \"Avatar\" est sorti avant \"Titanic\" au cinéma.", "tags": ["realisateurs"], "explanation": "Titanic est sorti en 1997, soit douze ans avant Avatar (2009) — les deux ont été réalisés par James Cameron.", "points": 2, "content": { "isTrue": false } },
     { "id": "cine-7", "type": "cloze", "theme": "cinema", "difficulty": "easy", "question": "Les films Star Wars originaux ont été créés par George ___.", "tags": ["realisateurs"], "explanation": "George Lucas a créé et réalisé les premiers films de la saga Star Wars.", "points": 1, "content": { "expectedAnswers": ["Lucas"], "caseSensitive": false } },
+    { "id": "cine-8", "type": "matching", "theme": "cinema", "difficulty": "medium", "question": "Associez chaque film à son réalisateur.", "tags": ["realisateurs"], "explanation": "Titanic est de James Cameron, Jurassic Park de Steven Spielberg, Le Parrain de Francis Ford Coppola, Pulp Fiction de Quentin Tarantino.", "points": 2, "content": {
+      "left": [
+        { "id": "titanic", "label": "Titanic" },
+        { "id": "jurassic", "label": "Jurassic Park" },
+        { "id": "parrain", "label": "Le Parrain" },
+        { "id": "pulp", "label": "Pulp Fiction" }
+      ],
+      "right": [
+        { "id": "r-tarantino", "label": "Quentin Tarantino" },
+        { "id": "r-cameron", "label": "James Cameron" },
+        { "id": "r-coppola", "label": "Francis Ford Coppola" },
+        { "id": "r-spielberg", "label": "Steven Spielberg" }
+      ],
+      "correctPairs": { "titanic": "r-cameron", "jurassic": "r-spielberg", "parrain": "r-coppola", "pulp": "r-tarantino" }
+    } },
 
     { "id": "litt-1", "type": "qcm", "theme": "litterature", "difficulty": "easy", "question": "Qui a écrit \"Les Misérables\" ?", "tags": ["romans-francais"], "explanation": "Victor Hugo a publié Les Misérables en 1862.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Victor Hugo", "isCorrect": true },
@@ -134,6 +194,21 @@
     ] } },
     { "id": "litt-6", "type": "boolean", "theme": "litterature", "difficulty": "easy", "question": "\"Harry Potter\" a été écrit par J.K. Rowling.", "tags": ["fantastique"], "explanation": "J.K. Rowling a publié le premier tome de la saga Harry Potter en 1997.", "points": 1, "content": { "isTrue": true } },
     { "id": "litt-7", "type": "cloze", "theme": "litterature", "difficulty": "medium", "question": "Victor Hugo est l'auteur du roman \"Les ___\" (1862).", "tags": ["romans-francais"], "explanation": "Victor Hugo a publié Les Misérables en 1862.", "points": 2, "content": { "expectedAnswers": ["Misérables"], "caseSensitive": false } },
+    { "id": "litt-8", "type": "matching", "theme": "litterature", "difficulty": "medium", "question": "Associez chaque œuvre à son auteur.", "tags": ["auteurs"], "explanation": "Notre-Dame de Paris est de Victor Hugo, 1984 de George Orwell, Le Vieil Homme et la Mer d'Ernest Hemingway, Germinal d'Émile Zola.", "points": 2, "content": {
+      "left": [
+        { "id": "notredame", "label": "Notre-Dame de Paris" },
+        { "id": "n1984", "label": "1984" },
+        { "id": "vieilhomme", "label": "Le Vieil Homme et la Mer" },
+        { "id": "germinal", "label": "Germinal" }
+      ],
+      "right": [
+        { "id": "r-hemingway", "label": "Ernest Hemingway" },
+        { "id": "r-hugo", "label": "Victor Hugo" },
+        { "id": "r-orwell", "label": "George Orwell" },
+        { "id": "r-zola", "label": "Émile Zola" }
+      ],
+      "correctPairs": { "notredame": "r-hugo", "n1984": "r-orwell", "vieilhomme": "r-hemingway", "germinal": "r-zola" }
+    } },
 
     { "id": "sport-1", "type": "qcm", "theme": "sport", "difficulty": "easy", "question": "Combien de joueurs compose une équipe de football sur le terrain ?", "tags": ["football"], "explanation": "Une équipe de football aligne 11 joueurs sur le terrain, dont un gardien.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "10", "isCorrect": false },
@@ -159,6 +234,21 @@
     ], "correctOrder": ["cent", "quatrecent", "millecinqcent", "marathon"] } },
     { "id": "sport-6", "type": "boolean", "theme": "sport", "difficulty": "medium", "question": "Le tennis se joue avec une équipe de 5 joueurs.", "tags": ["tennis"], "explanation": "Le tennis se joue en simple (1 contre 1) ou en double (2 contre 2), jamais en équipe de 5.", "points": 2, "content": { "isTrue": false } },
     { "id": "sport-7", "type": "cloze", "theme": "sport", "difficulty": "easy", "question": "Le ___ est le sport le plus populaire au monde en nombre de pratiquants.", "tags": ["football"], "explanation": "Le football est considéré comme le sport le plus populaire au monde, avec des milliards de pratiquants et de fans.", "points": 1, "content": { "expectedAnswers": ["football", "le football"], "caseSensitive": false } },
+    { "id": "sport-8", "type": "matching", "theme": "sport", "difficulty": "easy", "question": "Associez chaque sport à son lieu de pratique.", "tags": ["lieux-de-pratique"], "explanation": "La natation se pratique en piscine, le ski sur une piste enneigée, le tennis sur un court, la boxe sur un ring.", "points": 1, "content": {
+      "left": [
+        { "id": "natation", "label": "Natation" },
+        { "id": "ski", "label": "Ski" },
+        { "id": "tennis", "label": "Tennis" },
+        { "id": "boxe", "label": "Boxe" }
+      ],
+      "right": [
+        { "id": "r-ring", "label": "Un ring" },
+        { "id": "r-piscine", "label": "Une piscine" },
+        { "id": "r-court", "label": "Un court" },
+        { "id": "r-piste", "label": "Une piste enneigée" }
+      ],
+      "correctPairs": { "natation": "r-piscine", "ski": "r-piste", "tennis": "r-court", "boxe": "r-ring" }
+    } },
 
     { "id": "mus-1", "type": "qcm", "theme": "musique", "difficulty": "easy", "question": "Combien de cordes possède une guitare classique ?", "tags": ["instruments"], "explanation": "Une guitare classique possède 6 cordes.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "4", "isCorrect": false },
@@ -183,6 +273,21 @@
     ] } },
     { "id": "mus-6", "type": "boolean", "theme": "musique", "difficulty": "easy", "question": "Le piano est un instrument à cordes frappées.", "tags": ["instruments"], "explanation": "Le piano produit son son grâce à des marteaux qui frappent des cordes, il est donc classé parmi les cordes frappées.", "points": 1, "content": { "isTrue": true } },
     { "id": "mus-7", "type": "cloze", "theme": "musique", "difficulty": "easy", "question": "Wolfgang Amadeus ___ est un compositeur autrichien du XVIIIe siècle.", "tags": ["classique"], "explanation": "Wolfgang Amadeus Mozart (1756-1791) est l'un des plus grands compositeurs classiques.", "points": 1, "content": { "expectedAnswers": ["Mozart"], "caseSensitive": false } },
+    { "id": "mus-8", "type": "matching", "theme": "musique", "difficulty": "medium", "question": "Associez chaque compositeur à sa nationalité.", "tags": ["compositeurs"], "explanation": "Mozart était autrichien, Beethoven allemand, Chopin polonais et Verdi italien.", "points": 2, "content": {
+      "left": [
+        { "id": "mozart", "label": "Mozart" },
+        { "id": "beethoven", "label": "Beethoven" },
+        { "id": "chopin", "label": "Chopin" },
+        { "id": "verdi", "label": "Verdi" }
+      ],
+      "right": [
+        { "id": "r-italien", "label": "Italien" },
+        { "id": "r-autrichien", "label": "Autrichien" },
+        { "id": "r-polonais", "label": "Polonais" },
+        { "id": "r-allemand", "label": "Allemand" }
+      ],
+      "correctPairs": { "mozart": "r-autrichien", "beethoven": "r-allemand", "chopin": "r-polonais", "verdi": "r-italien" }
+    } },
 
     { "id": "gastro-1", "type": "qcm", "theme": "gastronomie", "difficulty": "easy", "question": "De quel pays la pizza margherita est-elle originaire ?", "tags": ["origines"], "explanation": "La pizza margherita est née à Naples, en Italie, à la fin du XIXe siècle.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "La France", "isCorrect": false },
@@ -207,6 +312,21 @@
       { "id": "petrir", "label": "Pétrir la pâte" }
     ], "correctOrder": ["melanger", "petrir", "lever", "cuire"] } },
     { "id": "gastro-6", "type": "boolean", "theme": "gastronomie", "difficulty": "medium", "question": "Le champagne est originaire d'Italie.", "tags": ["origines"], "explanation": "Le champagne provient de la région Champagne, en France, seule appellation autorisée à porter ce nom.", "points": 2, "content": { "isTrue": false } },
-    { "id": "gastro-7", "type": "cloze", "theme": "gastronomie", "difficulty": "medium", "question": "Le plat italien à base de riz crémeux cuit lentement s'appelle le ___.", "tags": ["techniques"], "explanation": "Le risotto est un plat italien à base de riz cuit lentement dans un bouillon.", "points": 2, "content": { "expectedAnswers": ["risotto"], "caseSensitive": false } }
+    { "id": "gastro-7", "type": "cloze", "theme": "gastronomie", "difficulty": "medium", "question": "Le plat italien à base de riz crémeux cuit lentement s'appelle le ___.", "tags": ["techniques"], "explanation": "Le risotto est un plat italien à base de riz cuit lentement dans un bouillon.", "points": 2, "content": { "expectedAnswers": ["risotto"], "caseSensitive": false } },
+    { "id": "gastro-8", "type": "matching", "theme": "gastronomie", "difficulty": "easy", "question": "Associez chaque plat à son pays d'origine.", "tags": ["origines"], "explanation": "Le sushi vient du Japon, la paella d'Espagne, les tacos du Mexique, la fondue de Suisse.", "points": 1, "content": {
+      "left": [
+        { "id": "sushi", "label": "Sushi" },
+        { "id": "paella", "label": "Paella" },
+        { "id": "tacos", "label": "Tacos" },
+        { "id": "fondue", "label": "Fondue" }
+      ],
+      "right": [
+        { "id": "r-suisse", "label": "Suisse" },
+        { "id": "r-japon", "label": "Japon" },
+        { "id": "r-mexique", "label": "Mexique" },
+        { "id": "r-espagne", "label": "Espagne" }
+      ],
+      "correctPairs": { "sushi": "r-japon", "paella": "r-espagne", "tacos": "r-mexique", "fondue": "r-suisse" }
+    } }
   ]
 }
