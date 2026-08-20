@@ -51,6 +51,7 @@
       ],
       "correctPairs": { "napoleon": "r-napoleon", "cesar": "r-cesar", "louis14": "r-louis14", "vinci": "r-vinci" }
     } },
+    { "id": "hist-9", "type": "numeric", "theme": "histoire", "difficulty": "medium", "question": "En quelle année a éclaté la Révolution française ?", "tags": ["france"], "explanation": "La Révolution française a débuté en 1789 avec la prise de la Bastille.", "points": 2, "content": { "min": 1700, "max": 1900, "step": 1, "target": 1789, "tolerance": 3 } },
 
     { "id": "geo-1", "type": "qcm", "theme": "geographie", "difficulty": "easy", "question": "Quelle est la capitale de l'Australie ?", "tags": ["capitales"], "explanation": "Canberra est la capitale de l'Australie, bien que Sydney soit la ville la plus peuplée.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Sydney", "isCorrect": false },
@@ -91,6 +92,7 @@
       ],
       "correctPairs": { "egypte": "r-afrique", "bresil": "r-as", "japon": "r-asie", "canada": "r-an" }
     } },
+    { "id": "geo-9", "type": "numeric", "theme": "geographie", "difficulty": "medium", "question": "Quelle est l'altitude approximative du Mont Blanc ?", "tags": ["montagnes"], "explanation": "Le Mont Blanc culmine à 4 809 mètres, point culminant des Alpes.", "points": 2, "content": { "min": 0, "max": 6000, "step": 50, "target": 4809, "tolerance": 100, "unit": "m" } },
 
     { "id": "sci-1", "type": "qcm", "theme": "sciences", "difficulty": "easy", "question": "Quel est le symbole chimique de l'or ?", "tags": ["chimie"], "explanation": "Au vient du latin \"aurum\", qui signifie or.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Ag", "isCorrect": false },
@@ -130,6 +132,7 @@
       ],
       "correctPairs": { "or": "r-au", "fer": "r-fe", "oxygene": "r-o", "carbone": "r-c" }
     } },
+    { "id": "sci-9", "type": "numeric", "theme": "sciences", "difficulty": "medium", "question": "Combien d'os compte le squelette d'un adulte ?", "tags": ["biologie"], "explanation": "Le squelette humain adulte compte 206 os.", "points": 2, "content": { "min": 100, "max": 300, "step": 1, "target": 206, "tolerance": 5, "unit": "os" } },
 
     { "id": "cine-1", "type": "qcm", "theme": "cinema", "difficulty": "easy", "question": "Qui a réalisé le film \"Titanic\" (1997) ?", "tags": ["realisateurs"], "explanation": "James Cameron a réalisé Titanic, qui a remporté 11 Oscars.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Steven Spielberg", "isCorrect": false },
@@ -170,6 +173,7 @@
       ],
       "correctPairs": { "titanic": "r-cameron", "jurassic": "r-spielberg", "parrain": "r-coppola", "pulp": "r-tarantino" }
     } },
+    { "id": "cine-9", "type": "numeric", "theme": "cinema", "difficulty": "medium", "question": "En quelle année est sorti le premier film \"Star Wars\" (Un nouvel espoir) ?", "tags": ["sagas"], "explanation": "Un nouvel espoir est sorti en 1977, premier film de la saga Star Wars.", "points": 2, "content": { "min": 1950, "max": 2020, "step": 1, "target": 1977, "tolerance": 2 } },
 
     { "id": "litt-1", "type": "qcm", "theme": "litterature", "difficulty": "easy", "question": "Qui a écrit \"Les Misérables\" ?", "tags": ["romans-francais"], "explanation": "Victor Hugo a publié Les Misérables en 1862.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Victor Hugo", "isCorrect": true },
@@ -209,6 +213,7 @@
       ],
       "correctPairs": { "notredame": "r-hugo", "n1984": "r-orwell", "vieilhomme": "r-hemingway", "germinal": "r-zola" }
     } },
+    { "id": "litt-9", "type": "numeric", "theme": "litterature", "difficulty": "medium", "question": "En quelle année a été publié \"1984\" de George Orwell ?", "tags": ["classiques"], "explanation": "1984 a été publié en 1949.", "points": 2, "content": { "min": 1900, "max": 2000, "step": 1, "target": 1949, "tolerance": 3 } },
 
     { "id": "sport-1", "type": "qcm", "theme": "sport", "difficulty": "easy", "question": "Combien de joueurs compose une équipe de football sur le terrain ?", "tags": ["football"], "explanation": "Une équipe de football aligne 11 joueurs sur le terrain, dont un gardien.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "10", "isCorrect": false },
@@ -249,6 +254,7 @@
       ],
       "correctPairs": { "natation": "r-piscine", "ski": "r-piste", "tennis": "r-court", "boxe": "r-ring" }
     } },
+    { "id": "sport-9", "type": "numeric", "theme": "sport", "difficulty": "easy", "question": "Quelle est la distance officielle d'un marathon ?", "tags": ["athletisme"], "explanation": "Un marathon fait 42,195 km, soit environ 42 km.", "points": 1, "content": { "min": 0, "max": 100, "step": 1, "target": 42, "tolerance": 1, "unit": "km" } },
 
     { "id": "mus-1", "type": "qcm", "theme": "musique", "difficulty": "easy", "question": "Combien de cordes possède une guitare classique ?", "tags": ["instruments"], "explanation": "Une guitare classique possède 6 cordes.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "4", "isCorrect": false },
@@ -288,6 +294,7 @@
       ],
       "correctPairs": { "mozart": "r-autrichien", "beethoven": "r-allemand", "chopin": "r-polonais", "verdi": "r-italien" }
     } },
+    { "id": "mus-9", "type": "numeric", "theme": "musique", "difficulty": "medium", "question": "En quelle année est sorti l'album \"Thriller\" de Michael Jackson ?", "tags": ["pop"], "explanation": "Thriller est sorti en 1982, il reste l'album le plus vendu de tous les temps.", "points": 2, "content": { "min": 1950, "max": 2020, "step": 1, "target": 1982, "tolerance": 2 } },
 
     { "id": "gastro-1", "type": "qcm", "theme": "gastronomie", "difficulty": "easy", "question": "De quel pays la pizza margherita est-elle originaire ?", "tags": ["origines"], "explanation": "La pizza margherita est née à Naples, en Italie, à la fin du XIXe siècle.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "La France", "isCorrect": false },
@@ -327,6 +334,7 @@
         { "id": "r-espagne", "label": "Espagne" }
       ],
       "correctPairs": { "sushi": "r-japon", "paella": "r-espagne", "tacos": "r-mexique", "fondue": "r-suisse" }
-    } }
+    } },
+    { "id": "gastro-9", "type": "numeric", "theme": "gastronomie", "difficulty": "medium", "question": "À quelle température cuit-on traditionnellement une pizza au four ?", "tags": ["techniques"], "explanation": "Une pizza se cuit traditionnellement autour de 250°C, voire davantage dans un four à bois.", "points": 2, "content": { "min": 100, "max": 400, "step": 10, "target": 250, "tolerance": 30, "unit": "°C" } }
   ]
 }

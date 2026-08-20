@@ -75,6 +75,15 @@ function parseQuestion(value: unknown): Question {
       return { ...base, type, content: { left: content.left, right: content.right, correctPairs: correctPairs as Record<string, string> } }
     }
   }
+  if (
+    type === 'numeric' && typeof content.min === 'number' && typeof content.max === 'number' && typeof content.step === 'number' &&
+    typeof content.target === 'number' && typeof content.tolerance === 'number' && (content.unit === undefined || typeof content.unit === 'string')
+  ) {
+    if (content.min >= content.max || content.target < content.min || content.target > content.max || content.tolerance < 0) {
+      throw new Error(`Question « ${id} » : bornes ou tolérance du curseur invalides.`)
+    }
+    return { ...base, type, content: { min: content.min, max: content.max, step: content.step, target: content.target, tolerance: content.tolerance, unit: content.unit as string | undefined } }
+  }
   throw new Error(`Le contenu de la question « ${id} » ne correspond pas au type « ${String(type)} ».`)
 }
 
