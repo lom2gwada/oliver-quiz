@@ -34,6 +34,7 @@
       { "id": "b", "label": "Le traité de Vienne", "isCorrect": false },
       { "id": "c", "label": "Le traité de Rome", "isCorrect": false }
     ] } },
+    { "id": "hist-6", "type": "boolean", "theme": "histoire", "difficulty": "easy", "question": "Napoléon Bonaparte est né en Corse.", "tags": ["france"], "explanation": "Napoléon Bonaparte est né à Ajaccio, en Corse, en 1769.", "points": 1, "content": { "isTrue": true } },
 
     { "id": "geo-1", "type": "qcm", "theme": "geographie", "difficulty": "easy", "question": "Quelle est la capitale de l'Australie ?", "tags": ["capitales"], "explanation": "Canberra est la capitale de l'Australie, bien que Sydney soit la ville la plus peuplée.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Sydney", "isCorrect": false },
@@ -57,6 +58,7 @@
       { "id": "kilimandjaro", "label": "Kilimandjaro" },
       { "id": "k2", "label": "K2" }
     ], "correctOrder": ["everest", "k2", "kilimandjaro", "montblanc"] } },
+    { "id": "geo-6", "type": "boolean", "theme": "geographie", "difficulty": "easy", "question": "L'Everest se trouve en Amérique du Sud.", "tags": ["montagnes"], "explanation": "L'Everest culmine dans la chaîne de l'Himalaya, en Asie, à la frontière entre le Népal et la Chine.", "points": 1, "content": { "isTrue": false } },
 
     { "id": "sci-1", "type": "qcm", "theme": "sciences", "difficulty": "easy", "question": "Quel est le symbole chimique de l'or ?", "tags": ["chimie"], "explanation": "Au vient du latin \"aurum\", qui signifie or.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Ag", "isCorrect": false },
@@ -79,6 +81,7 @@
       { "id": "b", "label": "L'azote", "isCorrect": true },
       { "id": "c", "label": "Le dioxyde de carbone", "isCorrect": false }
     ] } },
+    { "id": "sci-6", "type": "boolean", "theme": "sciences", "difficulty": "medium", "question": "La lumière se déplace plus vite que le son.", "tags": ["physique"], "explanation": "La lumière voyage à environ 300 000 km/s dans le vide, bien plus vite que le son (environ 340 m/s dans l'air).", "points": 2, "content": { "isTrue": true } },
 
     { "id": "cine-1", "type": "qcm", "theme": "cinema", "difficulty": "easy", "question": "Qui a réalisé le film \"Titanic\" (1997) ?", "tags": ["realisateurs"], "explanation": "James Cameron a réalisé Titanic, qui a remporté 11 Oscars.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Steven Spielberg", "isCorrect": false },
@@ -102,6 +105,7 @@
       { "id": "jedi", "label": "Le Retour du Jedi" },
       { "id": "empire", "label": "L'Empire contre-attaque" }
     ], "correctOrder": ["espoir", "empire", "jedi", "menace"] } },
+    { "id": "cine-6", "type": "boolean", "theme": "cinema", "difficulty": "medium", "question": "Le film \"Avatar\" est sorti avant \"Titanic\" au cinéma.", "tags": ["realisateurs"], "explanation": "Titanic est sorti en 1997, soit douze ans avant Avatar (2009) — les deux ont été réalisés par James Cameron.", "points": 2, "content": { "isTrue": false } },
 
     { "id": "litt-1", "type": "qcm", "theme": "litterature", "difficulty": "easy", "question": "Qui a écrit \"Les Misérables\" ?", "tags": ["romans-francais"], "explanation": "Victor Hugo a publié Les Misérables en 1862.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Victor Hugo", "isCorrect": true },
@@ -124,6 +128,7 @@
       { "id": "b", "label": "Albert Camus", "isCorrect": true },
       { "id": "c", "label": "André Gide", "isCorrect": false }
     ] } },
+    { "id": "litt-6", "type": "boolean", "theme": "litterature", "difficulty": "easy", "question": "\"Harry Potter\" a été écrit par J.K. Rowling.", "tags": ["fantastique"], "explanation": "J.K. Rowling a publié le premier tome de la saga Harry Potter en 1997.", "points": 1, "content": { "isTrue": true } },
 
     { "id": "sport-1", "type": "qcm", "theme": "sport", "difficulty": "easy", "question": "Combien de joueurs compose une équipe de football sur le terrain ?", "tags": ["football"], "explanation": "Une équipe de football aligne 11 joueurs sur le terrain, dont un gardien.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "10", "isCorrect": false },
@@ -147,6 +152,7 @@
       { "id": "millecinqcent", "label": "1500 m" },
       { "id": "quatrecent", "label": "400 m" }
     ], "correctOrder": ["cent", "quatrecent", "millecinqcent", "marathon"] } },
+    { "id": "sport-6", "type": "boolean", "theme": "sport", "difficulty": "medium", "question": "Le tennis se joue avec une équipe de 5 joueurs.", "tags": ["tennis"], "explanation": "Le tennis se joue en simple (1 contre 1) ou en double (2 contre 2), jamais en équipe de 5.", "points": 2, "content": { "isTrue": false } },
 
     { "id": "mus-1", "type": "qcm", "theme": "musique", "difficulty": "easy", "question": "Combien de cordes possède une guitare classique ?", "tags": ["instruments"], "explanation": "Une guitare classique possède 6 cordes.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "4", "isCorrect": false },
@@ -169,6 +175,7 @@
       { "id": "b", "label": "Les années 1980", "isCorrect": false },
       { "id": "c", "label": "Les années 1990", "isCorrect": true }
     ] } },
+    { "id": "mus-6", "type": "boolean", "theme": "musique", "difficulty": "easy", "question": "Le piano est un instrument à cordes frappées.", "tags": ["instruments"], "explanation": "Le piano produit son son grâce à des marteaux qui frappent des cordes, il est donc classé parmi les cordes frappées.", "points": 1, "content": { "isTrue": true } },
 
     { "id": "gastro-1", "type": "qcm", "theme": "gastronomie", "difficulty": "easy", "question": "De quel pays la pizza margherita est-elle originaire ?", "tags": ["origines"], "explanation": "La pizza margherita est née à Naples, en Italie, à la fin du XIXe siècle.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "La France", "isCorrect": false },
@@ -191,6 +198,7 @@
       { "id": "melanger", "label": "Mélanger les ingrédients" },
       { "id": "lever", "label": "Laisser lever la pâte" },
       { "id": "petrir", "label": "Pétrir la pâte" }
-    ], "correctOrder": ["melanger", "petrir", "lever", "cuire"] } }
+    ], "correctOrder": ["melanger", "petrir", "lever", "cuire"] } },
+    { "id": "gastro-6", "type": "boolean", "theme": "gastronomie", "difficulty": "medium", "question": "Le champagne est originaire d'Italie.", "tags": ["origines"], "explanation": "Le champagne provient de la région Champagne, en France, seule appellation autorisée à porter ce nom.", "points": 2, "content": { "isTrue": false } }
   ]
 }

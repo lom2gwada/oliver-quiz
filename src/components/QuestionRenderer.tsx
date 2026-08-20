@@ -1,4 +1,5 @@
 import type { Question, UserAnswer } from '../types/quiz'
+import { BooleanQuestion } from './BooleanQuestion'
 import { CodeQuestion } from './CodeQuestion'
 import { OrderingQuestion } from './OrderingQuestion'
 import { QCMQuestion } from './QCMQuestion'
@@ -10,5 +11,6 @@ export function QuestionRenderer({ question, answer, onChange }: { question: Que
     case 'text': return <TextQuestion question={question} answer={answer} onChange={onChange} />
     case 'code': return <CodeQuestion question={question} answer={answer} onChange={onChange} />
     case 'ordering': return <OrderingQuestion question={question} answer={answer} onChange={onChange} />
+    case 'boolean': return <BooleanQuestion question={question} answer={answer} onChange={onChange} />
   }
 }

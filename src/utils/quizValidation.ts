@@ -56,6 +56,9 @@ function parseQuestion(value: unknown): Question {
       return { ...base, type, content: { items: content.items, correctOrder: content.correctOrder } }
     }
   }
+  if (type === 'boolean' && typeof content.isTrue === 'boolean') {
+    return { ...base, type, content: { isTrue: content.isTrue } }
+  }
   throw new Error(`Le contenu de la question « ${id} » ne correspond pas au type « ${String(type)} ».`)
 }
 

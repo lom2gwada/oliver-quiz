@@ -4,8 +4,8 @@ import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
 import { QuestionRenderer } from './QuestionRenderer'
 
-const TYPE_ICONS: Record<Question['type'], string> = { qcm: '🧩', code: '💻', text: '✍️', ordering: '🔀' }
-const TYPE_LABELS: Record<Question['type'], string> = { qcm: 'QCM', code: 'Code', text: 'Texte', ordering: 'Ordre' }
+const TYPE_ICONS: Record<Question['type'], string> = { qcm: '🧩', code: '💻', text: '✍️', ordering: '🔀', boolean: '⚖️' }
+const TYPE_LABELS: Record<Question['type'], string> = { qcm: 'QCM', code: 'Code', text: 'Texte', ordering: 'Ordre', boolean: 'Vrai/Faux' }
 
 /** Mélange les options de réponse une fois par question, pour que la bonne réponse ne soit pas toujours au même endroit. */
 function withShuffledAnswers(question: Question): Question {
