@@ -104,9 +104,15 @@ export function ResultPage({ questions, answers, themes, elapsedSeconds, onResta
       <p className="duration">⏱ Temps : {formatDuration(elapsedSeconds)}</p>
     </div>
     <button type="button" onClick={onRestart}>Recommencer</button>
-    <div className="stats-grid">
-      {byTheme.map((group) => <PieChart key={`theme-${group.key}`} title={`${group.label} — score`} data={group.data} />)}
-      {byDifficulty.map((group) => <PieChart key={`difficulty-${group.key}`} title={`${group.label} — score`} data={group.data} />)}
+    <div className="stats-groups">
+      <div className="stats-group">
+        <h3 className="stats-group-title">Par thème</h3>
+        <div className="stats-grid">{byTheme.map((group) => <PieChart key={`theme-${group.key}`} title={`${group.label} — score`} data={group.data} />)}</div>
+      </div>
+      <div className="stats-group">
+        <h3 className="stats-group-title">Par difficulté</h3>
+        <div className="stats-grid">{byDifficulty.map((group) => <PieChart key={`difficulty-${group.key}`} title={`${group.label} — score`} data={group.data} />)}</div>
+      </div>
     </div>
     <div className="corrections">{questions.map((question) => {
       const correct = isCorrect(question, answers[question.id])
