@@ -1,5 +1,5 @@
 export type Difficulty = 'easy' | 'medium' | 'hard'
-export type QuestionType = 'qcm' | 'text' | 'code' | 'ordering' | 'boolean'
+export type QuestionType = 'qcm' | 'text' | 'code' | 'ordering' | 'boolean' | 'cloze'
 
 export interface Theme {
   id: string
@@ -42,6 +42,9 @@ export interface BooleanContent {
   isTrue: boolean
 }
 
+/** Le champ `question` doit contenir un marqueur de trou (`___`) que ClozeQuestion remplace par un champ de saisie. */
+export type ClozeContent = TextContent
+
 export interface BaseQuestion {
   id: string
   theme: string
@@ -77,7 +80,12 @@ export interface BooleanQuestion extends BaseQuestion {
   content: BooleanContent
 }
 
-export type Question = QCMQuestion | TextQuestion | CodeQuestion | OrderingQuestion | BooleanQuestion
+export interface ClozeQuestion extends BaseQuestion {
+  type: 'cloze'
+  content: ClozeContent
+}
+
+export type Question = QCMQuestion | TextQuestion | CodeQuestion | OrderingQuestion | BooleanQuestion | ClozeQuestion
 
 export interface Quiz {
   version: string

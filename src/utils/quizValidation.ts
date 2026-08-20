@@ -59,6 +59,10 @@ function parseQuestion(value: unknown): Question {
   if (type === 'boolean' && typeof content.isTrue === 'boolean') {
     return { ...base, type, content: { isTrue: content.isTrue } }
   }
+  if (type === 'cloze' && hasStrings(content.expectedAnswers) && typeof content.caseSensitive === 'boolean') {
+    if (!/_{3,}/.test(question)) throw new Error(`Question « ${id} » : le texte à trous doit contenir un marqueur "___".`)
+    return { ...base, type, content: { expectedAnswers: content.expectedAnswers, caseSensitive: content.caseSensitive } }
+  }
   throw new Error(`Le contenu de la question « ${id} » ne correspond pas au type « ${String(type)} ».`)
 }
 

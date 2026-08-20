@@ -4,8 +4,8 @@ import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
 import { QuestionRenderer } from './QuestionRenderer'
 
-const TYPE_ICONS: Record<Question['type'], string> = { qcm: '🧩', code: '💻', text: '✍️', ordering: '🔀', boolean: '⚖️' }
-const TYPE_LABELS: Record<Question['type'], string> = { qcm: 'QCM', code: 'Code', text: 'Texte', ordering: 'Ordre', boolean: 'Vrai/Faux' }
+const TYPE_ICONS: Record<Question['type'], string> = { qcm: '🧩', code: '💻', text: '✍️', ordering: '🔀', boolean: '⚖️', cloze: '📝' }
+const TYPE_LABELS: Record<Question['type'], string> = { qcm: 'QCM', code: 'Code', text: 'Texte', ordering: 'Ordre', boolean: 'Vrai/Faux', cloze: 'Texte à trous' }
 
 /** Mélange les options de réponse une fois par question, pour que la bonne réponse ne soit pas toujours au même endroit. */
 function withShuffledAnswers(question: Question): Question {
@@ -40,7 +40,7 @@ export function QuizPage({ quiz, questions, onFinish }: QuizPageProps) {
     <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${((current + 1) / shuffledQuestions.length) * 100}%` }} /></div>
     <p className="progress">Question {current + 1} / {shuffledQuestions.length}</p>
     <div className="question-body" key={question.id}>
-      <h2>{question.question}</h2>
+      {question.type !== 'cloze' && <h2>{question.question}</h2>}
       <QuestionRenderer question={question} answer={answers[question.id]} onChange={updateAnswer} />
     </div>
     <div className="quiz-actions">

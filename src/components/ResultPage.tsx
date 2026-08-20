@@ -10,7 +10,7 @@ const DIFFICULTY_LABELS: Record<Difficulty, string> = { easy: 'Facile', medium: 
 const sameIds = (left: string[], right: string[]) => left.length === right.length && left.every((item) => right.includes(item))
 
 export function isCorrect(question: Question, answer: AnswersByQuestion[string]): boolean {
-  if (question.type === 'text') {
+  if (question.type === 'text' || question.type === 'cloze') {
     if (typeof answer !== 'string') return false
     const normalize = (value: string) => question.content.caseSensitive ? value.trim() : value.trim().toLocaleLowerCase()
     return question.content.expectedAnswers.map(normalize).includes(normalize(answer))
@@ -105,7 +105,7 @@ export function ResultPage({ questions, answers, themes, elapsedSeconds, onResta
 }
 
 function correctAnswer(question: Question): string {
-  if (question.type === 'text') return question.content.expectedAnswers.join(' ou ')
+  if (question.type === 'text' || question.type === 'cloze') return question.content.expectedAnswers.join(' ou ')
   if (question.type === 'ordering') return question.content.correctOrder.map((id) => question.content.items.find((item) => item.id === id)?.label).join(' → ')
   if (question.type === 'boolean') return question.content.isTrue ? 'Vrai' : 'Faux'
   return question.content.answers.filter((answer) => answer.isCorrect).map((answer) => answer.label).join(', ')
