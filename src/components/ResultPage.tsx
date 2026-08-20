@@ -18,6 +18,16 @@ export function isCorrect(question: Question, answer: AnswersByQuestion[string])
   if (!Array.isArray(answer)) return false
   if (question.type === 'ordering') return answer.every((id, index) => id === question.content.correctOrder[index]) && answer.length === question.content.correctOrder.length
   if (question.type === 'boolean') return answer[0] === String(question.content.isTrue)
+  if (question.type === 'matching') {
+    const expected = question.content.correctPairs
+    const given: Record<string, string> = {}
+    answer.forEach((token) => {
+      const [left, right] = token.split(':')
+      if (left && right) given[left] = right
+    })
+    const keys = Object.keys(expected)
+    return keys.length === Object.keys(given).length && keys.every((left) => given[left] === expected[left])
+  }
   return sameIds(answer, question.content.answers.filter((item) => item.isCorrect).map((item) => item.id))
 }
 
@@ -108,5 +118,11 @@ function correctAnswer(question: Question): string {
   if (question.type === 'text' || question.type === 'cloze') return question.content.expectedAnswers.join(' ou ')
   if (question.type === 'ordering') return question.content.correctOrder.map((id) => question.content.items.find((item) => item.id === id)?.label).join(' → ')
   if (question.type === 'boolean') return question.content.isTrue ? 'Vrai' : 'Faux'
+  if (question.type === 'matching') {
+    return question.content.left.map((left) => {
+      const right = question.content.right.find((item) => item.id === question.content.correctPairs[left.id])
+      return `${left.label} → ${right?.label ?? '?'}`
+    }).join(', ')
+  }
   return question.content.answers.filter((answer) => answer.isCorrect).map((answer) => answer.label).join(', ')
 }

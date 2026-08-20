@@ -63,6 +63,18 @@ function parseQuestion(value: unknown): Question {
     if (!/_{3,}/.test(question)) throw new Error(`Question « ${id} » : le texte à trous doit contenir un marqueur "___".`)
     return { ...base, type, content: { expectedAnswers: content.expectedAnswers, caseSensitive: content.caseSensitive } }
   }
+  if (type === 'matching' && validItems(content.left) && validItems(content.right) && isRecord(content.correctPairs)) {
+    const leftIds = new Set(content.left.map((item) => item.id))
+    const rightIds = new Set(content.right.map((item) => item.id))
+    const correctPairs = content.correctPairs
+    const pairKeys = Object.keys(correctPairs)
+    if (
+      pairKeys.length === content.left.length &&
+      pairKeys.every((leftId) => leftIds.has(leftId) && typeof correctPairs[leftId] === 'string' && rightIds.has(correctPairs[leftId] as string))
+    ) {
+      return { ...base, type, content: { left: content.left, right: content.right, correctPairs: correctPairs as Record<string, string> } }
+    }
+  }
   throw new Error(`Le contenu de la question « ${id} » ne correspond pas au type « ${String(type)} ».`)
 }
 
