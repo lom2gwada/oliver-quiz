@@ -1,5 +1,5 @@
 export type Difficulty = 'easy' | 'medium' | 'hard'
-export type QuestionType = 'qcm' | 'text' | 'code' | 'ordering'
+export type QuestionType = 'qcm' | 'text' | 'code' | 'ordering' | 'boolean'
 
 export interface Theme {
   id: string
@@ -38,6 +38,10 @@ export interface OrderingContent {
   correctOrder: string[]
 }
 
+export interface BooleanContent {
+  isTrue: boolean
+}
+
 export interface BaseQuestion {
   id: string
   theme: string
@@ -68,7 +72,12 @@ export interface OrderingQuestion extends BaseQuestion {
   content: OrderingContent
 }
 
-export type Question = QCMQuestion | TextQuestion | CodeQuestion | OrderingQuestion
+export interface BooleanQuestion extends BaseQuestion {
+  type: 'boolean'
+  content: BooleanContent
+}
+
+export type Question = QCMQuestion | TextQuestion | CodeQuestion | OrderingQuestion | BooleanQuestion
 
 export interface Quiz {
   version: string

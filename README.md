@@ -1,10 +1,10 @@
 # Oliver Quiz
 
-Application web de quiz construite avec React, TypeScript et Vite. Elle permet de s'entraîner sur des questions à choix multiples, du code, du texte libre ou du réordonnancement, filtrées par thème et niveau de difficulté.
+Application web de quiz construite avec React, TypeScript et Vite. Elle permet de s'entraîner sur des questions à choix multiples, du code, du texte libre, du réordonnancement ou du vrai/faux, filtrées par thème et niveau de difficulté.
 
 ## Fonctionnalités
 
-- Quatre types de questions : QCM, code, texte libre et ordonnancement (`src/components`)
+- Cinq types de questions : QCM, code, texte libre, ordonnancement et vrai/faux (`src/components`)
 - Filtrage des questions par thème et par difficulté (`src/components/FilterPanel.tsx`)
 - Tirage aléatoire d'un nombre de questions choisi par l'utilisateur
 - Import d'un quiz personnalisé au format JSON, validé avant utilisation (`src/utils/quizValidation.ts`)

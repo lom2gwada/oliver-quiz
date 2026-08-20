@@ -17,6 +17,7 @@ export function isCorrect(question: Question, answer: AnswersByQuestion[string])
   }
   if (!Array.isArray(answer)) return false
   if (question.type === 'ordering') return answer.every((id, index) => id === question.content.correctOrder[index]) && answer.length === question.content.correctOrder.length
+  if (question.type === 'boolean') return answer[0] === String(question.content.isTrue)
   return sameIds(answer, question.content.answers.filter((item) => item.isCorrect).map((item) => item.id))
 }
 
@@ -106,5 +107,6 @@ export function ResultPage({ questions, answers, themes, elapsedSeconds, onResta
 function correctAnswer(question: Question): string {
   if (question.type === 'text') return question.content.expectedAnswers.join(' ou ')
   if (question.type === 'ordering') return question.content.correctOrder.map((id) => question.content.items.find((item) => item.id === id)?.label).join(' → ')
+  if (question.type === 'boolean') return question.content.isTrue ? 'Vrai' : 'Faux'
   return question.content.answers.filter((answer) => answer.isCorrect).map((answer) => answer.label).join(', ')
 }
