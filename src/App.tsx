@@ -52,6 +52,13 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     setView('quiz')
   }
 
+  const backToStart = () => {
+    setAnswers({})
+    setSessionQuestions([])
+    setElapsedSeconds(0)
+    setView('start')
+  }
+
   const toggleSound = () => {
     setSoundMuted(!muted)
     setMuted(!muted)
@@ -61,8 +68,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     <header><div><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>par {quiz.metadata.author}</p></div><div className="header-actions"><button type="button" className="secondary" onClick={toggleSound} aria-label={muted ? 'Activer le son' : 'Couper le son'}>{muted ? '🔇' : '🔊'}</button>{view !== 'stats' && <button type="button" className="secondary" onClick={() => setView('stats')}>📊 Statistiques</button>}<label className="file-input">Importer un JSON<input type="file" accept="application/json,.json" onChange={(event) => loadFile(event.target.files?.[0])} /></label><button type="button" className="secondary" onClick={onLogout}>Se déconnecter</button></div></header>
     {fileError && <p className="alert" role="alert">{fileError}</p>}
     {view === 'start' && <section className="start-page"><FilterPanel themes={quiz.themes} selectedThemes={selectedThemes} difficulty={difficulty} onThemeToggle={toggleTheme} onDifficultyChange={setDifficulty} /><label className="question-count">Nombre de questions<select value={questionCount} onChange={(event) => { playClick(); setQuestionCount(Number(event.target.value)) }}>{questionCounts.map((count) => <option key={count} value={count} disabled={count > filteredQuestions.length}>{count} {count === 1 ? 'question' : 'questions'}{count > filteredQuestions.length ? ' (indisponible)' : ''}</option>)}<option value={filteredQuestions.length}>Toutes les questions ({filteredQuestions.length})</option></select></label><p>{filteredQuestions.length} question{filteredQuestions.length > 1 ? 's' : ''} disponible{filteredQuestions.length > 1 ? 's' : ''} — {Math.min(questionCount, filteredQuestions.length)} seront tirées aléatoirement.</p><button type="button" onClick={startQuiz} disabled={!filteredQuestions.length}>Démarrer le quiz</button></section>}
-    {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} onFinish={(nextAnswers, duration) => { setAnswers(nextAnswers); setElapsedSeconds(duration); setView('results') }} />}
-    {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.themes} elapsedSeconds={elapsedSeconds} onRestart={() => { setAnswers({}); setSessionQuestions([]); setElapsedSeconds(0); setView('start') }} />}
+    {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} onFinish={(nextAnswers, duration) => { setAnswers(nextAnswers); setElapsedSeconds(duration); setView('results') }} onCancel={backToStart} />}
+    {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.themes} elapsedSeconds={elapsedSeconds} onRestart={backToStart} />}
     {view === 'stats' && <StatsPage quiz={quiz} onBack={() => setView('start')} />}
   </main>
 }
