@@ -3,6 +3,7 @@ dist/
 dist-ssr/
 
 *.local
+*.bak
 
 .vscode/*
 !.vscode/extensions.json
