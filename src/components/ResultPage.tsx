@@ -118,11 +118,34 @@ export function ResultPage({ questions, answers, themes, elapsedSeconds, onResta
       const correct = isCorrect(question, answers[question.id])
       return <article className={`correction ${correct ? 'correct' : 'incorrect'}`} key={question.id}>
         <h3>{correct ? '✓ Bonne réponse' : '✗ Réponse incorrecte'} — {question.question}</h3>
+        {!correct && <p><strong>Votre réponse :</strong> {userAnswer(question, answers[question.id])}</p>}
         {!correct && <p><strong>Bonne réponse :</strong> {correctAnswer(question)}</p>}
         <p>{question.explanation}</p>
       </article>
     })}</div>
   </section>
+}
+
+function userAnswer(question: Question, answer: AnswersByQuestion[string]): string {
+  if (question.type === 'text' || question.type === 'cloze') return typeof answer === 'string' && answer.trim() ? answer : 'Aucune réponse'
+  if (question.type === 'numeric') {
+    if (typeof answer !== 'string' || answer === '') return 'Aucune réponse'
+    const suffix = question.content.unit ? ` ${question.content.unit}` : ''
+    return `${answer}${suffix}`
+  }
+  if (!Array.isArray(answer) || !answer.length) return 'Aucune réponse'
+  if (question.type === 'ordering') return answer.map((id) => question.content.items.find((item) => item.id === id)?.label).join(' → ')
+  if (question.type === 'boolean') return answer[0] === 'true' ? 'Vrai' : 'Faux'
+  if (question.type === 'matching') {
+    const pairs = answer.map((token) => {
+      const [leftId, rightId] = token.split(':')
+      const left = question.content.left.find((item) => item.id === leftId)
+      const right = question.content.right.find((item) => item.id === rightId)
+      return left && right ? `${left.label} → ${right.label}` : null
+    }).filter(Boolean)
+    return pairs.length ? pairs.join(', ') : 'Aucune réponse'
+  }
+  return answer.map((id) => question.content.answers.find((item) => item.id === id)?.label).join(', ')
 }
 
 function correctAnswer(question: Question): string {
