@@ -9,7 +9,7 @@ const DIFFICULTY_LABELS: Record<Difficulty, string> = { easy: 'Facile', medium: 
 
 const sameIds = (left: string[], right: string[]) => left.length === right.length && left.every((item) => right.includes(item))
 
-export function isCorrect(question: Question, answer: AnswersByQuestion[string]): boolean {
+export function isCorrect(question: Question, answer: AnswersByQuestion[string] | undefined): boolean {
   if (question.type === 'text' || question.type === 'cloze') {
     if (typeof answer !== 'string') return false
     const normalize = (value: string) => question.content.caseSensitive ? value.trim() : value.trim().toLocaleLowerCase()
@@ -126,7 +126,7 @@ export function ResultPage({ questions, answers, themes, elapsedSeconds, onResta
   </section>
 }
 
-function userAnswer(question: Question, answer: AnswersByQuestion[string]): string {
+export function userAnswer(question: Question, answer: AnswersByQuestion[string] | undefined): string {
   if (question.type === 'text' || question.type === 'cloze') return typeof answer === 'string' && answer.trim() ? answer : 'Aucune réponse'
   if (question.type === 'numeric') {
     if (typeof answer !== 'string' || answer === '') return 'Aucune réponse'
@@ -148,7 +148,7 @@ function userAnswer(question: Question, answer: AnswersByQuestion[string]): stri
   return answer.map((id) => question.content.answers.find((item) => item.id === id)?.label).join(', ')
 }
 
-function correctAnswer(question: Question): string {
+export function correctAnswer(question: Question): string {
   if (question.type === 'text' || question.type === 'cloze') return question.content.expectedAnswers.join(' ou ')
   if (question.type === 'numeric') {
     const { target, tolerance, unit } = question.content

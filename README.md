@@ -41,6 +41,9 @@ La clé `anon` est prévue pour être publique (elle finit de toute façon dans 
 | `npm run dev`     | Démarre le serveur de développement Vite           |
 | `npm run build`   | Vérifie les types puis génère le build de production |
 | `npm run preview` | Prévisualise le build de production en local       |
+| `npm test`        | Lance les tests unitaires (Vitest)                 |
+| `npm run test:watch` | Lance les tests unitaires en mode watch         |
+| `npm run test:coverage` | Lance les tests avec un rapport de couverture |
 
 ## Format d'un quiz JSON
 
