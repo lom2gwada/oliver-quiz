@@ -1,6 +1,7 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { MatchingQuestion as Question, UserAnswer } from '../types/quiz'
 import { playClick } from '../utils/sound'
+import { shuffle } from '../utils/shuffle'
 
 const LINE_COLORS = ['#38bdf8', '#a78bfa', '#fbbf24', '#f472b6', '#34d399', '#fb923c']
 
@@ -24,6 +25,8 @@ export function MatchingQuestion({ question, answer, onChange }: { question: Que
   const leftRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const rightRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const [lines, setLines] = useState<Line[]>([])
+  const shuffledLeft = useMemo(() => shuffle(question.content.left), [question])
+  const shuffledRight = useMemo(() => shuffle(question.content.right), [question])
 
   const colorFor = (leftId: string) => LINE_COLORS[question.content.left.findIndex((item) => item.id === leftId) % LINE_COLORS.length]
 
@@ -81,14 +84,14 @@ export function MatchingQuestion({ question, answer, onChange }: { question: Que
       {lines.map((line, index) => <line key={index} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke={line.color} strokeWidth={2} />)}
     </svg>
     <div className="matching-col">
-      {question.content.left.map((item) => <button type="button" key={item.id}
+      {shuffledLeft.map((item) => <button type="button" key={item.id}
         ref={(el) => { leftRefs.current[item.id] = el }}
         className={`matching-item${selectedLeft === item.id ? ' selected' : ''}${pairs[item.id] ? ' paired' : ''}`}
         style={pairs[item.id] ? { borderColor: colorFor(item.id) } : undefined}
         onClick={() => toggleLeft(item.id)}>{item.label}</button>)}
     </div>
     <div className="matching-col">
-      {question.content.right.map((item) => {
+      {shuffledRight.map((item) => {
         const owner = Object.keys(pairs).find((left) => pairs[left] === item.id)
         return <button type="button" key={item.id}
           ref={(el) => { rightRefs.current[item.id] = el }}
