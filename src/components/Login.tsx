@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { supabase } from '../utils/supabase'
 
-export function Login() {
+export function Login({ initialError = '' }: { initialError?: string }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [error, setError] = useState(initialError)
   const [loading, setLoading] = useState(false)
 
   const submit = async (event: React.FormEvent) => {
