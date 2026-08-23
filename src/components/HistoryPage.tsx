@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import type { QuizResultRow } from '../types/history'
-import { computeRecords, fetchQuizHistory } from '../utils/quizHistory'
+import { bucketsToChartGroups, computeRecords, fetchQuizHistory, sumBuckets } from '../utils/quizHistory'
 import { formatDuration } from '../utils/time'
+import { DIFFICULTY_LABELS } from './ResultPage'
+import { PieChart } from './PieChart'
+import { TYPE_LABELS } from './QuizPage'
 import { ScoreChart } from './ScoreChart'
 
 const shortDate = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
@@ -17,6 +20,9 @@ export function HistoryPage({ onBack }: { onBack: () => void }) {
 
   const records = rows ? computeRecords(rows) : null
   const chartPoints = rows ? [...rows].reverse().map((row) => ({ label: shortDate(row.created_at), score: row.score })) : []
+  const byTheme = rows ? bucketsToChartGroups(sumBuckets(rows, (row) => row.by_theme), (key) => key) : []
+  const byType = rows ? bucketsToChartGroups(sumBuckets(rows, (row) => row.by_type), (key) => TYPE_LABELS[key as keyof typeof TYPE_LABELS] ?? key) : []
+  const byDifficulty = rows ? bucketsToChartGroups(sumBuckets(rows, (row) => row.by_difficulty), (key) => DIFFICULTY_LABELS[key as keyof typeof DIFFICULTY_LABELS] ?? key) : []
 
   return <section className="stats-page">
     <div className="stats-header">
@@ -34,6 +40,20 @@ export function HistoryPage({ onBack }: { onBack: () => void }) {
         <div className="record-tile"><span className="record-value">{formatDuration(records.totalPlaytimeSeconds)}</span><span className="record-label">Temps de jeu cumulé</span></div>
       </div>
       <ScoreChart points={chartPoints} />
+      <div className="stats-groups">
+        <div className="stats-group">
+          <h3 className="stats-group-title">Par thème (historique complet)</h3>
+          <div className="stats-grid">{byTheme.map((group) => <PieChart key={`theme-${group.key}`} title={group.label} data={group.data} />)}</div>
+        </div>
+        <div className="stats-group">
+          <h3 className="stats-group-title">Par type de question (historique complet)</h3>
+          <div className="stats-grid">{byType.map((group) => <PieChart key={`type-${group.key}`} title={group.label} data={group.data} />)}</div>
+        </div>
+        <div className="stats-group">
+          <h3 className="stats-group-title">Par difficulté (historique complet)</h3>
+          <div className="stats-grid">{byDifficulty.map((group) => <PieChart key={`difficulty-${group.key}`} title={group.label} data={group.data} />)}</div>
+        </div>
+      </div>
     </>}
     {rows && rows.length > 0 && <ul className="history-list">
       {rows.map((row) => <li className="history-item" key={row.id}>

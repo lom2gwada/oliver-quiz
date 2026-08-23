@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BooleanQuestion, QCMQuestion, Theme } from '../types/quiz'
 import type { QuizResultRow } from '../types/history'
-import { buildQuizResultPayload, computeRecords } from './quizHistory'
+import { bucketsToChartGroups, buildQuizResultPayload, computeRecords, sumBuckets } from './quizHistory'
 
 const themes: Theme[] = [{ id: 'histoire', label: 'Histoire' }, { id: 'geo', label: 'Géographie' }]
 
@@ -83,5 +83,50 @@ describe('computeRecords', () => {
 
   it('sums total playtime across all games', () => {
     expect(computeRecords([row({ elapsed_seconds: 30 }), row({ elapsed_seconds: 45 })]).totalPlaytimeSeconds).toBe(75)
+  })
+})
+
+describe('sumBuckets', () => {
+  it('sums correct/total across every row for the same key', () => {
+    const rows = [
+      row({ by_theme: { Histoire: { correct: 1, total: 2 } } }),
+      row({ by_theme: { Histoire: { correct: 2, total: 3 } } }),
+    ]
+    expect(sumBuckets(rows, (r) => r.by_theme)).toEqual({ Histoire: { correct: 3, total: 5 } })
+  })
+
+  it('keeps separate keys separate', () => {
+    const rows = [
+      row({ by_theme: { Histoire: { correct: 1, total: 1 } } }),
+      row({ by_theme: { Géographie: { correct: 0, total: 1 } } }),
+    ]
+    expect(sumBuckets(rows, (r) => r.by_theme)).toEqual({
+      Histoire: { correct: 1, total: 1 },
+      Géographie: { correct: 0, total: 1 },
+    })
+  })
+
+  it('returns an empty object for an empty history', () => {
+    expect(sumBuckets([], (r) => r.by_theme)).toEqual({})
+  })
+})
+
+describe('bucketsToChartGroups', () => {
+  it('splits each bucket into a Réussi/Raté pie slice pair', () => {
+    const groups = bucketsToChartGroups({ Histoire: { correct: 3, total: 5 } }, (key) => key)
+    expect(groups).toEqual([{
+      key: 'Histoire', label: 'Histoire',
+      data: [{ label: 'Réussi', value: 3, color: '#34d399' }, { label: 'Raté', value: 2, color: '#fb7185' }],
+    }])
+  })
+
+  it('omits a slice when its value is zero', () => {
+    const perfect = bucketsToChartGroups({ Histoire: { correct: 4, total: 4 } }, (key) => key)
+    expect(perfect[0].data).toEqual([{ label: 'Réussi', value: 4, color: '#34d399' }])
+  })
+
+  it('applies the label resolver to each key', () => {
+    const groups = bucketsToChartGroups({ qcm: { correct: 1, total: 1 } }, () => 'QCM')
+    expect(groups[0].label).toBe('QCM')
   })
 })

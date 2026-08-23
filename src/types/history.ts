@@ -26,3 +26,9 @@ export interface QuizRecords {
   averageScore: number
   totalPlaytimeSeconds: number
 }
+
+export interface ChartGroup {
+  key: string
+  label: string
+  data: { label: string; value: number; color: string }[]
+}
