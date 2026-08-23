@@ -51,6 +51,7 @@ pre { padding: 1rem; overflow: auto; background: #020617; border: 1px solid #334
 .confetti-piece { position: absolute; top: -12px; width: 8px; height: 14px; border-radius: 2px; opacity: .9; animation-name: confetti-fall; animation-timing-function: ease-in; animation-fill-mode: forwards; }
 @keyframes confetti-fall { to { transform: translateY(440px) rotate(340deg); opacity: 0; } }
 .stats-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; } .stats-header h2 { margin: 0; }
+.quiz-import { margin-bottom: 2rem; }.quiz-import .alert { margin-top: .8rem; }
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.2rem; }
 .pie-chart { margin: 0; background: rgba(15, 23, 42, .8); border: 1px solid #334155; border-radius: 1rem; padding: 1.2rem; display: grid; justify-items: center; gap: .8rem; }
 .pie-chart svg { width: 140px; height: 140px; }
