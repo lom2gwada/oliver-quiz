@@ -10,19 +10,24 @@ import { ScoreChart } from './ScoreChart'
 const shortDate = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 const longDate = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 
-export function HistoryPage({ onBack }: { onBack: () => void }) {
+export function HistoryPage({ onBack, currentQuizTitle }: { onBack: () => void; currentQuizTitle: string }) {
   const [rows, setRows] = useState<QuizResultRow[] | null>(null)
   const [error, setError] = useState('')
+  const [selectedQuiz, setSelectedQuiz] = useState<string | null>(null)
 
   useEffect(() => {
     fetchQuizHistory().then(setRows).catch(() => setError("Impossible de charger l'historique."))
   }, [])
 
-  const records = rows ? computeRecords(rows) : null
-  const chartPoints = rows ? [...rows].reverse().map((row) => ({ label: shortDate(row.created_at), score: row.score })) : []
-  const byTheme = rows ? bucketsToChartGroups(sumBuckets(rows, (row) => row.by_theme), (key) => key) : []
-  const byType = rows ? bucketsToChartGroups(sumBuckets(rows, (row) => row.by_type), (key) => TYPE_LABELS[key as keyof typeof TYPE_LABELS] ?? key) : []
-  const byDifficulty = rows ? bucketsToChartGroups(sumBuckets(rows, (row) => row.by_difficulty), (key) => DIFFICULTY_LABELS[key as keyof typeof DIFFICULTY_LABELS] ?? key) : []
+  const quizTitles = rows ? Array.from(new Set(rows.map((row) => row.quiz_title))) : []
+  const activeQuiz = selectedQuiz && quizTitles.includes(selectedQuiz) ? selectedQuiz : (quizTitles.includes(currentQuizTitle) ? currentQuizTitle : quizTitles[0])
+  const quizRows = rows ? rows.filter((row) => row.quiz_title === activeQuiz) : null
+
+  const records = quizRows ? computeRecords(quizRows) : null
+  const chartPoints = quizRows ? [...quizRows].reverse().map((row) => ({ label: shortDate(row.created_at), score: row.score })) : []
+  const byTheme = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_theme), (key) => key) : []
+  const byType = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_type), (key) => TYPE_LABELS[key as keyof typeof TYPE_LABELS] ?? key) : []
+  const byDifficulty = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_difficulty), (key) => DIFFICULTY_LABELS[key as keyof typeof DIFFICULTY_LABELS] ?? key) : []
 
   return <section className="stats-page">
     <div className="stats-header">
@@ -32,6 +37,11 @@ export function HistoryPage({ onBack }: { onBack: () => void }) {
     {error && <p className="alert" role="alert">{error}</p>}
     {!error && !rows && <p>Chargement…</p>}
     {rows && !rows.length && <p>Aucune partie enregistrée pour l'instant.</p>}
+    {quizTitles.length > 1 && <label className="quiz-select">Quiz
+      <select value={activeQuiz} onChange={(event) => setSelectedQuiz(event.target.value)}>
+        {quizTitles.map((title) => <option key={title} value={title}>{title}</option>)}
+      </select>
+    </label>}
     {records && records.gamesPlayed > 0 && <>
       <div className="records-grid">
         <div className="record-tile"><span className="record-value">{records.gamesPlayed}</span><span className="record-label">Parties jouées</span></div>
@@ -42,21 +52,21 @@ export function HistoryPage({ onBack }: { onBack: () => void }) {
       <ScoreChart points={chartPoints} />
       <div className="stats-groups">
         <div className="stats-group">
-          <h3 className="stats-group-title">Par thème (historique complet)</h3>
+          <h3 className="stats-group-title">Par thème</h3>
           <div className="stats-grid">{byTheme.map((group) => <PieChart key={`theme-${group.key}`} title={group.label} data={group.data} />)}</div>
         </div>
         <div className="stats-group">
-          <h3 className="stats-group-title">Par type de question (historique complet)</h3>
+          <h3 className="stats-group-title">Par type de question</h3>
           <div className="stats-grid">{byType.map((group) => <PieChart key={`type-${group.key}`} title={group.label} data={group.data} />)}</div>
         </div>
         <div className="stats-group">
-          <h3 className="stats-group-title">Par difficulté (historique complet)</h3>
+          <h3 className="stats-group-title">Par difficulté</h3>
           <div className="stats-grid">{byDifficulty.map((group) => <PieChart key={`difficulty-${group.key}`} title={group.label} data={group.data} />)}</div>
         </div>
       </div>
     </>}
-    {rows && rows.length > 0 && <ul className="history-list">
-      {rows.map((row) => <li className="history-item" key={row.id}>
+    {quizRows && quizRows.length > 0 && <ul className="history-list">
+      {quizRows.map((row) => <li className="history-item" key={row.id}>
         <span className="history-score">{row.score}%</span>
         <span className="history-date">{longDate(row.created_at)}</span>
         <span className="history-themes">{row.themes.join(', ')}</span>
