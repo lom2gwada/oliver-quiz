@@ -1,5 +1,5 @@
 import type { AnswersByQuestion, Question, Theme } from '../types/quiz'
-import type { QuizRecords, QuizResultPayload, QuizResultRow, StatBucket } from '../types/history'
+import type { ChartGroup, QuizRecords, QuizResultPayload, QuizResultRow, StatBucket } from '../types/history'
 import { isCorrect } from '../components/ResultPage'
 import { supabase } from './supabase'
 
@@ -55,4 +55,30 @@ export function computeRecords(rows: QuizResultRow[]): QuizRecords {
     averageScore: Math.round(rows.reduce((sum, row) => sum + row.score, 0) / rows.length),
     totalPlaytimeSeconds: rows.reduce((sum, row) => sum + row.elapsed_seconds, 0),
   }
+}
+
+/** Cumule les buckets `correct`/`total` d'une clé (par ex. `by_theme`) sur l'ensemble de l'historique. */
+export function sumBuckets(rows: QuizResultRow[], pick: (row: QuizResultRow) => Record<string, StatBucket>): Record<string, StatBucket> {
+  const totals: Record<string, StatBucket> = {}
+  rows.forEach((row) => {
+    Object.entries(pick(row)).forEach(([key, bucket]) => {
+      const total = totals[key] ?? { correct: 0, total: 0 }
+      total.correct += bucket.correct
+      total.total += bucket.total
+      totals[key] = total
+    })
+  })
+  return totals
+}
+
+/** Convertit des buckets cumulés en groupes prêts pour `PieChart`. */
+export function bucketsToChartGroups(buckets: Record<string, StatBucket>, labelOf: (key: string) => string): ChartGroup[] {
+  return Object.entries(buckets).map(([key, bucket]) => ({
+    key,
+    label: labelOf(key),
+    data: [
+      { label: 'Réussi', value: bucket.correct, color: '#34d399' },
+      { label: 'Raté', value: bucket.total - bucket.correct, color: '#fb7185' },
+    ].filter((slice) => slice.value > 0),
+  }))
 }

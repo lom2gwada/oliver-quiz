@@ -5,7 +5,7 @@ import { playFinish, playVictory } from '../utils/sound'
 import { Confetti } from './Confetti'
 import { PieChart } from './PieChart'
 
-const DIFFICULTY_LABELS: Record<Difficulty, string> = { easy: 'Facile', medium: 'Intermédiaire', hard: 'Difficile' }
+export const DIFFICULTY_LABELS: Record<Difficulty, string> = { easy: 'Facile', medium: 'Intermédiaire', hard: 'Difficile' }
 
 const sameIds = (left: string[], right: string[]) => left.length === right.length && left.every((item) => right.includes(item))
 
