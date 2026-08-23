@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BooleanQuestion, QCMQuestion, Theme } from '../types/quiz'
-import { buildQuizResultPayload } from './quizHistory'
+import type { QuizResultRow } from '../types/history'
+import { buildQuizResultPayload, computeRecords } from './quizHistory'
 
 const themes: Theme[] = [{ id: 'histoire', label: 'Histoire' }, { id: 'geo', label: 'Géographie' }]
 
@@ -52,5 +53,35 @@ describe('buildQuizResultPayload', () => {
     const payload = buildQuizResultPayload([], {}, themes, 0)
     expect(payload.score).toBe(0)
     expect(payload.themes).toEqual([])
+  })
+})
+
+function row(overrides: Partial<QuizResultRow>): QuizResultRow {
+  return {
+    id: '1', created_at: '2026-01-01T00:00:00Z', score: 50, earned_points: 1, total_points: 2,
+    elapsed_seconds: 60, question_count: 2, themes: [], by_theme: {}, by_type: {}, by_difficulty: {},
+    ...overrides,
+  }
+}
+
+describe('computeRecords', () => {
+  it('returns zeroed records for an empty history', () => {
+    expect(computeRecords([])).toEqual({ gamesPlayed: 0, bestScore: 0, averageScore: 0, totalPlaytimeSeconds: 0 })
+  })
+
+  it('counts games played', () => {
+    expect(computeRecords([row({}), row({}), row({})]).gamesPlayed).toBe(3)
+  })
+
+  it('finds the best score regardless of row order', () => {
+    expect(computeRecords([row({ score: 40 }), row({ score: 90 }), row({ score: 70 })]).bestScore).toBe(90)
+  })
+
+  it('rounds the average score', () => {
+    expect(computeRecords([row({ score: 40 }), row({ score: 41 })]).averageScore).toBe(41)
+  })
+
+  it('sums total playtime across all games', () => {
+    expect(computeRecords([row({ elapsed_seconds: 30 }), row({ elapsed_seconds: 45 })]).totalPlaytimeSeconds).toBe(75)
   })
 })

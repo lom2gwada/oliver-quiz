@@ -19,3 +19,10 @@ export interface QuizResultRow extends QuizResultPayload {
   id: string
   created_at: string
 }
+
+export interface QuizRecords {
+  gamesPlayed: number
+  bestScore: number
+  averageScore: number
+  totalPlaytimeSeconds: number
+}

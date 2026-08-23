@@ -1,5 +1,5 @@
 import type { AnswersByQuestion, Question, Theme } from '../types/quiz'
-import type { QuizResultPayload, QuizResultRow, StatBucket } from '../types/history'
+import type { QuizRecords, QuizResultPayload, QuizResultRow, StatBucket } from '../types/history'
 import { isCorrect } from '../components/ResultPage'
 import { supabase } from './supabase'
 
@@ -44,4 +44,15 @@ export async function fetchQuizHistory(): Promise<QuizResultRow[]> {
   const { data, error } = await supabase.from('quiz_results').select('*').order('created_at', { ascending: false })
   if (error) throw error
   return data ?? []
+}
+
+/** `rows` peut être dans n'importe quel ordre — seuls les agrégats comptent ici. */
+export function computeRecords(rows: QuizResultRow[]): QuizRecords {
+  if (!rows.length) return { gamesPlayed: 0, bestScore: 0, averageScore: 0, totalPlaytimeSeconds: 0 }
+  return {
+    gamesPlayed: rows.length,
+    bestScore: Math.max(...rows.map((row) => row.score)),
+    averageScore: Math.round(rows.reduce((sum, row) => sum + row.score, 0) / rows.length),
+    totalPlaytimeSeconds: rows.reduce((sum, row) => sum + row.elapsed_seconds, 0),
+  }
 }
