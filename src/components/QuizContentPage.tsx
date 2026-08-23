@@ -24,7 +24,7 @@ export function QuizContentPage({ quiz, onBack, onFileChange, fileError }: QuizC
 
   return <section className="stats-page">
     <div className="stats-header">
-      <h2>Ce quiz</h2>
+      <h2>Quiz</h2>
       <button type="button" className="secondary" onClick={onBack}>Retour</button>
     </div>
     <div className="quiz-import">
