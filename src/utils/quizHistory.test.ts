@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BooleanQuestion, QCMQuestion, Theme } from '../types/quiz'
-import type { QuizResultRow } from '../types/history'
-import { bucketsToChartGroups, buildQuizResultPayload, computeRecords, sumBuckets } from './quizHistory'
+import type { QuestionResultRow, QuizResultRow } from '../types/history'
+import { bucketsToChartGroups, buildQuestionResultPayloads, buildQuizResultPayload, computeMissedQuestions, computeRecords, sumBuckets } from './quizHistory'
 
 const themes: Theme[] = [{ id: 'histoire', label: 'Histoire' }, { id: 'geo', label: 'Géographie' }]
 
@@ -133,5 +133,68 @@ describe('bucketsToChartGroups', () => {
   it('applies the label resolver to each key', () => {
     const groups = bucketsToChartGroups({ qcm: { correct: 1, total: 1 } }, () => 'QCM')
     expect(groups[0].label).toBe('QCM')
+  })
+})
+
+describe('buildQuestionResultPayloads', () => {
+  it('tags each question with its own correctness', () => {
+    const payloads = buildQuestionResultPayloads([qcm, bool], { q1: ['a'], q2: ['false'] }, 'Culture générale')
+    expect(payloads).toEqual([
+      { quiz_title: 'Culture générale', question_id: 'q1', question_text: 'Q ?', correct: true },
+      { quiz_title: 'Culture générale', question_id: 'q2', question_text: 'Vrai ou faux ?', correct: false },
+    ])
+  })
+
+  it('marks an unanswered question as incorrect', () => {
+    const [payload] = buildQuestionResultPayloads([qcm], {}, 'Culture générale')
+    expect(payload.correct).toBe(false)
+  })
+
+  it('returns an empty array for no questions', () => {
+    expect(buildQuestionResultPayloads([], {}, 'Culture générale')).toEqual([])
+  })
+})
+
+function questionRow(overrides: Partial<QuestionResultRow>): QuestionResultRow {
+  return {
+    id: '1', created_at: '2026-01-01T00:00:00Z', quiz_title: 'Culture générale',
+    question_id: 'q1', question_text: 'Q ?', correct: true,
+    ...overrides,
+  }
+}
+
+describe('computeMissedQuestions', () => {
+  it('counts wrong attempts per question', () => {
+    const rows = [
+      questionRow({ correct: false }),
+      questionRow({ correct: true }),
+      questionRow({ correct: false }),
+    ]
+    const [missed] = computeMissedQuestions(rows, 'Culture générale')
+    expect(missed).toEqual({ questionId: 'q1', questionText: 'Q ?', attempts: 3, wrongCount: 2 })
+  })
+
+  it('excludes questions that were always answered correctly', () => {
+    const rows = [questionRow({ correct: true }), questionRow({ correct: true })]
+    expect(computeMissedQuestions(rows, 'Culture générale')).toEqual([])
+  })
+
+  it('sorts by wrong count, most missed first', () => {
+    const rows = [
+      questionRow({ question_id: 'q1', correct: false }),
+      questionRow({ question_id: 'q2', correct: false }),
+      questionRow({ question_id: 'q2', correct: false }),
+    ]
+    const missed = computeMissedQuestions(rows, 'Culture générale')
+    expect(missed.map((entry) => entry.questionId)).toEqual(['q2', 'q1'])
+  })
+
+  it('ignores rows from other quizzes', () => {
+    const rows = [questionRow({ quiz_title: 'Autre quiz', correct: false })]
+    expect(computeMissedQuestions(rows, 'Culture générale')).toEqual([])
+  })
+
+  it('returns an empty array for no history', () => {
+    expect(computeMissedQuestions([], 'Culture générale')).toEqual([])
   })
 })

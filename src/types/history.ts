@@ -33,3 +33,22 @@ export interface ChartGroup {
   label: string
   data: { label: string; value: number; color: string }[]
 }
+
+export interface QuestionResultPayload {
+  quiz_title: string
+  question_id: string
+  question_text: string
+  correct: boolean
+}
+
+export interface QuestionResultRow extends QuestionResultPayload {
+  id: string
+  created_at: string
+}
+
+export interface MissedQuestion {
+  questionId: string
+  questionText: string
+  attempts: number
+  wrongCount: number
+}
