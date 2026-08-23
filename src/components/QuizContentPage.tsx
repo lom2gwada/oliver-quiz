@@ -6,7 +6,14 @@ const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard']
 const DIFFICULTY_COLORS: Record<Difficulty, string> = { easy: '#34d399', medium: '#38bdf8', hard: '#fb7185' }
 const DIFFICULTY_LABELS: Record<Difficulty, string> = { easy: 'Facile', medium: 'Intermédiaire', hard: 'Difficile' }
 
-export function StatsPage({ quiz, onBack }: { quiz: Quiz; onBack: () => void }) {
+interface QuizContentPageProps {
+  quiz: Quiz
+  onBack: () => void
+  onFileChange: (file?: File) => void
+  fileError: string
+}
+
+export function QuizContentPage({ quiz, onBack, onFileChange, fileError }: QuizContentPageProps) {
   const byTheme = quiz.themes
     .map((theme, index) => ({
       label: theme.label,
@@ -17,9 +24,14 @@ export function StatsPage({ quiz, onBack }: { quiz: Quiz; onBack: () => void }) 
 
   return <section className="stats-page">
     <div className="stats-header">
-      <h2>Répartition des questions</h2>
+      <h2>Quiz</h2>
       <button type="button" className="secondary" onClick={onBack}>Retour</button>
     </div>
+    <div className="quiz-import">
+      <label className="file-input">Importer un autre quiz (JSON)<input type="file" accept="application/json,.json" onChange={(event) => onFileChange(event.target.files?.[0])} /></label>
+      {fileError && <p className="alert" role="alert">{fileError}</p>}
+    </div>
+    <h3 className="stats-group-title">Répartition des questions</h3>
     <div className="stats-grid">
       <PieChart title={`Thèmes — ${quiz.questions.length} questions`} data={byTheme} />
       {quiz.themes.map((theme) => {
