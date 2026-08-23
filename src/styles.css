@@ -59,4 +59,5 @@ pre { padding: 1rem; overflow: auto; background: #020617; border: 1px solid #334
 .pie-chart ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
 .pie-chart li { display: flex; align-items: center; gap: .5rem; color: #cbd5e1; font-size: .85rem; }
 .pie-chart .swatch { width: .7rem; height: .7rem; border-radius: 50%; flex-shrink: 0; }
+.history-list { display: grid; gap: .7rem; list-style: none; margin: 0; padding: 0; }.history-item { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; padding: .8rem 1rem; background: rgba(15, 23, 42, .8); border: 1px solid #334155; border-radius: .6rem; color: #cbd5e1; font-size: .88rem; }.history-score { font-size: 1.2rem; font-weight: 800; color: #f8fafc; min-width: 3.2rem; }.history-date { color: #94a3b8; }.history-themes { flex: 1; min-width: 160px; }
 @media (max-width: 550px) { .app-shell { padding-top: 1.5rem; } header { display: grid; }.file-input { justify-self: start; }.header-actions { justify-content: space-between; }.quiz-actions { flex-direction: column; }.quiz-nav { flex-direction: column; }.quiz-actions button { width: 100%; } }
