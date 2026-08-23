@@ -4,6 +4,7 @@ export interface StatBucket {
 }
 
 export interface QuizResultPayload {
+  quiz_title: string
   score: number
   earned_points: number
   total_points: number

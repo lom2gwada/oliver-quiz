@@ -17,48 +17,53 @@ const bool: BooleanQuestion = {
 
 describe('buildQuizResultPayload', () => {
   it('computes the score and point totals', () => {
-    const payload = buildQuizResultPayload([qcm, bool], { q1: ['a'], q2: ['true'] }, themes, 42)
+    const payload = buildQuizResultPayload([qcm, bool], { q1: ['a'], q2: ['true'] }, themes, 42, 'Culture générale')
     expect(payload.score).toBe(100)
     expect(payload.earned_points).toBe(3)
     expect(payload.total_points).toBe(3)
     expect(payload.elapsed_seconds).toBe(42)
     expect(payload.question_count).toBe(2)
+    expect(payload.quiz_title).toBe('Culture générale')
   })
 
   it('computes a partial score when some answers are wrong', () => {
-    const payload = buildQuizResultPayload([qcm, bool], { q1: ['b'], q2: ['true'] }, themes, 0)
+    const payload = buildQuizResultPayload([qcm, bool], { q1: ['b'], q2: ['true'] }, themes, 0, 'Culture générale')
     expect(payload.score).toBe(67)
     expect(payload.earned_points).toBe(2)
   })
 
   it('resolves theme ids to labels and dedupes them', () => {
-    const payload = buildQuizResultPayload([qcm, bool], {}, themes, 0)
+    const payload = buildQuizResultPayload([qcm, bool], {}, themes, 0, 'Culture générale')
     expect(payload.themes).toEqual(['Histoire', 'Géographie'])
   })
 
   it('falls back to the raw id when a theme is unknown', () => {
     const orphan: QCMQuestion = { ...qcm, id: 'q3', theme: 'unknown' }
-    const payload = buildQuizResultPayload([orphan], {}, themes, 0)
+    const payload = buildQuizResultPayload([orphan], {}, themes, 0, 'Culture générale')
     expect(payload.themes).toEqual(['unknown'])
   })
 
   it('aggregates correctness by theme, type and difficulty', () => {
-    const payload = buildQuizResultPayload([qcm, bool], { q1: ['a'], q2: ['false'] }, themes, 0)
+    const payload = buildQuizResultPayload([qcm, bool], { q1: ['a'], q2: ['false'] }, themes, 0, 'Culture générale')
     expect(payload.by_theme).toEqual({ Histoire: { correct: 1, total: 1 }, Géographie: { correct: 0, total: 1 } })
     expect(payload.by_type).toEqual({ qcm: { correct: 1, total: 1 }, boolean: { correct: 0, total: 1 } })
     expect(payload.by_difficulty).toEqual({ easy: { correct: 1, total: 1 }, medium: { correct: 0, total: 1 } })
   })
 
   it('returns a score of 0 for an empty question set', () => {
-    const payload = buildQuizResultPayload([], {}, themes, 0)
+    const payload = buildQuizResultPayload([], {}, themes, 0, 'Culture générale')
     expect(payload.score).toBe(0)
     expect(payload.themes).toEqual([])
+  })
+
+  it('tags the payload with the given quiz title', () => {
+    expect(buildQuizResultPayload([qcm], {}, themes, 0, 'Test technique IT').quiz_title).toBe('Test technique IT')
   })
 })
 
 function row(overrides: Partial<QuizResultRow>): QuizResultRow {
   return {
-    id: '1', created_at: '2026-01-01T00:00:00Z', score: 50, earned_points: 1, total_points: 2,
+    id: '1', created_at: '2026-01-01T00:00:00Z', quiz_title: 'Culture générale', score: 50, earned_points: 1, total_points: 2,
     elapsed_seconds: 60, question_count: 2, themes: [], by_theme: {}, by_type: {}, by_difficulty: {},
     ...overrides,
   }
