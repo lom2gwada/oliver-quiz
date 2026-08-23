@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import type { QuizResultRow } from '../types/history'
-import { bucketsToChartGroups, computeRecords, fetchQuizHistory, sumBuckets } from '../utils/quizHistory'
+import type { Question, Quiz } from '../types/quiz'
+import type { QuestionResultRow, QuizResultRow } from '../types/history'
+import { bucketsToChartGroups, computeMissedQuestions, computeRecords, fetchQuestionResults, fetchQuizHistory, sumBuckets } from '../utils/quizHistory'
 import { formatDuration } from '../utils/time'
 import { DIFFICULTY_LABELS } from './ResultPage'
 import { PieChart } from './PieChart'
@@ -10,17 +11,19 @@ import { ScoreChart } from './ScoreChart'
 const shortDate = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 const longDate = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 
-export function HistoryPage({ onBack, currentQuizTitle }: { onBack: () => void; currentQuizTitle: string }) {
+export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => void; quiz: Quiz; onReplayMissed: (questions: Question[]) => void }) {
   const [rows, setRows] = useState<QuizResultRow[] | null>(null)
+  const [questionRows, setQuestionRows] = useState<QuestionResultRow[]>([])
   const [error, setError] = useState('')
   const [selectedQuiz, setSelectedQuiz] = useState<string | null>(null)
 
   useEffect(() => {
     fetchQuizHistory().then(setRows).catch(() => setError("Impossible de charger l'historique."))
+    fetchQuestionResults().then(setQuestionRows).catch(() => {})
   }, [])
 
   const quizTitles = rows ? Array.from(new Set(rows.map((row) => row.quiz_title))) : []
-  const activeQuiz = selectedQuiz && quizTitles.includes(selectedQuiz) ? selectedQuiz : (quizTitles.includes(currentQuizTitle) ? currentQuizTitle : quizTitles[0])
+  const activeQuiz = selectedQuiz && quizTitles.includes(selectedQuiz) ? selectedQuiz : (quizTitles.includes(quiz.metadata.title) ? quiz.metadata.title : quizTitles[0])
   const quizRows = rows ? rows.filter((row) => row.quiz_title === activeQuiz) : null
 
   const records = quizRows ? computeRecords(quizRows) : null
@@ -28,6 +31,12 @@ export function HistoryPage({ onBack, currentQuizTitle }: { onBack: () => void; 
   const byTheme = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_theme), (key) => key) : []
   const byType = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_type), (key) => TYPE_LABELS[key as keyof typeof TYPE_LABELS] ?? key) : []
   const byDifficulty = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_difficulty), (key) => DIFFICULTY_LABELS[key as keyof typeof DIFFICULTY_LABELS] ?? key) : []
+
+  const missedQuestions = activeQuiz ? computeMissedQuestions(questionRows, activeQuiz) : []
+  const canReplay = activeQuiz === quiz.metadata.title
+  const replayQuestions = canReplay
+    ? missedQuestions.map((missed) => quiz.questions.find((question) => question.id === missed.questionId)).filter((question): question is Question => Boolean(question))
+    : []
 
   return <section className="stats-page">
     <div className="stats-header">
@@ -65,6 +74,18 @@ export function HistoryPage({ onBack, currentQuizTitle }: { onBack: () => void; 
         </div>
       </div>
     </>}
+    {missedQuestions.length > 0 && <div className="missed-questions">
+      <div className="stats-group-header">
+        <h3 className="stats-group-title">Questions à retravailler</h3>
+        {replayQuestions.length > 0 && <button type="button" onClick={() => onReplayMissed(replayQuestions)}>Reprendre mes erreurs</button>}
+      </div>
+      <ul className="missed-list">
+        {missedQuestions.map((missed) => <li className="missed-item" key={missed.questionId}>
+          <span>{missed.questionText}</span>
+          <span className="missed-ratio">Ratée {missed.wrongCount} fois sur {missed.attempts}</span>
+        </li>)}
+      </ul>
+    </div>}
     {quizRows && quizRows.length > 0 && <ul className="history-list">
       {quizRows.map((row) => <li className="history-item" key={row.id}>
         <span className="history-score">{row.score}%</span>

@@ -5,8 +5,8 @@ import { HistoryPage } from './components/HistoryPage'
 import { QuizContentPage } from './components/QuizContentPage'
 import { QuizPage } from './components/QuizPage'
 import { ResultPage } from './components/ResultPage'
-import type { AnswersByQuestion, Difficulty, Quiz } from './types/quiz'
-import { buildQuizResultPayload, saveQuizResult } from './utils/quizHistory'
+import type { AnswersByQuestion, Difficulty, Quiz, Question } from './types/quiz'
+import { buildQuestionResultPayloads, buildQuizResultPayload, saveQuestionResults, saveQuizResult } from './utils/quizHistory'
 import { parseQuiz } from './utils/quizValidation'
 import { isSoundMuted, playClick, setSoundMuted } from './utils/sound'
 import { shuffle } from './utils/shuffle'
@@ -54,6 +54,13 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     setView('quiz')
   }
 
+  const replayMissed = (questions: Question[]) => {
+    playClick()
+    setAnswers({})
+    setSessionQuestions(questions)
+    setView('quiz')
+  }
+
   const backToStart = () => {
     setAnswers({})
     setSessionQuestions([])
@@ -72,9 +79,10 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} onFinish={(nextAnswers, duration) => {
       setAnswers(nextAnswers); setElapsedSeconds(duration); setView('results')
       saveQuizResult(buildQuizResultPayload(sessionQuestions, nextAnswers, quiz.themes, duration, quiz.metadata.title))
+      saveQuestionResults(buildQuestionResultPayloads(sessionQuestions, nextAnswers, quiz.metadata.title))
     }} onCancel={backToStart} />}
     {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.themes} elapsedSeconds={elapsedSeconds} onRestart={backToStart} />}
     {view === 'content' && <QuizContentPage quiz={quiz} onBack={() => setView('start')} onFileChange={loadFile} fileError={fileError} />}
-    {view === 'history' && <HistoryPage onBack={() => setView('start')} currentQuizTitle={quiz.metadata.title} />}
+    {view === 'history' && <HistoryPage onBack={() => setView('start')} quiz={quiz} onReplayMissed={replayMissed} />}
   </main>
 }
