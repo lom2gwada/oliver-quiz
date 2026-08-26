@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import sampleQuiz from './data/sample-quiz.json'
 import { FilterPanel } from './components/FilterPanel'
+import { HistoryPage } from './components/HistoryPage'
 import { ProfilePage } from './components/ProfilePage'
 import { QuizContentPage } from './components/QuizContentPage'
 import { QuizPage } from './components/QuizPage'
@@ -13,7 +14,7 @@ import { parseQuiz } from './utils/quizValidation'
 import { isSoundMuted, playClick, setSoundMuted } from './utils/sound'
 import { shuffle } from './utils/shuffle'
 
-type View = 'start' | 'quiz' | 'results' | 'content' | 'profile'
+type View = 'start' | 'quiz' | 'results' | 'content' | 'history' | 'profile'
 
 const initialQuiz = parseQuiz(sampleQuiz)
 const questionCounts = [5, 10, 20, 30, 50]
@@ -87,6 +88,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     }} onCancel={backToStart} />}
     {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.themes} elapsedSeconds={elapsedSeconds} onRestart={backToStart} />}
     {view === 'content' && <QuizContentPage quiz={quiz} onBack={() => setView('start')} onFileChange={loadFile} fileError={fileError} />}
-    {view === 'profile' && <ProfilePage profile={profile} quiz={quiz} onBack={() => setView('start')} onSave={async (next) => { await saveProfile(next); setProfile(next) }} onReplayMissed={replayMissed} />}
+    {view === 'history' && <HistoryPage onBack={() => setView('profile')} quiz={quiz} onReplayMissed={replayMissed} />}
+    {view === 'profile' && <ProfilePage profile={profile} onBack={() => setView('start')} onSave={async (next) => { await saveProfile(next); setProfile(next) }} onViewHistory={() => setView('history')} />}
   </main>
 }
