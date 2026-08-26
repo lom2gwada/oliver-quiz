@@ -1,17 +1,20 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import sampleQuiz from './data/sample-quiz.json'
 import { FilterPanel } from './components/FilterPanel'
 import { HistoryPage } from './components/HistoryPage'
+import { ProfilePage } from './components/ProfilePage'
 import { QuizContentPage } from './components/QuizContentPage'
 import { QuizPage } from './components/QuizPage'
 import { ResultPage } from './components/ResultPage'
 import type { AnswersByQuestion, Difficulty, Quiz, Question } from './types/quiz'
+import type { Profile } from './types/profile'
 import { buildQuestionResultPayloads, buildQuizResultPayload, saveQuestionResults, saveQuizResult } from './utils/quizHistory'
+import { fetchProfile, saveProfile } from './utils/profile'
 import { parseQuiz } from './utils/quizValidation'
 import { isSoundMuted, playClick, setSoundMuted } from './utils/sound'
 import { shuffle } from './utils/shuffle'
 
-type View = 'start' | 'quiz' | 'results' | 'content' | 'history'
+type View = 'start' | 'quiz' | 'results' | 'content' | 'history' | 'profile'
 
 const initialQuiz = parseQuiz(sampleQuiz)
 const questionCounts = [5, 10, 20, 30, 50]
@@ -31,6 +34,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const [sessionQuestions, setSessionQuestions] = useState<Quiz['questions']>([])
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [muted, setMuted] = useState(isSoundMuted())
+  const [profile, setProfile] = useState<Profile | null>(null)
+  useEffect(() => { fetchProfile().then(setProfile).catch(() => {}) }, [])
   const filteredQuestions = useMemo(() => quiz.questions.filter((question) =>
     (!selectedThemes.length || selectedThemes.includes(question.theme)) && (!difficulty || question.difficulty === difficulty)), [quiz, selectedThemes, difficulty])
 
@@ -74,7 +79,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   }
 
   return <main className="app-shell">
-    <header><div><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>par {quiz.metadata.author}</p></div><div className="header-actions"><button type="button" className="secondary" onClick={toggleSound} aria-label={muted ? 'Activer le son' : 'Couper le son'}>{muted ? '🔇' : '🔊'}</button>{view === 'start' && <button type="button" className="secondary" onClick={() => setView('content')}>⚙️ Quiz</button>}{view === 'start' && <button type="button" className="secondary" onClick={() => setView('history')}>🕓 Historique</button>}<button type="button" className="secondary" onClick={onLogout}>Se déconnecter</button></div></header>
+    <header><div><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>par {quiz.metadata.author}</p></div><div className="header-actions"><button type="button" className="secondary" onClick={toggleSound} aria-label={muted ? 'Activer le son' : 'Couper le son'}>{muted ? '🔇' : '🔊'}</button>{view === 'start' && <button type="button" className="secondary" onClick={() => setView('profile')}>{profile ? `${profile.avatar} ${profile.pseudo}` : '👤 Profil'}</button>}{view === 'start' && <button type="button" className="secondary" onClick={() => setView('content')}>⚙️ Quiz</button>}{view === 'start' && <button type="button" className="secondary" onClick={() => setView('history')}>🕓 Historique</button>}<button type="button" className="secondary" onClick={onLogout}>Se déconnecter</button></div></header>
     {view === 'start' && <section className="start-page"><FilterPanel themes={quiz.themes} selectedThemes={selectedThemes} difficulty={difficulty} onThemeToggle={toggleTheme} onDifficultyChange={setDifficulty} /><label className="question-count">Nombre de questions<select value={questionCount} onChange={(event) => { playClick(); setQuestionCount(Number(event.target.value)) }}>{questionCounts.map((count) => <option key={count} value={count} disabled={count > filteredQuestions.length}>{count} {count === 1 ? 'question' : 'questions'}{count > filteredQuestions.length ? ' (indisponible)' : ''}</option>)}<option value={filteredQuestions.length}>Toutes les questions ({filteredQuestions.length})</option></select></label><p>{filteredQuestions.length} question{filteredQuestions.length > 1 ? 's' : ''} disponible{filteredQuestions.length > 1 ? 's' : ''} — {Math.min(questionCount, filteredQuestions.length)} seront tirées aléatoirement.</p><button type="button" onClick={startQuiz} disabled={!filteredQuestions.length}>Démarrer le quiz</button></section>}
     {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} onFinish={(nextAnswers, duration) => {
       setAnswers(nextAnswers); setElapsedSeconds(duration); setView('results')
@@ -84,5 +89,6 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.themes} elapsedSeconds={elapsedSeconds} onRestart={backToStart} />}
     {view === 'content' && <QuizContentPage quiz={quiz} onBack={() => setView('start')} onFileChange={loadFile} fileError={fileError} />}
     {view === 'history' && <HistoryPage onBack={() => setView('start')} quiz={quiz} onReplayMissed={replayMissed} />}
+    {view === 'profile' && <ProfilePage profile={profile} onBack={() => setView('start')} onSave={async (next) => { await saveProfile(next); setProfile(next) }} />}
   </main>
 }
