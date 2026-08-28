@@ -31,6 +31,7 @@ p { color: #94a3b8; } .eyebrow { margin: 0; color: #38bdf8; letter-spacing: .14e
 .theme-hint { margin: 0; font-size: .78rem; }
 select, .text-answer { width: 100%; background: #0f172a; color: #e2e8f0; border: 1px solid #475569; border-radius: .45rem; padding: .7rem; }
 .start-page > p { margin: 2rem 0 1rem; } .start-page button { width: 100%; }
+.start-page > p.top-score { margin: 0 0 1.5rem; padding: .6rem 1rem; background: rgba(251, 191, 36, .12); border: 1px solid rgba(251, 191, 36, .35); border-radius: .6rem; color: #fbbf24; font-weight: 700; text-align: center; }
 .question-count { display: grid; gap: .4rem; margin-top: 1.2rem; color: #cbd5e1; max-width: 280px; }
 .question-meta { display: flex; gap: .5rem; flex-wrap: wrap; } .question-meta span { padding: .28rem .55rem; background: #1e293b; color: #bae6fd; border-radius: 99px; font-size: .8rem; }
 .quiz-progress { height: .35rem; background: #1e293b; border-radius: 999px; overflow: hidden; margin-top: 1.2rem; }
