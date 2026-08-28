@@ -24,7 +24,8 @@ export function LeaderboardPage({ quiz, onBack }: LeaderboardPageProps) {
 
   const quizTitles = rows ? Array.from(new Set(rows.map((row) => row.quiz_title))) : []
   const activeQuiz = selectedQuiz && quizTitles.includes(selectedQuiz) ? selectedQuiz : (quizTitles.includes(quiz.metadata.title) ? quiz.metadata.title : quizTitles[0])
-  const ranked = rows ? rows.filter((row) => row.quiz_title === activeQuiz).sort((a, b) => b.best_score - a.best_score) : []
+  const ranked = rows ? rows.filter((row) => row.quiz_title === activeQuiz).sort((a, b) =>
+    b.best_score - a.best_score || b.earned_points - a.earned_points || a.elapsed_seconds - b.elapsed_seconds) : []
 
   return <section className="stats-page">
     <div className="stats-header">

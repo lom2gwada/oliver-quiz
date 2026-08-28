@@ -4,4 +4,7 @@ export interface LeaderboardRow {
   pseudo: string
   avatar: string
   best_score: number
+  earned_points: number
+  total_points: number
+  elapsed_seconds: number
 }
