@@ -10,9 +10,10 @@ interface ProfilePageProps {
   onBack: () => void
   onSave: (profile: Profile) => Promise<void>
   onViewHistory: () => void
+  onViewLeaderboard: () => void
 }
 
-export function ProfilePage({ profile, onBack, onSave, onViewHistory }: ProfilePageProps) {
+export function ProfilePage({ profile, onBack, onSave, onViewHistory, onViewLeaderboard }: ProfilePageProps) {
   const [pseudo, setPseudo] = useState(profile?.pseudo ?? '')
   const [avatar, setAvatar] = useState(profile?.avatar ?? AVATAR_OPTIONS[0])
   const [error, setError] = useState('')
@@ -90,6 +91,9 @@ export function ProfilePage({ profile, onBack, onSave, onViewHistory }: ProfileP
       <button type="submit" disabled={passwordSaving}>{passwordSaving ? 'Modification…' : 'Modifier le mot de passe'}</button>
     </form>
 
-    <button type="button" className="secondary profile-history-link" onClick={onViewHistory}>🕓 Historique</button>
+    <div className="profile-links">
+      <button type="button" className="secondary" onClick={onViewHistory}>🕓 Historique</button>
+      <button type="button" className="secondary" onClick={onViewLeaderboard}>🏆 Classement</button>
+    </div>
   </section>
 }
