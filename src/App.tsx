@@ -42,6 +42,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const [topScore, setTopScore] = useState<LeaderboardRow | null>(null)
   const refreshTopScore = () => { fetchTopScore(quiz.metadata.title).then(setTopScore).catch(() => setTopScore(null)) }
   useEffect(refreshTopScore, [quiz.metadata.title])
+  const [leaderboardBack, setLeaderboardBack] = useState<View>('profile')
+  const viewLeaderboard = (from: View) => { setLeaderboardBack(from); setView('leaderboard') }
   const filteredQuestions = useMemo(() => quiz.questions.filter((question) =>
     (!selectedThemes.length || selectedThemes.includes(question.theme)) && (!difficulty || question.difficulty === difficulty)), [quiz, selectedThemes, difficulty])
 
@@ -86,7 +88,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   }
 
   return <main className="app-shell">
-    <header><div><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>par {quiz.metadata.author}</p>{view === 'start' && topScore && <p className="top-score">🏆 {topScore.avatar} {topScore.pseudo} — {topScore.best_score}%</p>}</div><div className="header-actions"><button type="button" className="secondary" onClick={toggleSound} aria-label={muted ? 'Activer le son' : 'Couper le son'}>{muted ? '🔇' : '🔊'}</button>{view === 'start' && <button type="button" className="secondary" onClick={() => setView('profile')}>{profile ? `${profile.avatar} ${profile.pseudo}` : '👤 Profil'}</button>}{view === 'start' && <button type="button" className="secondary" onClick={() => setView('content')}>⚙️ Quiz</button>}<button type="button" className="secondary" onClick={onLogout}>Se déconnecter</button></div></header>
+    <header><div><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>par {quiz.metadata.author}</p>{view === 'start' && topScore && <button type="button" className="top-score" onClick={() => viewLeaderboard('start')}>🏆 {topScore.avatar} {topScore.pseudo} — {topScore.best_score}%</button>}</div><div className="header-actions"><button type="button" className="secondary" onClick={toggleSound} aria-label={muted ? 'Activer le son' : 'Couper le son'}>{muted ? '🔇' : '🔊'}</button>{view === 'start' && <button type="button" className="secondary" onClick={() => setView('profile')}>{profile ? `${profile.avatar} ${profile.pseudo}` : '👤 Profil'}</button>}{view === 'start' && <button type="button" className="secondary" onClick={() => setView('content')}>⚙️ Quiz</button>}<button type="button" className="secondary" onClick={onLogout}>Se déconnecter</button></div></header>
     {view === 'start' && <section className="start-page"><FilterPanel themes={quiz.themes} selectedThemes={selectedThemes} difficulty={difficulty} onThemeToggle={toggleTheme} onDifficultyChange={setDifficulty} /><label className="question-count">Nombre de questions<select value={questionCount} onChange={(event) => { playClick(); setQuestionCount(Number(event.target.value)) }}>{questionCounts.map((count) => <option key={count} value={count} disabled={count > filteredQuestions.length}>{count} {count === 1 ? 'question' : 'questions'}{count > filteredQuestions.length ? ' (indisponible)' : ''}</option>)}<option value={filteredQuestions.length}>Toutes les questions ({filteredQuestions.length})</option></select></label><p>{filteredQuestions.length} question{filteredQuestions.length > 1 ? 's' : ''} disponible{filteredQuestions.length > 1 ? 's' : ''} — {Math.min(questionCount, filteredQuestions.length)} seront tirées aléatoirement.</p><button type="button" onClick={startQuiz} disabled={!filteredQuestions.length}>Démarrer le quiz</button></section>}
     {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} onFinish={(nextAnswers, duration) => {
       setAnswers(nextAnswers); setElapsedSeconds(duration); setView('results')
@@ -96,7 +98,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.themes} elapsedSeconds={elapsedSeconds} onRestart={backToStart} />}
     {view === 'content' && <QuizContentPage quiz={quiz} onBack={() => setView('start')} onFileChange={loadFile} fileError={fileError} />}
     {view === 'history' && <HistoryPage onBack={() => setView('profile')} quiz={quiz} onReplayMissed={replayMissed} />}
-    {view === 'leaderboard' && <LeaderboardPage quiz={quiz} onBack={() => setView('profile')} />}
-    {view === 'profile' && <ProfilePage profile={profile} onBack={() => setView('start')} onSave={async (next) => { await saveProfile(next); setProfile(next) }} onViewHistory={() => setView('history')} onViewLeaderboard={() => setView('leaderboard')} />}
+    {view === 'leaderboard' && <LeaderboardPage quiz={quiz} onBack={() => setView(leaderboardBack)} />}
+    {view === 'profile' && <ProfilePage profile={profile} onBack={() => setView('start')} onSave={async (next) => { await saveProfile(next); setProfile(next) }} onViewHistory={() => setView('history')} onViewLeaderboard={() => viewLeaderboard('profile')} />}
   </main>
 }
