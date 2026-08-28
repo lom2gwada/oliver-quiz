@@ -60,6 +60,10 @@ export function ProfilePage({ profile, onBack, onSave, onViewHistory, onViewLead
       <h2>Profil</h2>
       <button type="button" className="secondary" onClick={onBack}>Retour</button>
     </div>
+    <div className="nav-links">
+      <button type="button" className="secondary" onClick={onViewHistory}>🕓 Historique</button>
+      <button type="button" className="secondary" onClick={onViewLeaderboard}>🏆 Classement</button>
+    </div>
     <form className="profile-form" onSubmit={submit}>
       <label>Pseudo
         <input value={pseudo} onChange={(event) => { setPseudo(event.target.value); setSaved(false) }} required maxLength={30} placeholder="Ton prénom ou pseudo" />
@@ -90,10 +94,5 @@ export function ProfilePage({ profile, onBack, onSave, onViewHistory, onViewLead
       {passwordSaved && !passwordError && <p className="profile-saved">Mot de passe modifié ✓</p>}
       <button type="submit" disabled={passwordSaving}>{passwordSaving ? 'Modification…' : 'Modifier le mot de passe'}</button>
     </form>
-
-    <div className="profile-links">
-      <button type="button" className="secondary" onClick={onViewHistory}>🕓 Historique</button>
-      <button type="button" className="secondary" onClick={onViewLeaderboard}>🏆 Classement</button>
-    </div>
   </section>
 }

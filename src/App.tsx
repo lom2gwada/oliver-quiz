@@ -44,6 +44,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   useEffect(refreshTopScore, [quiz.metadata.title])
   const [leaderboardBack, setLeaderboardBack] = useState<View>('profile')
   const viewLeaderboard = (from: View) => { setLeaderboardBack(from); setView('leaderboard') }
+  const [historyBack, setHistoryBack] = useState<View>('profile')
+  const viewHistory = (from: View) => { setHistoryBack(from); setView('history') }
   const filteredQuestions = useMemo(() => quiz.questions.filter((question) =>
     (!selectedThemes.length || selectedThemes.includes(question.theme)) && (!difficulty || question.difficulty === difficulty)), [quiz, selectedThemes, difficulty])
 
@@ -95,10 +97,10 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       saveQuizResult(buildQuizResultPayload(sessionQuestions, nextAnswers, quiz.themes, duration, quiz.metadata.title))
       saveQuestionResults(buildQuestionResultPayloads(sessionQuestions, nextAnswers, quiz.metadata.title))
     }} onCancel={backToStart} />}
-    {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.themes} elapsedSeconds={elapsedSeconds} onRestart={backToStart} />}
+    {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.themes} elapsedSeconds={elapsedSeconds} onRestart={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} />}
     {view === 'content' && <QuizContentPage quiz={quiz} onBack={() => setView('start')} onFileChange={loadFile} fileError={fileError} />}
-    {view === 'history' && <HistoryPage onBack={() => setView('profile')} quiz={quiz} onReplayMissed={replayMissed} />}
+    {view === 'history' && <HistoryPage onBack={() => setView(historyBack)} quiz={quiz} onReplayMissed={replayMissed} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} onBack={() => setView(leaderboardBack)} />}
-    {view === 'profile' && <ProfilePage profile={profile} onBack={() => setView('start')} onSave={async (next) => { await saveProfile(next); setProfile(next) }} onViewHistory={() => setView('history')} onViewLeaderboard={() => viewLeaderboard('profile')} />}
+    {view === 'profile' && <ProfilePage profile={profile} onBack={() => setView('start')} onSave={async (next) => { await saveProfile(next); setProfile(next) }} onViewHistory={() => viewHistory('profile')} onViewLeaderboard={() => viewLeaderboard('profile')} />}
   </main>
 }
