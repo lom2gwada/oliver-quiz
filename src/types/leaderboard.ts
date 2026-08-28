@@ -7,4 +7,5 @@ export interface LeaderboardRow {
   earned_points: number
   total_points: number
   elapsed_seconds: number
+  question_count: number
 }
