@@ -83,9 +83,11 @@ interface ResultPageProps {
   themes: Theme[]
   elapsedSeconds: number
   onRestart: () => void
+  onViewHistory: () => void
+  onViewLeaderboard: () => void
 }
 
-export function ResultPage({ questions, answers, themes, elapsedSeconds, onRestart }: ResultPageProps) {
+export function ResultPage({ questions, answers, themes, elapsedSeconds, onRestart, onViewHistory, onViewLeaderboard }: ResultPageProps) {
   const earned = questions.filter((question) => isCorrect(question, answers[question.id])).reduce((total, question) => total + question.points, 0)
   const total = questions.reduce((sum, question) => sum + question.points, 0)
   const score = total ? Math.round((earned / total) * 100) : 0
@@ -104,6 +106,10 @@ export function ResultPage({ questions, answers, themes, elapsedSeconds, onResta
       <p className="duration">⏱ Temps : {formatDuration(elapsedSeconds)}</p>
     </div>
     <button type="button" onClick={onRestart}>Recommencer</button>
+    <div className="nav-links">
+      <button type="button" className="secondary" onClick={onViewHistory}>🕓 Historique</button>
+      <button type="button" className="secondary" onClick={onViewLeaderboard}>🏆 Classement</button>
+    </div>
     <div className="stats-groups">
       <div className="stats-group">
         <h3 className="stats-group-title">Par thème</h3>
