@@ -13,6 +13,7 @@ import type { LeaderboardRow } from './types/leaderboard'
 import { buildQuestionResultPayloads, buildQuizResultPayload, saveQuestionResults, saveQuizResult } from './utils/quizHistory'
 import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchTopScore } from './utils/leaderboard'
+import { applyTheme } from './utils/theme'
 import { parseQuiz } from './utils/quizValidation'
 import { isSoundMuted, playClick, setSoundMuted } from './utils/sound'
 import { shuffle } from './utils/shuffle'
@@ -39,6 +40,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const [muted, setMuted] = useState(isSoundMuted())
   const [profile, setProfile] = useState<Profile | null>(null)
   useEffect(() => { fetchProfile().then(setProfile).catch(() => {}) }, [])
+  useEffect(() => { applyTheme(profile?.theme ?? 'dark') }, [profile?.theme])
   const [topScore, setTopScore] = useState<LeaderboardRow | null>(null)
   useEffect(() => { if (view === 'start') fetchTopScore(quiz.metadata.title).then(setTopScore).catch(() => setTopScore(null)) }, [view, quiz.metadata.title])
   const [leaderboardBack, setLeaderboardBack] = useState<View>('profile')

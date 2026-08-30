@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import type { Profile } from '../types/profile'
+import type { Profile, Theme } from '../types/profile'
 import { playClick } from '../utils/sound'
 import { supabase } from '../utils/supabase'
+import { applyTheme } from '../utils/theme'
 
 export const AVATAR_OPTIONS = ['🙂', '😎', '🤓', '🦊', '🐱', '🐶', '🦁', '🐼', '🚀', '🎯', '⭐', '🔥']
 
@@ -16,9 +17,12 @@ interface ProfilePageProps {
 export function ProfilePage({ profile, onBack, onSave, onViewHistory, onViewLeaderboard }: ProfilePageProps) {
   const [pseudo, setPseudo] = useState(profile?.pseudo ?? '')
   const [avatar, setAvatar] = useState(profile?.avatar ?? AVATAR_OPTIONS[0])
+  const [theme, setTheme] = useState<Theme>(profile?.theme ?? 'dark')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  const previewTheme = (next: Theme) => { playClick(); setTheme(next); applyTheme(next); setSaved(false) }
 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -30,7 +34,7 @@ export function ProfilePage({ profile, onBack, onSave, onViewHistory, onViewLead
     event.preventDefault()
     setSaving(true); setError(''); setSaved(false)
     try {
-      await onSave({ pseudo: pseudo.trim(), avatar })
+      await onSave({ pseudo: pseudo.trim(), avatar, theme })
       setSaved(true)
     } catch {
       setError("Impossible d'enregistrer le profil. Réessayez.")
@@ -75,6 +79,19 @@ export function ProfilePage({ profile, onBack, onSave, onViewHistory, onViewLead
             <input type="radio" name="avatar" value={option} checked={avatar === option} onChange={() => { playClick(); setAvatar(option); setSaved(false) }} />
             <span>{option}</span>
           </label>)}
+        </div>
+      </fieldset>
+      <fieldset className="theme-picker">
+        <legend>Thème</legend>
+        <div className="theme-options">
+          <label className="theme-option">
+            <input type="radio" name="theme" checked={theme === 'dark'} onChange={() => previewTheme('dark')} />
+            🌙 Sombre
+          </label>
+          <label className="theme-option">
+            <input type="radio" name="theme" checked={theme === 'light'} onChange={() => previewTheme('light')} />
+            ☀️ Clair
+          </label>
         </div>
       </fieldset>
       {error && <p className="alert" role="alert">{error}</p>}

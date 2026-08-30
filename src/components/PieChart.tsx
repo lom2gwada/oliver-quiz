@@ -14,7 +14,7 @@ export function PieChart({ title, data }: { title: string; data: PieSlice[] }) {
   return <figure className="pie-chart">
     <svg viewBox="0 0 36 36" role="img" aria-label={title}>
       {total === 0
-        ? <circle cx="18" cy="18" r={RADIUS} fill="none" stroke="#334155" strokeWidth="4" />
+        ? <circle cx="18" cy="18" r={RADIUS} fill="none" stroke="var(--border)" strokeWidth="4" />
         : data.map((slice) => {
           const percent = (slice.value / total) * 100
           const dashoffset = START_OFFSET - cumulative
