@@ -2,7 +2,7 @@ import type { Profile } from '../types/profile'
 import { supabase } from './supabase'
 
 export async function fetchProfile(): Promise<Profile | null> {
-  const { data, error } = await supabase.from('profiles').select('pseudo, avatar').maybeSingle()
+  const { data, error } = await supabase.from('profiles').select('pseudo, avatar, theme').maybeSingle()
   if (error) throw error
   return data
 }
