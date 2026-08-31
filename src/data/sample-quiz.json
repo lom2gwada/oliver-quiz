@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "metadata": { "title": "Culture générale", "author": "Oliver Quiz", "createdAt": "2026-08-20" },
+  "metadata": { "title": "Culture générale", "author": "Oliver Quiz", "createdAt": "2026-08-20", "description": "Un tour d'horizon en histoire, géographie, sciences, cinéma, littérature, sport, musique et gastronomie — huit thèmes et huit types de questions pour tester tes connaissances générales." },
   "themes": [
     { "id": "histoire", "label": "Histoire" },
     { "id": "geographie", "label": "Géographie" },
