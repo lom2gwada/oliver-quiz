@@ -1,0 +1,16 @@
+name: Check quiz image links
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # tous les lundis à 6h UTC
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm run check-images
