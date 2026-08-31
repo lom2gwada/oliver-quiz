@@ -98,7 +98,7 @@
       { "id": "b", "label": "Le Brésil", "isCorrect": true },
       { "id": "c", "label": "Le Portugal", "isCorrect": false }
     ] } },
-    { "id": "geo-11", "type": "text", "theme": "geographie", "difficulty": "easy", "question": "Quel est ce monument, symbole de Paris ?", "tags": ["monuments"], "explanation": "La tour Eiffel a été construite par Gustave Eiffel pour l'Exposition universelle de 1889.", "points": 1, "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Tour_Eiffel_Wikimedia_Commons_%28cropped%29.jpg/330px-Tour_Eiffel_Wikimedia_Commons_%28cropped%29.jpg", "imageAlt": "La tour Eiffel photographiée depuis le sol, vue en contre-plongée.", "content": { "expectedAnswers": ["la tour Eiffel", "tour Eiffel", "la Tour Eiffel"], "caseSensitive": false } },
+    { "id": "geo-11", "type": "text", "theme": "geographie", "difficulty": "medium", "question": "Quel est ce monument antique ?", "tags": ["monuments"], "explanation": "Le Colisée, à Rome, est un amphithéâtre construit au 1er siècle qui pouvait accueillir environ 50 000 spectateurs.", "points": 2, "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Colosseo_2020.jpg/500px-Colosseo_2020.jpg", "imageAlt": "Le Colisée de Rome, amphithéâtre antique en pierre, vue extérieure.", "content": { "expectedAnswers": ["le Colisée", "Colisée", "le colisee", "colisee"], "caseSensitive": false } },
 
     { "id": "sci-1", "type": "qcm", "theme": "sciences", "difficulty": "easy", "question": "Quel est le symbole chimique de l'or ?", "tags": ["chimie"], "explanation": "Au vient du latin \"aurum\", qui signifie or.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Ag", "isCorrect": false },
