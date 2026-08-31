@@ -36,6 +36,17 @@ describe('parseQuiz — root schema', () => {
     const bad = quiz([{ ...base, theme: 'unknown', type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true } }])
     expect(() => parseQuiz(bad)).toThrow('thème existant')
   })
+
+  it('parses an optional metadata description', () => {
+    const withDescription = { ...quiz([]), metadata: { ...quiz([]).metadata, description: 'Un quiz de test.' } }
+    const result = parseQuiz(withDescription)
+    expect(result.metadata.description).toBe('Un quiz de test.')
+  })
+
+  it('rejects a non-string metadata description', () => {
+    const bad = { ...quiz([]), metadata: { ...quiz([]).metadata, description: 42 } }
+    expect(() => parseQuiz(bad)).toThrow()
+  })
 })
 
 describe('parseQuiz — shared question fields', () => {

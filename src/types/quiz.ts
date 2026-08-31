@@ -122,7 +122,7 @@ export type Question = QCMQuestion | TextQuestion | CodeQuestion | OrderingQuest
 
 export interface Quiz {
   version: string
-  metadata: { title: string; author: string; createdAt: string }
+  metadata: { title: string; author: string; createdAt: string; description?: string }
   themes: Theme[]
   questions: Question[]
 }

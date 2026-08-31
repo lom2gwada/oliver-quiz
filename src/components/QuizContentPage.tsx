@@ -37,6 +37,7 @@ export function QuizContentPage({ quiz, onBack, onFileChange, fileError }: QuizC
       <h2>Quiz</h2>
       <button type="button" className="secondary" onClick={onBack}>Retour</button>
     </div>
+    {quiz.metadata.description && <p className="quiz-description">{quiz.metadata.description}</p>}
     <div className="quiz-import">
       <label className="file-input">Importer un autre quiz (JSON)<input type="file" accept="application/json,.json" onChange={(event) => onFileChange(event.target.files?.[0])} /></label>
       {fileError && <p className="alert" role="alert">{fileError}</p>}

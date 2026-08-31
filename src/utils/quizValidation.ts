@@ -16,6 +16,7 @@ export function parseQuiz(value: unknown): Quiz {
     typeof metadata.title !== 'string' ||
     typeof metadata.author !== 'string' ||
     typeof metadata.createdAt !== 'string' ||
+    (metadata.description !== undefined && typeof metadata.description !== 'string') ||
     !Array.isArray(themes) ||
     !themes.every((theme) => isRecord(theme) && typeof theme.id === 'string' && typeof theme.label === 'string') ||
     !Array.isArray(questions)
