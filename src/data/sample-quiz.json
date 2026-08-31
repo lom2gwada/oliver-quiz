@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "metadata": { "title": "Culture générale", "author": "Oliver Quiz", "createdAt": "2026-08-20", "description": "Un tour d'horizon en histoire, géographie, sciences, cinéma, littérature, sport, musique et gastronomie — huit thèmes et huit types de questions pour tester tes connaissances générales." },
+  "metadata": { "title": "Culture générale", "author": "Oliver Quiz", "createdAt": "2026-08-20", "description": "Quiz d'exemple pour découvrir les possibilités d'Oliver Quiz : huit thèmes de culture générale et les huit types de questions proposés par l'application, du QCM classique au glisser-déposer. Importe ton propre quiz au format JSON pour aller plus loin." },
   "themes": [
     { "id": "histoire", "label": "Histoire" },
     { "id": "geographie", "label": "Géographie" },
