@@ -33,14 +33,19 @@ export function parseQuiz(value: unknown): Quiz {
 
 function parseQuestion(value: unknown): Question {
   if (!isRecord(value) || !isRecord(value.content)) throw new Error('Question ou contenu invalide.')
-  const { id, type, theme, difficulty, question, tags, explanation, points, content } = value
+  const { id, type, theme, difficulty, question, tags, explanation, points, content, imageUrl, imageAlt } = value
   if (
     typeof id !== 'string' || typeof theme !== 'string' || typeof question !== 'string' ||
     typeof explanation !== 'string' || typeof points !== 'number' || points < 0 || !hasStrings(tags) ||
-    !['easy', 'medium', 'hard'].includes(String(difficulty))
+    !['easy', 'medium', 'hard'].includes(String(difficulty)) ||
+    (imageUrl !== undefined && (typeof imageUrl !== 'string' || !imageUrl)) ||
+    (imageAlt !== undefined && typeof imageAlt !== 'string')
   ) throw new Error(`Question « ${String(id ?? '?')} » invalide.`)
 
-  const base = { id, theme, difficulty: difficulty as Question['difficulty'], question, tags, explanation, points }
+  const base = {
+    id, theme, difficulty: difficulty as Question['difficulty'], question, tags, explanation, points,
+    imageUrl: imageUrl as string | undefined, imageAlt: imageAlt as string | undefined,
+  }
   if (type === 'qcm' && typeof content.multiple === 'boolean' && validAnswers(content.answers)) {
     return { ...base, type, content: { multiple: content.multiple, answers: content.answers } }
   }

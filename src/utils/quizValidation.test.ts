@@ -53,6 +53,21 @@ describe('parseQuiz — shared question fields', () => {
     const bad = quiz([{ ...base, tags: 'not-an-array', type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true } }])
     expect(() => parseQuiz(bad)).toThrow()
   })
+
+  it('parses a question with an optional image', () => {
+    const result = parseQuiz(quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, imageUrl: 'https://example.com/x.jpg', imageAlt: 'Un drapeau' }]))
+    expect(result.questions[0]).toMatchObject({ imageUrl: 'https://example.com/x.jpg', imageAlt: 'Un drapeau' })
+  })
+
+  it('rejects an empty imageUrl', () => {
+    const bad = quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, imageUrl: '' }])
+    expect(() => parseQuiz(bad)).toThrow()
+  })
+
+  it('rejects a non-string imageAlt', () => {
+    const bad = quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, imageUrl: 'https://example.com/x.jpg', imageAlt: 42 }])
+    expect(() => parseQuiz(bad)).toThrow()
+  })
 })
 
 describe('parseQuiz — qcm', () => {

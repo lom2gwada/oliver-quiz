@@ -73,6 +73,9 @@ export interface BaseQuestion {
   tags: string[]
   explanation: string
   points: number
+  /** Optionnel, sur n'importe quel type de question — pas un type dédié : évite de dupliquer la logique QCM/texte libre. */
+  imageUrl?: string
+  imageAlt?: string
 }
 
 export interface QCMQuestion extends BaseQuestion {

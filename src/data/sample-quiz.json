@@ -93,6 +93,12 @@
       "correctPairs": { "egypte": "r-afrique", "bresil": "r-as", "japon": "r-asie", "canada": "r-an" }
     } },
     { "id": "geo-9", "type": "numeric", "theme": "geographie", "difficulty": "medium", "question": "Quelle est l'altitude approximative du Mont Blanc ?", "tags": ["montagnes"], "explanation": "Le Mont Blanc culmine à 4 809 mètres, point culminant des Alpes.", "points": 2, "content": { "min": 0, "max": 6000, "step": 50, "target": 4809, "tolerance": 100, "unit": "m" } },
+    { "id": "geo-10", "type": "qcm", "theme": "geographie", "difficulty": "easy", "question": "Quel pays ce drapeau représente-t-il ?", "tags": ["drapeaux"], "explanation": "Le drapeau du Brésil arbore un losange doré et un globe bleu sur fond vert, avec la devise \"Ordem e Progresso\".", "points": 1, "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/05/Flag_of_Brazil.svg", "imageAlt": "Un drapeau vert avec un losange jaune et un globe bleu au centre.", "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "L'Argentine", "isCorrect": false },
+      { "id": "b", "label": "Le Brésil", "isCorrect": true },
+      { "id": "c", "label": "Le Portugal", "isCorrect": false }
+    ] } },
+    { "id": "geo-11", "type": "text", "theme": "geographie", "difficulty": "medium", "question": "Quel est ce monument antique ?", "tags": ["monuments"], "explanation": "Le Colisée, à Rome, est un amphithéâtre construit au 1er siècle qui pouvait accueillir environ 50 000 spectateurs.", "points": 2, "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Colosseo_2020.jpg/500px-Colosseo_2020.jpg", "imageAlt": "Le Colisée de Rome, amphithéâtre antique en pierre, vue extérieure.", "content": { "expectedAnswers": ["le Colisée", "Colisée", "le colisee", "colisee"], "caseSensitive": false } },
 
     { "id": "sci-1", "type": "qcm", "theme": "sciences", "difficulty": "easy", "question": "Quel est le symbole chimique de l'or ?", "tags": ["chimie"], "explanation": "Au vient du latin \"aurum\", qui signifie or.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Ag", "isCorrect": false },
