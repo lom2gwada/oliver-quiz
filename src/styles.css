@@ -77,6 +77,14 @@ pre { padding: 1rem; overflow: auto; background: var(--code-bg); border: 1px sol
 .quiz-description-preview { max-width: 60ch; margin: .4rem 0 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .quiz-description { max-width: 65ch; margin: 0 0 2rem; color: var(--text-soft); }
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.2rem; }
+.question-list-group { margin-bottom: .8rem; border: 1px solid var(--border); border-radius: .6rem; background: var(--surface); overflow: hidden; }
+.question-list-group summary { padding: .8rem 1rem; cursor: pointer; font-weight: 700; color: var(--text); }
+.question-list-group summary:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.question-list { display: grid; gap: 1rem; padding: 0 1rem 1rem; }
+.question-list-item { padding: 1rem; border-left: 4px solid var(--neutral-border); background: var(--surface-solid); border-radius: 0 .5rem .5rem 0; }
+.question-list-item .question-meta { margin-bottom: .6rem; }
+.question-list-prompt { font-weight: 700; color: var(--ink); }
+.question-list-explanation { margin-bottom: 0; }
 .pie-chart { margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 1.2rem; display: grid; justify-items: center; gap: .8rem; }
 .pie-chart svg { width: 140px; height: 140px; }
 .pie-chart h3 { text-align: center; margin: 0 0 .6rem; }
