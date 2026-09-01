@@ -15,9 +15,10 @@ interface QuizContentPageProps {
   onBack: () => void
   onFileChange: (file?: File) => void
   fileError: string
+  isAdmin: boolean
 }
 
-export function QuizContentPage({ quiz, onBack, onFileChange, fileError }: QuizContentPageProps) {
+export function QuizContentPage({ quiz, onBack, onFileChange, fileError, isAdmin }: QuizContentPageProps) {
   const byTheme = quiz.themes
     .map((theme, index) => ({
       label: theme.label,
@@ -61,22 +62,24 @@ export function QuizContentPage({ quiz, onBack, onFileChange, fileError }: QuizC
         return <PieChart key={theme.id} title={`${theme.label} — ${themeQuestions.length} questions`} data={byDifficulty} />
       })}
     </div>
-    <h3 className="stats-group-title profile-section-title">Toutes les questions ({quiz.questions.length})</h3>
-    {quiz.themes.map((theme) => {
-      const themeQuestions = quiz.questions.filter((question) => question.theme === theme.id)
-      if (!themeQuestions.length) return null
-      return <details key={theme.id} className="question-list-group">
-        <summary>{theme.label} ({themeQuestions.length})</summary>
-        <div className="question-list">
-          {themeQuestions.map((question) => <article key={question.id} className="question-list-item">
-            <div className="question-meta"><span>{TYPE_ICONS[question.type]} {TYPE_LABELS[question.type]}</span><span>{DIFFICULTY_LABELS[question.difficulty]}</span><span>{question.points} pts</span></div>
-            <p className="question-list-prompt">{question.question}</p>
-            {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
-            <p><strong>Réponse :</strong> {correctAnswer(question)}</p>
-            <p className="question-list-explanation">{question.explanation}</p>
-          </article>)}
-        </div>
-      </details>
-    })}
+    {isAdmin && <>
+      <h3 className="stats-group-title profile-section-title">Toutes les questions ({quiz.questions.length})</h3>
+      {quiz.themes.map((theme) => {
+        const themeQuestions = quiz.questions.filter((question) => question.theme === theme.id)
+        if (!themeQuestions.length) return null
+        return <details key={theme.id} className="question-list-group">
+          <summary>{theme.label} ({themeQuestions.length})</summary>
+          <div className="question-list">
+            {themeQuestions.map((question) => <article key={question.id} className="question-list-item">
+              <div className="question-meta"><span>{TYPE_ICONS[question.type]} {TYPE_LABELS[question.type]}</span><span>{DIFFICULTY_LABELS[question.difficulty]}</span><span>{question.points} pts</span></div>
+              <p className="question-list-prompt">{question.question}</p>
+              {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
+              <p><strong>Réponse :</strong> {correctAnswer(question)}</p>
+              <p className="question-list-explanation">{question.explanation}</p>
+            </article>)}
+          </div>
+        </details>
+      })}
+    </>}
   </section>
 }

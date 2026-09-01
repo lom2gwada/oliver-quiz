@@ -123,9 +123,9 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       saveQuestionResults(buildQuestionResultPayloads(sessionQuestions, nextAnswers, quiz.metadata.title))
     }} onCancel={backToStart} />}
     {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.themes} elapsedSeconds={elapsedSeconds} onRestart={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} />}
-    {view === 'content' && <QuizContentPage quiz={quiz} onBack={() => navigate('start')} onFileChange={loadFile} fileError={fileError} />}
+    {view === 'content' && <QuizContentPage quiz={quiz} onBack={() => navigate('start')} onFileChange={loadFile} fileError={fileError} isAdmin={profile?.isAdmin ?? false} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} onReplayMissed={replayMissed} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} onBack={() => navigate(leaderboardBack)} />}
-    {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); setProfile(next) }} onViewHistory={() => viewHistory('profile')} onViewLeaderboard={() => viewLeaderboard('profile')} />}
+    {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} onViewHistory={() => viewHistory('profile')} onViewLeaderboard={() => viewLeaderboard('profile')} />}
   </main>
 }
