@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { AnswersByQuestion, Question, Quiz } from '../types/quiz'
 import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
+import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { QuestionImage } from './QuestionImage'
 import { QuestionRenderer } from './QuestionRenderer'
 
@@ -18,11 +19,13 @@ function withShuffledAnswers(question: Question): Question {
 interface QuizPageProps {
   quiz: Quiz
   questions: Question[]
+  /** Temps limite par question en secondes, `null`/`undefined` pour aucune limite. Écoulé, la question en cours est soumise en l'état. */
+  questionSeconds?: number | null
   onFinish: (answers: AnswersByQuestion, elapsedSeconds: number) => void
   onCancel: () => void
 }
 
-export function QuizPage({ quiz, questions, onFinish, onCancel }: QuizPageProps) {
+export function QuizPage({ quiz, questions, questionSeconds, onFinish, onCancel }: QuizPageProps) {
   const [current, setCurrent] = useState(0)
   const [answers, setAnswers] = useState<AnswersByQuestion>({})
   const [elapsed, setElapsed] = useState(0)
@@ -36,10 +39,17 @@ export function QuizPage({ quiz, questions, onFinish, onCancel }: QuizPageProps)
     return () => clearInterval(interval)
   }, [])
 
+  const goNext = () => {
+    if (!question) return
+    if (current === shuffledQuestions.length - 1) onFinish(answers, elapsed)
+    else setCurrent((value) => value + 1)
+  }
+  const remaining = useQuestionTimer(question?.id ?? '', questionSeconds ?? null, goNext)
+
   if (!question) return <section className="empty"><h2>Aucune question</h2><p>Modifiez les filtres pour lancer le quiz.</p><button type="button" className="secondary" onClick={onCancel}>Retour</button></section>
   const theme = quiz.themes.find((item) => item.id === question.theme)?.label ?? question.theme
   return <section className="quiz-card">
-    <div className="question-meta"><span>{TYPE_ICONS[question.type]} {TYPE_LABELS[question.type]}</span><span>{theme}</span><span>{question.difficulty}</span><span>{question.points} pts</span><span>⏱ {formatDuration(elapsed)}</span></div>
+    <div className="question-meta"><span>{TYPE_ICONS[question.type]} {TYPE_LABELS[question.type]}</span><span>{theme}</span><span>{question.difficulty}</span><span>{question.points} pts</span>{remaining !== null && <span>⏳ {remaining}s</span>}<span>⏱ {formatDuration(elapsed)}</span></div>
     <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${((current + 1) / shuffledQuestions.length) * 100}%` }} /></div>
     <p className="progress">Question {current + 1} / {shuffledQuestions.length}</p>
     <div className="question-body" key={question.id}>
@@ -51,9 +61,7 @@ export function QuizPage({ quiz, questions, onFinish, onCancel }: QuizPageProps)
       <button type="button" className="secondary" onClick={cancelQuiz}>Annuler</button>
       <div className="quiz-nav">
         <button type="button" className="secondary" onClick={() => setCurrent((value) => value - 1)} disabled={current === 0}>Précédente</button>
-        {current === shuffledQuestions.length - 1
-          ? <button type="button" onClick={() => onFinish(answers, elapsed)}>Voir ma correction</button>
-          : <button type="button" onClick={() => setCurrent((value) => value + 1)}>Suivante</button>}
+        <button type="button" onClick={goNext}>{current === shuffledQuestions.length - 1 ? 'Voir ma correction' : 'Suivante'}</button>
       </div>
     </div>
   </section>

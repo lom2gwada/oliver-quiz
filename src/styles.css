@@ -56,6 +56,7 @@ select, .text-answer { width: 100%; background: var(--surface-solid); color: var
 .mode-option.active { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--text-on-accent); border-color: transparent; }
 .mode-hint { margin-top: 1.2rem; max-width: 60ch; }
 .question-count { display: grid; gap: .4rem; margin-top: 1.2rem; color: var(--text-soft); max-width: 280px; }
+.timer-toggle { margin-top: 1.2rem; }
 .question-meta { display: flex; gap: .5rem; flex-wrap: wrap; } .question-meta span { padding: .28rem .55rem; background: var(--surface-alt); color: var(--info-text); border-radius: 99px; font-size: .8rem; }
 .quiz-progress { height: .35rem; background: var(--surface-alt); border-radius: 999px; overflow: hidden; margin-top: 1.2rem; }
 .quiz-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-3)); border-radius: 999px; transition: width .35s ease; }

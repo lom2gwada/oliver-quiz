@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Question, QuestionAttempt, Quiz, UserAnswer } from '../types/quiz'
 import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
+import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { QuestionImage } from './QuestionImage'
 import { QuestionRenderer } from './QuestionRenderer'
 import { TYPE_ICONS, TYPE_LABELS } from './QuizPage'
@@ -17,11 +18,13 @@ interface TimedQuizPageProps {
   quiz: Quiz
   pool: Question[]
   durationSeconds: number
+  /** Temps limite par question en secondes, `null`/`undefined` pour aucune limite. Écoulé, la question en cours est soumise en l'état. */
+  questionSeconds?: number | null
   onFinish: (result: TimedResult) => void
   onCancel: () => void
 }
 
-export function TimedQuizPage({ quiz, pool, durationSeconds, onFinish, onCancel }: TimedQuizPageProps) {
+export function TimedQuizPage({ quiz, pool, durationSeconds, questionSeconds, onFinish, onCancel }: TimedQuizPageProps) {
   const [order, setOrder] = useState<Question[]>(() => shuffle(pool))
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState<UserAnswer | undefined>(undefined)
@@ -45,11 +48,13 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, onFinish, onCancel 
   // Pas de correction affichée question par question (comme le mode sans-faute) : le bilan complet
   // n'apparaît qu'à la fin. Si le pool filtré est épuisé avant la fin du temps, on remélange et ça continue.
   const advance = () => {
+    if (!question) return
     setAttempts((previous) => [...previous, { question, answer }])
     if (index + 1 >= order.length) setOrder((previous) => [...previous, ...shuffle(pool)])
     setIndex((value) => value + 1)
     setAnswer(undefined)
   }
+  const questionRemaining = useQuestionTimer(question ? `${question.id}-${index}` : '', questionSeconds ?? null, advance)
 
   const finishNow = () => {
     const finalAttempts = answer === undefined ? attempts : [...attempts, { question, answer }]
@@ -61,7 +66,7 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, onFinish, onCancel 
   const remaining = durationSeconds > 0 ? Math.max(0, durationSeconds - elapsed) : null
 
   return <section className="quiz-card">
-    <div className="question-meta"><span>{TYPE_ICONS[question.type]} {TYPE_LABELS[question.type]}</span><span>{theme}</span><span>{question.difficulty}</span><span>{question.points} pts</span><span>✅ {attempts.length}</span><span>⏱ {remaining !== null ? formatDuration(remaining) : formatDuration(elapsed)}</span></div>
+    <div className="question-meta"><span>{TYPE_ICONS[question.type]} {TYPE_LABELS[question.type]}</span><span>{theme}</span><span>{question.difficulty}</span><span>{question.points} pts</span><span>✅ {attempts.length}</span>{questionRemaining !== null && <span>⏳ {questionRemaining}s</span>}<span>⏱ {remaining !== null ? formatDuration(remaining) : formatDuration(elapsed)}</span></div>
     {durationSeconds > 0 && <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${Math.min(100, (elapsed / durationSeconds) * 100)}%` }} /></div>}
     <p className="progress">Question {attempts.length + 1}</p>
     <div className="question-body" key={`${question.id}-${index}`}>
