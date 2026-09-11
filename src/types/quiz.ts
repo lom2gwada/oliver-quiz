@@ -1,7 +1,15 @@
 export type Difficulty = 'easy' | 'medium' | 'hard'
 export type QuestionType = 'qcm' | 'text' | 'code' | 'ordering' | 'boolean' | 'cloze' | 'matching' | 'numeric'
-/** 'classic' : N questions tirées, correction à la fin. 'streak' : questions à la chaîne jusqu'à la première erreur. */
-export type GameMode = 'classic' | 'streak'
+/** 'classic' : N questions tirées, correction à la fin. 'streak' : questions à la chaîne jusqu'à la première erreur.
+ * 'timed' : questions à la chaîne pendant une durée fixe (ou infinie), correction à la fin. */
+export type GameMode = 'classic' | 'streak' | 'timed'
+
+/** Une réponse donnée à une question au cours d'une partie "continue" (streak/timed) — un tableau plutôt qu'un
+ * Record par id de question, car ces modes peuvent repasser plusieurs fois sur la même question. */
+export interface QuestionAttempt {
+  question: Question
+  answer: UserAnswer | undefined
+}
 
 export interface Theme {
   id: string
