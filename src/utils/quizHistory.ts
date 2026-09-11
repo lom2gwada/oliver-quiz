@@ -108,15 +108,15 @@ export function sumBuckets(rows: QuizResultRow[], pick: (row: QuizResultRow) => 
   return totals
 }
 
-/** Construit le résumé d'une partie "sans-faute" terminée. `themeIds` sont les thèmes réellement rencontrés pendant la partie. */
-export function buildStreakResultPayload(streakCount: number, elapsedSeconds: number, victory: boolean, themeIds: string[], themes: Theme[], quizTitle: string): StreakResultPayload {
+/** Construit le résumé d'une partie "sans-faute" terminée, à partir des questions réellement jouées. */
+export function buildStreakResultPayload(streakCount: number, elapsedSeconds: number, victory: boolean, playedQuestions: Question[], themes: Theme[], quizTitle: string): StreakResultPayload {
   const themeLabel = (id: string) => themes.find((theme) => theme.id === id)?.label ?? id
   return {
     quiz_title: quizTitle,
     streak_count: streakCount,
     elapsed_seconds: elapsedSeconds,
     victory,
-    themes: Array.from(new Set(themeIds.map(themeLabel))),
+    themes: Array.from(new Set(playedQuestions.map((question) => themeLabel(question.theme)))),
   }
 }
 

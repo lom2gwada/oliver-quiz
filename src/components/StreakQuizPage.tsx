@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Question, Quiz, UserAnswer } from '../types/quiz'
+import type { AnswersByQuestion, Question, Quiz, UserAnswer } from '../types/quiz'
 import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
-import { isCorrect, correctAnswer, userAnswer } from './ResultPage'
+import { isCorrect } from './ResultPage'
 import { QuestionImage } from './QuestionImage'
 import { QuestionRenderer } from './QuestionRenderer'
 import { TYPE_ICONS, TYPE_LABELS } from './QuizPage'
@@ -11,9 +11,8 @@ export interface StreakResult {
   streakCount: number
   elapsedSeconds: number
   victory: boolean
-  themeIds: string[]
-  lastQuestion?: Question
-  lastAnswer?: UserAnswer
+  playedQuestions: Question[]
+  answers: AnswersByQuestion
 }
 
 interface StreakQuizPageProps {
@@ -27,9 +26,8 @@ export function StreakQuizPage({ quiz, pool, onFinish, onCancel }: StreakQuizPag
   const order = useMemo(() => shuffle(pool), [pool])
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState<UserAnswer | undefined>(undefined)
-  const [revealed, setRevealed] = useState(false)
+  const [answers, setAnswers] = useState<AnswersByQuestion>({})
   const [elapsed, setElapsed] = useState(0)
-  const [themeIds, setThemeIds] = useState<string[]>([])
   const question = order[index]
   const streakCount = index
 
@@ -40,23 +38,20 @@ export function StreakQuizPage({ quiz, pool, onFinish, onCancel }: StreakQuizPag
 
   const cancelQuiz = () => { if (window.confirm('Abandonner la partie en cours ? Votre série sera perdue.')) onCancel() }
 
-  const validate = () => {
-    setThemeIds((previous) => [...previous, question.theme])
-    setRevealed(true)
-  }
-
+  // Pas de correction affichée question par question : comme le mode classique, tout se joue "à l'aveugle"
+  // et le bilan complet n'apparaît qu'à la fin (voir StreakResultPage).
   const advance = () => {
-    const correct = isCorrect(question, answer)
-    if (!correct) { onFinish({ streakCount, elapsedSeconds: elapsed, victory: false, themeIds, lastQuestion: question, lastAnswer: answer }); return }
-    if (index + 1 === order.length) { onFinish({ streakCount: streakCount + 1, elapsedSeconds: elapsed, victory: true, themeIds }); return }
+    const nextAnswers = answer === undefined ? answers : { ...answers, [question.id]: answer }
+    const playedQuestions = order.slice(0, index + 1)
+    if (!isCorrect(question, answer)) { onFinish({ streakCount: index, elapsedSeconds: elapsed, victory: false, playedQuestions, answers: nextAnswers }); return }
+    if (index + 1 === order.length) { onFinish({ streakCount: index + 1, elapsedSeconds: elapsed, victory: true, playedQuestions, answers: nextAnswers }); return }
+    setAnswers(nextAnswers)
     setIndex((value) => value + 1)
     setAnswer(undefined)
-    setRevealed(false)
   }
 
   if (!question) return <section className="empty"><h2>Aucune question</h2><p>Modifiez les filtres pour lancer une partie.</p><button type="button" className="secondary" onClick={onCancel}>Retour</button></section>
   const theme = quiz.themes.find((item) => item.id === question.theme)?.label ?? question.theme
-  const correct = revealed ? isCorrect(question, answer) : false
 
   return <section className="quiz-card">
     <div className="question-meta"><span>{TYPE_ICONS[question.type]} {TYPE_LABELS[question.type]}</span><span>{theme}</span><span>{question.difficulty}</span><span>{question.points} pts</span><span>🔥 {streakCount}</span><span>⏱ {formatDuration(elapsed)}</span></div>
@@ -66,18 +61,10 @@ export function StreakQuizPage({ quiz, pool, onFinish, onCancel }: StreakQuizPag
       {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
       {question.type !== 'cloze' && <h2>{question.question}</h2>}
       <QuestionRenderer question={question} answer={answer} onChange={setAnswer} />
-      {revealed && <article className={`correction ${correct ? 'correct' : 'incorrect'}`}>
-        <h3>{correct ? '✓ Bonne réponse' : '✗ Réponse incorrecte'}</h3>
-        {!correct && <p><strong>Votre réponse :</strong> {userAnswer(question, answer)}</p>}
-        {!correct && <p><strong>Bonne réponse :</strong> {correctAnswer(question)}</p>}
-        <p>{question.explanation}</p>
-      </article>}
     </div>
     <div className="quiz-actions">
       <button type="button" className="secondary" onClick={cancelQuiz}>Abandonner</button>
-      {!revealed
-        ? <button type="button" onClick={validate}>Valider</button>
-        : <button type="button" onClick={advance}>{correct ? (index + 1 === order.length ? 'Terminer en beauté 🏆' : 'Question suivante') : 'Voir le résultat'}</button>}
+      <button type="button" onClick={advance}>{index + 1 === order.length ? 'Voir ma correction' : 'Suivante'}</button>
     </div>
   </section>
 }
