@@ -65,3 +65,18 @@ export interface StreakResultRow extends StreakResultPayload {
   id: string
   created_at: string
 }
+
+export interface TimedResultPayload {
+  quiz_title: string
+  correct_count: number
+  question_count: number
+  /** 0 = mode "Infini" (pas de limite). */
+  duration_seconds: number
+  elapsed_seconds: number
+  themes: string[]
+}
+
+export interface TimedResultRow extends TimedResultPayload {
+  id: string
+  created_at: string
+}

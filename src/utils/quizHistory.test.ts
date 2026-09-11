@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BooleanQuestion, QCMQuestion, Theme } from '../types/quiz'
 import type { QuestionResultRow, QuizResultRow } from '../types/history'
-import { bucketsToChartGroups, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, computeMissedQuestions, computeRecords, sumBuckets } from './quizHistory'
+import { bucketsToChartGroups, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, computeMissedQuestions, computeRecords, sumBuckets } from './quizHistory'
 
 const themes: Theme[] = [{ id: 'histoire', label: 'Histoire' }, { id: 'geo', label: 'Géographie' }]
 
@@ -78,6 +78,36 @@ describe('buildStreakResultPayload', () => {
 
   it('marks a full clear as a victory', () => {
     expect(buildStreakResultPayload(74, 300, true, [], themes, 'Culture générale').victory).toBe(true)
+  })
+})
+
+describe('buildTimedResultPayload', () => {
+  it('counts correct attempts and resolves deduped theme labels', () => {
+    const payload = buildTimedResultPayload(
+      [{ question: qcm, answer: ['a'] }, { question: bool, answer: ['false'] }, { question: qcm, answer: ['a'] }],
+      300, 300, themes, 'Culture générale',
+    )
+    expect(payload).toEqual({
+      quiz_title: 'Culture générale', correct_count: 2, question_count: 3,
+      duration_seconds: 300, elapsed_seconds: 300, themes: ['Histoire', 'Géographie'],
+    })
+  })
+
+  it('counts a question answered more than once as separate attempts', () => {
+    const payload = buildTimedResultPayload([{ question: qcm, answer: ['a'] }, { question: qcm, answer: ['b'] }], 60, 300, themes, 'Culture générale')
+    expect(payload.question_count).toBe(2)
+    expect(payload.correct_count).toBe(1)
+  })
+
+  it('marks an unlimited-duration run with duration_seconds 0', () => {
+    expect(buildTimedResultPayload([], 45, 0, themes, 'Culture générale').duration_seconds).toBe(0)
+  })
+
+  it('falls back to the raw id when a theme is unknown', () => {
+    const orphan: QCMQuestion = { ...qcm, id: 'q3', theme: 'unknown' }
+    const payload = buildTimedResultPayload([{ question: orphan, answer: undefined }], 0, 60, themes, 'Culture générale')
+    expect(payload.themes).toEqual(['unknown'])
+    expect(payload.correct_count).toBe(0)
   })
 })
 

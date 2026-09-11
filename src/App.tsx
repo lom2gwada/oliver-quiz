@@ -9,10 +9,12 @@ import { QuizPage } from './components/QuizPage'
 import { ResultPage } from './components/ResultPage'
 import { StreakQuizPage, type StreakResult } from './components/StreakQuizPage'
 import { StreakResultPage } from './components/StreakResultPage'
+import { TimedQuizPage, type TimedResult } from './components/TimedQuizPage'
+import { TimedResultPage } from './components/TimedResultPage'
 import type { AnswersByQuestion, Difficulty, GameMode, Quiz, Question } from './types/quiz'
 import type { Profile } from './types/profile'
 import type { LeaderboardRow } from './types/leaderboard'
-import { buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, saveQuestionResults, saveQuizResult, saveStreakResult } from './utils/quizHistory'
+import { buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, saveQuestionResults, saveQuizResult, saveStreakResult, saveTimedResult } from './utils/quizHistory'
 import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchTopScore } from './utils/leaderboard'
 import { applyTheme } from './utils/theme'
@@ -20,10 +22,12 @@ import { parseQuiz } from './utils/quizValidation'
 import { isSoundMuted, playClick, setSoundMuted } from './utils/sound'
 import { shuffle } from './utils/shuffle'
 
-type View = 'start' | 'quiz' | 'results' | 'streak' | 'streakResults' | 'content' | 'history' | 'leaderboard' | 'profile'
+type View = 'start' | 'quiz' | 'results' | 'streak' | 'streakResults' | 'timed' | 'timedResults' | 'content' | 'history' | 'leaderboard' | 'profile'
 
 const initialQuiz = parseQuiz(sampleQuiz)
 const questionCounts = [5, 10, 20, 30, 50]
+/** En minutes ; 0 = mode "Infini" (pas de limite). */
+const durationOptions = [5, 10, 15, 20, 0]
 
 function pickRandomQuestions<T>(questions: T[], count: number): T[] {
   return shuffle(questions).slice(0, Math.min(count, questions.length))
@@ -41,6 +45,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const [sessionQuestions, setSessionQuestions] = useState<Quiz['questions']>([])
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [streakResult, setStreakResult] = useState<StreakResult | null>(null)
+  const [durationMinutes, setDurationMinutes] = useState(10)
+  const [timedResult, setTimedResult] = useState<TimedResult | null>(null)
   const [muted, setMuted] = useState(isSoundMuted())
   const [profile, setProfile] = useState<Profile | null>(null)
   useEffect(() => { fetchProfile().then(setProfile).catch(() => {}) }, [])
@@ -60,7 +66,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     window.history.replaceState({ view: 'start' }, '')
     const onPopState = (event: PopStateEvent) => {
       const nextView = (event.state?.view as View | undefined) ?? 'start'
-      if ((viewRef.current === 'quiz' || viewRef.current === 'streak') && nextView !== viewRef.current) {
+      if ((viewRef.current === 'quiz' || viewRef.current === 'streak' || viewRef.current === 'timed') && nextView !== viewRef.current) {
         if (!window.confirm('Abandonner la partie en cours ? Votre progression sera perdue.')) {
           window.history.pushState({ view: viewRef.current }, '')
           return
@@ -117,6 +123,17 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     saveStreakResult(buildStreakResultPayload(result.streakCount, result.elapsedSeconds, result.victory, result.playedQuestions, quiz.themes, quiz.metadata.title))
   }
 
+  const startTimed = () => {
+    playClick()
+    navigate('timed')
+  }
+
+  const finishTimed = (result: TimedResult) => {
+    setTimedResult(result)
+    replace('timedResults')
+    saveTimedResult(buildTimedResultPayload(result.attempts, result.elapsedSeconds, result.durationSeconds, quiz.themes, quiz.metadata.title))
+  }
+
   const backToStart = () => {
     setAnswers({})
     setSessionQuestions([])
@@ -135,13 +152,14 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       <div className="mode-picker" role="group" aria-label="Mode de jeu">
         <button type="button" className={gameMode === 'classic' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('classic') }}>🎯 Classique</button>
         <button type="button" className={gameMode === 'streak' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('streak') }}>🔥 Sans-faute</button>
+        <button type="button" className={gameMode === 'timed' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('timed') }}>⏱️ Contre-la-montre</button>
       </div>
       <FilterPanel themes={quiz.themes} selectedThemes={selectedThemes} difficulty={difficulty} onThemeToggle={toggleTheme} onDifficultyChange={setDifficulty} />
-      {gameMode === 'classic'
-        ? <label className="question-count">Nombre de questions<select value={questionCount} onChange={(event) => { playClick(); setQuestionCount(Number(event.target.value)) }}>{questionCounts.map((count) => <option key={count} value={count} disabled={count > filteredQuestions.length}>{count} {count === 1 ? 'question' : 'questions'}{count > filteredQuestions.length ? ' (indisponible)' : ''}</option>)}<option value={filteredQuestions.length}>Toutes les questions ({filteredQuestions.length})</option></select></label>
-        : <p className="mode-hint">Répondez correctement à la chaîne, sans limite de temps : la partie s'arrête à la première erreur.</p>}
-      <p>{filteredQuestions.length} question{filteredQuestions.length > 1 ? 's' : ''} disponible{filteredQuestions.length > 1 ? 's' : ''}{gameMode === 'classic' ? ` — ${Math.min(questionCount, filteredQuestions.length)} seront tirées aléatoirement.` : '.'}</p>
-      <button type="button" onClick={gameMode === 'classic' ? startQuiz : startStreak} disabled={!filteredQuestions.length}>{gameMode === 'classic' ? 'Démarrer le quiz' : 'Démarrer la série'}</button>
+      {gameMode === 'classic' && <label className="question-count">Nombre de questions<select value={questionCount} onChange={(event) => { playClick(); setQuestionCount(Number(event.target.value)) }}>{questionCounts.map((count) => <option key={count} value={count} disabled={count > filteredQuestions.length}>{count} {count === 1 ? 'question' : 'questions'}{count > filteredQuestions.length ? ' (indisponible)' : ''}</option>)}<option value={filteredQuestions.length}>Toutes les questions ({filteredQuestions.length})</option></select></label>}
+      {gameMode === 'streak' && <p className="mode-hint">Répondez correctement à la chaîne, sans limite de temps : la partie s'arrête à la première erreur.</p>}
+      {gameMode === 'timed' && <label className="question-count">Durée<select value={durationMinutes} onChange={(event) => { playClick(); setDurationMinutes(Number(event.target.value)) }}>{durationOptions.map((minutes) => <option key={minutes} value={minutes}>{minutes === 0 ? 'Infini' : `${minutes} minutes`}</option>)}</select></label>}
+      <p>{filteredQuestions.length} question{filteredQuestions.length > 1 ? 's' : ''} disponible{filteredQuestions.length > 1 ? 's' : ''}{gameMode === 'classic' ? ` — ${Math.min(questionCount, filteredQuestions.length)} seront tirées aléatoirement.` : gameMode === 'timed' ? ' — elles peuvent revenir plusieurs fois si le temps le permet.' : '.'}</p>
+      <button type="button" onClick={gameMode === 'classic' ? startQuiz : gameMode === 'streak' ? startStreak : startTimed} disabled={!filteredQuestions.length}>{gameMode === 'classic' ? 'Démarrer le quiz' : gameMode === 'streak' ? 'Démarrer la série' : 'Démarrer le chrono'}</button>
     </section>}
     {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} onFinish={(nextAnswers, duration) => {
       setAnswers(nextAnswers); setElapsedSeconds(duration); replace('results')
@@ -151,6 +169,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.themes} elapsedSeconds={elapsedSeconds} onRestart={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} />}
     {view === 'streak' && <StreakQuizPage quiz={quiz} pool={filteredQuestions} onFinish={finishStreak} onCancel={backToStart} />}
     {view === 'streakResults' && streakResult && <StreakResultPage {...streakResult} onRestart={backToStart} onViewHistory={() => viewHistory('streakResults')} />}
+    {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} durationSeconds={durationMinutes * 60} onFinish={finishTimed} onCancel={backToStart} />}
+    {view === 'timedResults' && timedResult && <TimedResultPage {...timedResult} onRestart={backToStart} onViewHistory={() => viewHistory('timedResults')} />}
     {view === 'content' && <QuizContentPage quiz={quiz} onBack={() => navigate('start')} onFileChange={loadFile} fileError={fileError} isAdmin={profile?.isAdmin ?? false} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} onReplayMissed={replayMissed} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} onBack={() => navigate(leaderboardBack)} />}

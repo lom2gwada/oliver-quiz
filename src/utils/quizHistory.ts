@@ -1,5 +1,5 @@
-import type { AnswersByQuestion, Question, Theme } from '../types/quiz'
-import type { ChartGroup, MissedQuestion, QuestionResultPayload, QuestionResultRow, QuizRecords, QuizResultPayload, QuizResultRow, StatBucket, StreakResultPayload, StreakResultRow } from '../types/history'
+import type { AnswersByQuestion, Question, QuestionAttempt, Theme } from '../types/quiz'
+import type { ChartGroup, MissedQuestion, QuestionResultPayload, QuestionResultRow, QuizRecords, QuizResultPayload, QuizResultRow, StatBucket, StreakResultPayload, StreakResultRow, TimedResultPayload, TimedResultRow } from '../types/history'
 import { isCorrect } from '../components/ResultPage'
 import { supabase } from './supabase'
 
@@ -129,6 +129,33 @@ export async function saveStreakResult(payload: StreakResultPayload): Promise<vo
 export async function fetchStreakHistory(): Promise<StreakResultRow[]> {
   const { data, error } = await supabase.from('streak_results').select('*')
     .order('streak_count', { ascending: false }).order('created_at', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+/** Construit le résumé d'une partie "contre-la-montre" terminée, à partir des tentatives réellement jouées
+ * (un tableau plutôt qu'un Record par question, car une même question peut revenir plusieurs fois). */
+export function buildTimedResultPayload(attempts: QuestionAttempt[], elapsedSeconds: number, durationSeconds: number, themes: Theme[], quizTitle: string): TimedResultPayload {
+  const themeLabel = (id: string) => themes.find((theme) => theme.id === id)?.label ?? id
+  return {
+    quiz_title: quizTitle,
+    correct_count: attempts.filter((attempt) => isCorrect(attempt.question, attempt.answer)).length,
+    question_count: attempts.length,
+    duration_seconds: durationSeconds,
+    elapsed_seconds: elapsedSeconds,
+    themes: Array.from(new Set(attempts.map((attempt) => themeLabel(attempt.question.theme)))),
+  }
+}
+
+/** Best-effort, comme `saveQuizResult`. */
+export async function saveTimedResult(payload: TimedResultPayload): Promise<void> {
+  const { error } = await supabase.from('timed_results').insert(payload)
+  if (error) console.error("Impossible d'enregistrer le résultat du mode contre-la-montre.", error)
+}
+
+export async function fetchTimedHistory(): Promise<TimedResultRow[]> {
+  const { data, error } = await supabase.from('timed_results').select('*')
+    .order('correct_count', { ascending: false }).order('created_at', { ascending: false })
   if (error) throw error
   return data ?? []
 }

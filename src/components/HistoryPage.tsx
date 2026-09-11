@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Question, Quiz } from '../types/quiz'
-import type { QuestionResultRow, QuizResultRow, StreakResultRow } from '../types/history'
-import { bucketsToChartGroups, computeMissedQuestions, computeRecords, fetchQuestionResults, fetchQuizHistory, fetchStreakHistory, sumBuckets } from '../utils/quizHistory'
+import type { QuestionResultRow, QuizResultRow, StreakResultRow, TimedResultRow } from '../types/history'
+import { bucketsToChartGroups, computeMissedQuestions, computeRecords, fetchQuestionResults, fetchQuizHistory, fetchStreakHistory, fetchTimedHistory, sumBuckets } from '../utils/quizHistory'
 import { formatDuration } from '../utils/time'
 import { DIFFICULTY_LABELS } from './ResultPage'
 import { PieChart } from './PieChart'
@@ -15,6 +15,7 @@ export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => vo
   const [rows, setRows] = useState<QuizResultRow[] | null>(null)
   const [questionRows, setQuestionRows] = useState<QuestionResultRow[]>([])
   const [streakRows, setStreakRows] = useState<StreakResultRow[]>([])
+  const [timedRows, setTimedRows] = useState<TimedResultRow[]>([])
   const [error, setError] = useState('')
   const [selectedQuiz, setSelectedQuiz] = useState<string | null>(null)
 
@@ -22,6 +23,7 @@ export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => vo
     fetchQuizHistory().then(setRows).catch(() => setError("Impossible de charger l'historique."))
     fetchQuestionResults().then(setQuestionRows).catch(() => {})
     fetchStreakHistory().then(setStreakRows).catch(() => {})
+    fetchTimedHistory().then(setTimedRows).catch(() => {})
   }, [])
 
   const quizTitles = rows ? Array.from(new Set(rows.map((row) => row.quiz_title))) : []
@@ -29,6 +31,9 @@ export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => vo
   const quizRows = rows ? rows.filter((row) => row.quiz_title === activeQuiz) : null
   const quizStreakRows = streakRows.filter((row) => row.quiz_title === activeQuiz)
   const bestStreak = quizStreakRows.length ? Math.max(...quizStreakRows.map((row) => row.streak_count)) : 0
+  const quizTimedRows = timedRows.filter((row) => row.quiz_title === activeQuiz)
+  const bestTimedCount = quizTimedRows.length ? Math.max(...quizTimedRows.map((row) => row.correct_count)) : 0
+  const timedDurationLabel = (row: TimedResultRow) => row.duration_seconds === 0 ? 'Infini' : `${Math.round(row.duration_seconds / 60)} min`
 
   const records = quizRows ? computeRecords(quizRows) : null
   const chartPoints = quizRows ? [...quizRows].reverse().map((row) => ({ label: shortDate(row.created_at), score: row.score })) : []
@@ -89,6 +94,21 @@ export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => vo
           <span className="history-score">{row.victory ? '🏆' : '🔥'} {row.streak_count}</span>
           <span className="history-date">{longDate(row.created_at)}</span>
           <span className="history-themes">{row.themes.join(', ') || 'Tous les thèmes'}</span>
+        </li>)}
+      </ul>
+    </div>}
+    {quizTimedRows.length > 0 && <div className="stats-group">
+      <h3 className="stats-group-title profile-section-title">Mode contre-la-montre</h3>
+      <div className="records-grid">
+        <div className="record-tile"><span className="record-value">✅ {bestTimedCount}</span><span className="record-label">Meilleur score</span></div>
+        <div className="record-tile"><span className="record-value">{quizTimedRows.length}</span><span className="record-label">Parties jouées</span></div>
+      </div>
+      <ul className="history-list">
+        {quizTimedRows.slice(0, 10).map((row) => <li className="history-item" key={row.id}>
+          <span className="history-score">✅ {row.correct_count} / {row.question_count}</span>
+          <span className="history-date">{longDate(row.created_at)}</span>
+          <span className="history-themes">{row.themes.join(', ') || 'Tous les thèmes'}</span>
+          <span>{timedDurationLabel(row)}</span>
         </li>)}
       </ul>
     </div>}
