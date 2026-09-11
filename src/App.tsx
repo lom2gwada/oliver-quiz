@@ -114,7 +114,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const finishStreak = (result: StreakResult) => {
     setStreakResult(result)
     replace('streakResults')
-    saveStreakResult(buildStreakResultPayload(result.streakCount, result.elapsedSeconds, result.victory, result.themeIds, quiz.themes, quiz.metadata.title))
+    saveStreakResult(buildStreakResultPayload(result.streakCount, result.elapsedSeconds, result.victory, result.playedQuestions, quiz.themes, quiz.metadata.title))
   }
 
   const backToStart = () => {

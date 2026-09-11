@@ -1,17 +1,22 @@
 import { useEffect } from 'react'
+import type { AnswersByQuestion, Question } from '../types/quiz'
 import { formatDuration } from '../utils/time'
 import { playFinish, playVictory } from '../utils/sound'
 import { Confetti } from './Confetti'
 import { QuestionImage } from './QuestionImage'
-import { correctAnswer, userAnswer } from './ResultPage'
-import type { StreakResult } from './StreakQuizPage'
+import { correctAnswer, isCorrect, userAnswer } from './ResultPage'
 
-interface StreakResultPageProps extends StreakResult {
+interface StreakResultPageProps {
+  streakCount: number
+  elapsedSeconds: number
+  victory: boolean
+  playedQuestions: Question[]
+  answers: AnswersByQuestion
   onRestart: () => void
   onViewHistory: () => void
 }
 
-export function StreakResultPage({ streakCount, elapsedSeconds, victory, lastQuestion, lastAnswer, onRestart, onViewHistory }: StreakResultPageProps) {
+export function StreakResultPage({ streakCount, elapsedSeconds, victory, playedQuestions, answers, onRestart, onViewHistory }: StreakResultPageProps) {
   useEffect(() => { victory ? playVictory() : playFinish() }, [])
   return <section className="results">
     {victory && <Confetti />}
@@ -26,14 +31,15 @@ export function StreakResultPage({ streakCount, elapsedSeconds, victory, lastQue
     <div className="nav-links">
       <button type="button" className="secondary" onClick={onViewHistory}>🕓 Historique</button>
     </div>
-    {!victory && lastQuestion && <div className="corrections">
-      <article className="correction incorrect">
-        <h3>✗ Question qui a mis fin à la série — {lastQuestion.question}</h3>
-        {lastQuestion.imageUrl && <QuestionImage src={lastQuestion.imageUrl} alt={lastQuestion.imageAlt} />}
-        <p><strong>Votre réponse :</strong> {userAnswer(lastQuestion, lastAnswer)}</p>
-        <p><strong>Bonne réponse :</strong> {correctAnswer(lastQuestion)}</p>
-        <p>{lastQuestion.explanation}</p>
+    <div className="corrections">{playedQuestions.map((question) => {
+      const correct = isCorrect(question, answers[question.id])
+      return <article className={`correction ${correct ? 'correct' : 'incorrect'}`} key={question.id}>
+        <h3>{correct ? '✓ Bonne réponse' : '✗ Réponse incorrecte'} — {question.question}</h3>
+        {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
+        {!correct && <p><strong>Votre réponse :</strong> {userAnswer(question, answers[question.id])}</p>}
+        {!correct && <p><strong>Bonne réponse :</strong> {correctAnswer(question)}</p>}
+        <p>{question.explanation}</p>
       </article>
-    </div>}
+    })}</div>
   </section>
 }

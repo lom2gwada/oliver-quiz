@@ -63,7 +63,7 @@ describe('buildQuizResultPayload', () => {
 
 describe('buildStreakResultPayload', () => {
   it('builds a payload with resolved, deduped theme labels', () => {
-    const payload = buildStreakResultPayload(7, 120, false, ['histoire', 'geo', 'histoire'], themes, 'Culture générale')
+    const payload = buildStreakResultPayload(7, 120, false, [qcm, bool, qcm], themes, 'Culture générale')
     expect(payload).toEqual({
       quiz_title: 'Culture générale', streak_count: 7, elapsed_seconds: 120, victory: false,
       themes: ['Histoire', 'Géographie'],
@@ -71,7 +71,8 @@ describe('buildStreakResultPayload', () => {
   })
 
   it('falls back to the raw id when a theme is unknown', () => {
-    const payload = buildStreakResultPayload(0, 0, false, ['unknown'], themes, 'Culture générale')
+    const orphan: QCMQuestion = { ...qcm, id: 'q3', theme: 'unknown' }
+    const payload = buildStreakResultPayload(0, 0, false, [orphan], themes, 'Culture générale')
     expect(payload.themes).toEqual(['unknown'])
   })
 
