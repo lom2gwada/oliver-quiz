@@ -1,5 +1,7 @@
 export type Difficulty = 'easy' | 'medium' | 'hard'
 export type QuestionType = 'qcm' | 'text' | 'code' | 'ordering' | 'boolean' | 'cloze' | 'matching' | 'numeric'
+/** 'classic' : N questions tirées, correction à la fin. 'streak' : questions à la chaîne jusqu'à la première erreur. */
+export type GameMode = 'classic' | 'streak'
 
 export interface Theme {
   id: string

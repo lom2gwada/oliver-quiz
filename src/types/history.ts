@@ -52,3 +52,16 @@ export interface MissedQuestion {
   attempts: number
   wrongCount: number
 }
+
+export interface StreakResultPayload {
+  quiz_title: string
+  streak_count: number
+  elapsed_seconds: number
+  victory: boolean
+  themes: string[]
+}
+
+export interface StreakResultRow extends StreakResultPayload {
+  id: string
+  created_at: string
+}
