@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BooleanQuestion, QCMQuestion, Theme } from '../types/quiz'
 import type { QuestionResultRow, QuizResultRow } from '../types/history'
-import { bucketsToChartGroups, buildQuestionResultPayloads, buildQuizResultPayload, computeMissedQuestions, computeRecords, sumBuckets } from './quizHistory'
+import { bucketsToChartGroups, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, computeMissedQuestions, computeRecords, sumBuckets } from './quizHistory'
 
 const themes: Theme[] = [{ id: 'histoire', label: 'Histoire' }, { id: 'geo', label: 'Géographie' }]
 
@@ -58,6 +58,25 @@ describe('buildQuizResultPayload', () => {
 
   it('tags the payload with the given quiz title', () => {
     expect(buildQuizResultPayload([qcm], {}, themes, 0, 'Test technique IT').quiz_title).toBe('Test technique IT')
+  })
+})
+
+describe('buildStreakResultPayload', () => {
+  it('builds a payload with resolved, deduped theme labels', () => {
+    const payload = buildStreakResultPayload(7, 120, false, ['histoire', 'geo', 'histoire'], themes, 'Culture générale')
+    expect(payload).toEqual({
+      quiz_title: 'Culture générale', streak_count: 7, elapsed_seconds: 120, victory: false,
+      themes: ['Histoire', 'Géographie'],
+    })
+  })
+
+  it('falls back to the raw id when a theme is unknown', () => {
+    const payload = buildStreakResultPayload(0, 0, false, ['unknown'], themes, 'Culture générale')
+    expect(payload.themes).toEqual(['unknown'])
+  })
+
+  it('marks a full clear as a victory', () => {
+    expect(buildStreakResultPayload(74, 300, true, [], themes, 'Culture générale').victory).toBe(true)
   })
 })
 

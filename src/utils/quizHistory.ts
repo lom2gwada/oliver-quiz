@@ -1,5 +1,5 @@
 import type { AnswersByQuestion, Question, Theme } from '../types/quiz'
-import type { ChartGroup, MissedQuestion, QuestionResultPayload, QuestionResultRow, QuizRecords, QuizResultPayload, QuizResultRow, StatBucket } from '../types/history'
+import type { ChartGroup, MissedQuestion, QuestionResultPayload, QuestionResultRow, QuizRecords, QuizResultPayload, QuizResultRow, StatBucket, StreakResultPayload, StreakResultRow } from '../types/history'
 import { isCorrect } from '../components/ResultPage'
 import { supabase } from './supabase'
 
@@ -106,6 +106,31 @@ export function sumBuckets(rows: QuizResultRow[], pick: (row: QuizResultRow) => 
     })
   })
   return totals
+}
+
+/** Construit le résumé d'une partie "sans-faute" terminée. `themeIds` sont les thèmes réellement rencontrés pendant la partie. */
+export function buildStreakResultPayload(streakCount: number, elapsedSeconds: number, victory: boolean, themeIds: string[], themes: Theme[], quizTitle: string): StreakResultPayload {
+  const themeLabel = (id: string) => themes.find((theme) => theme.id === id)?.label ?? id
+  return {
+    quiz_title: quizTitle,
+    streak_count: streakCount,
+    elapsed_seconds: elapsedSeconds,
+    victory,
+    themes: Array.from(new Set(themeIds.map(themeLabel))),
+  }
+}
+
+/** Best-effort, comme `saveQuizResult`. */
+export async function saveStreakResult(payload: StreakResultPayload): Promise<void> {
+  const { error } = await supabase.from('streak_results').insert(payload)
+  if (error) console.error("Impossible d'enregistrer le résultat du mode sans-faute.", error)
+}
+
+export async function fetchStreakHistory(): Promise<StreakResultRow[]> {
+  const { data, error } = await supabase.from('streak_results').select('*')
+    .order('streak_count', { ascending: false }).order('created_at', { ascending: false })
+  if (error) throw error
+  return data ?? []
 }
 
 /** Convertit des buckets cumulés en groupes prêts pour `PieChart`. */

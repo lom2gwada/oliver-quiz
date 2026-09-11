@@ -51,6 +51,10 @@ select, .text-answer { width: 100%; background: var(--surface-solid); color: var
 .start-page > p { margin: 2rem 0 1rem; } .start-page button { width: 100%; }
 .top-score { display: block; margin: .3rem 0 0; padding: 0; background: none; border-radius: 0; color: var(--gold); font-size: .85rem; font-weight: 600; text-align: left; }
 .top-score:hover { text-decoration: underline; }
+.mode-picker { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.5rem; }
+.mode-option { background: var(--surface-alt); color: var(--text-soft); border: 1px solid var(--border); }
+.mode-option.active { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--text-on-accent); border-color: transparent; }
+.mode-hint { margin-top: 1.2rem; max-width: 60ch; }
 .question-count { display: grid; gap: .4rem; margin-top: 1.2rem; color: var(--text-soft); max-width: 280px; }
 .question-meta { display: flex; gap: .5rem; flex-wrap: wrap; } .question-meta span { padding: .28rem .55rem; background: var(--surface-alt); color: var(--info-text); border-radius: 99px; font-size: .8rem; }
 .quiz-progress { height: .35rem; background: var(--surface-alt); border-radius: 999px; overflow: hidden; margin-top: 1.2rem; }
