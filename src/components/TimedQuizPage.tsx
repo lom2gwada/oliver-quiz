@@ -4,6 +4,7 @@ import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
 import { questionTimeLimit } from '../utils/questionTimeLimits'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
+import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
 import { QuestionRenderer } from './QuestionRenderer'
 import { TYPE_ICONS, TYPE_LABELS } from './QuizPage'
@@ -72,6 +73,7 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish
     <p className="progress">Question {attempts.length + 1}</p>
     <div className="question-body" key={`${question.id}-${index}`}>
       {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
+      {question.diagram && <MermaidDiagram chart={question.diagram} />}
       {question.type !== 'cloze' && <h2>{question.question}</h2>}
       <QuestionRenderer question={question} answer={answer} onChange={setAnswer} />
     </div>
