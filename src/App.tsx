@@ -43,6 +43,9 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const [fileError, setFileError] = useState('')
   const [questionCount, setQuestionCount] = useState(10)
   const [sessionQuestions, setSessionQuestions] = useState<Quiz['questions']>([])
+  // Une partie "reprendre mes erreurs" ne porte que sur un sous-ensemble ciblé de questions, pas sur le
+  // pool filtré normal : elle ne doit jamais compter comme "sans filtre" pour le classement.
+  const [isReplay, setIsReplay] = useState(false)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [streakResult, setStreakResult] = useState<StreakResult | null>(null)
   const [durationMinutes, setDurationMinutes] = useState(10)
@@ -86,6 +89,9 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const replace = (next: View) => { setView(next); window.history.replaceState({ view: next }, '') }
   const filteredQuestions = useMemo(() => quiz.questions.filter((question) =>
     (!selectedThemes.length || selectedThemes.includes(question.theme)) && (!difficulty || question.difficulty === difficulty)), [quiz, selectedThemes, difficulty])
+  // Seules les parties jouées sans filtre comptent pour le classement : sinon un thème/une difficulté
+  // choisie exprès rendrait les scores/streaks/rythmes incomparables entre joueurs.
+  const isUnfiltered = selectedThemes.length === 0 && difficulty === ''
 
   const toggleTheme = (themeId: string) => setSelectedThemes((previous) =>
     previous.includes(themeId) ? previous.filter((id) => id !== themeId) : [...previous, themeId])
@@ -103,6 +109,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const startQuiz = () => {
     playClick()
     setAnswers({})
+    setIsReplay(false)
     setSessionQuestions(pickRandomQuestions(filteredQuestions, questionCount))
     navigate('quiz')
   }
@@ -110,6 +117,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const replayMissed = (questions: Question[]) => {
     playClick()
     setAnswers({})
+    setIsReplay(true)
     setSessionQuestions(questions)
     navigate('quiz')
   }
@@ -122,7 +130,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const finishStreak = (result: StreakResult) => {
     setStreakResult(result)
     replace('streakResults')
-    saveStreakResult(buildStreakResultPayload(result.streakCount, result.elapsedSeconds, result.victory, result.playedQuestions, quiz.themes, quiz.metadata.title))
+    saveStreakResult(buildStreakResultPayload(result.streakCount, result.elapsedSeconds, result.victory, result.playedQuestions, quiz.themes, quiz.metadata.title, isUnfiltered))
   }
 
   const startTimed = () => {
@@ -133,7 +141,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const finishTimed = (result: TimedResult) => {
     setTimedResult(result)
     replace('timedResults')
-    saveTimedResult(buildTimedResultPayload(result.attempts, result.elapsedSeconds, result.durationSeconds, quiz.themes, quiz.metadata.title))
+    saveTimedResult(buildTimedResultPayload(result.attempts, result.elapsedSeconds, result.durationSeconds, quiz.themes, quiz.metadata.title, isUnfiltered))
   }
 
   const backToStart = () => {
@@ -169,7 +177,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     </section>}
     {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} timeboxed={timeboxed} onFinish={(nextAnswers, duration) => {
       setAnswers(nextAnswers); setElapsedSeconds(duration); replace('results')
-      saveQuizResult(buildQuizResultPayload(sessionQuestions, nextAnswers, quiz.themes, duration, quiz.metadata.title))
+      saveQuizResult(buildQuizResultPayload(sessionQuestions, nextAnswers, quiz.themes, duration, quiz.metadata.title, isUnfiltered && !isReplay))
       saveQuestionResults(buildQuestionResultPayloads(sessionQuestions, nextAnswers, quiz.metadata.title))
     }} onCancel={backToStart} />}
     {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.themes} elapsedSeconds={elapsedSeconds} onRestart={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} />}

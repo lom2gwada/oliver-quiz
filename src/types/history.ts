@@ -14,6 +14,8 @@ export interface QuizResultPayload {
   by_theme: Record<string, StatBucket>
   by_type: Record<string, StatBucket>
   by_difficulty: Record<string, StatBucket>
+  /** Aucun filtre thème/difficulté appliqué — seules ces parties comptent pour le classement (voir les vues *_leaderboard). */
+  unfiltered: boolean
 }
 
 export interface QuizResultRow extends QuizResultPayload {
@@ -59,6 +61,8 @@ export interface StreakResultPayload {
   elapsed_seconds: number
   victory: boolean
   themes: string[]
+  /** Aucun filtre thème/difficulté appliqué — seules ces parties comptent pour le classement. */
+  unfiltered: boolean
 }
 
 export interface StreakResultRow extends StreakResultPayload {
@@ -74,6 +78,8 @@ export interface TimedResultPayload {
   duration_seconds: number
   elapsed_seconds: number
   themes: string[]
+  /** Aucun filtre thème/difficulté appliqué — seules ces parties comptent pour le classement. */
+  unfiltered: boolean
 }
 
 export interface TimedResultRow extends TimedResultPayload {
