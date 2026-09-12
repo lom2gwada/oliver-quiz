@@ -8,8 +8,8 @@ const toOptionalString = (value: string): string | undefined => (value.trim() ==
 const toOptionalNumber = (value: string): number | undefined => (value.trim() === '' ? undefined : Number(value))
 
 /** Squelette vide mais valide (au sens de `parseQuiz`) pour démarrer la création d'une question d'un type donné.
- * Les types à liste ouverte (qcm/code/text/cloze) démarrent avec quelques entrées vides à compléter : il n'y a
- * pas d'ajout/suppression d'options ou d'items dans cette version, seulement d'énoncés/réponses déjà présents. */
+ * Les types à liste ouverte (qcm/code/text/cloze/ordering/matching) démarrent avec quelques entrées vides à
+ * compléter — l'admin peut ensuite en ajouter ou en retirer via les éditeurs de contenu ci-dessous. */
 function blankContent(type: QuestionType): Question['content'] {
   switch (type) {
     case 'qcm': return { multiple: false, answers: [0, 1, 2, 3].map(() => ({ id: crypto.randomUUID(), label: '', isCorrect: false })) } satisfies QCMContent
@@ -40,12 +40,16 @@ export function createBlankQuestion(type: QuestionType, themeId: string): Questi
 function AnswerOptionsEditor({ answers, onChange }: { answers: AnswerOption[]; onChange: (answers: AnswerOption[]) => void }) {
   const update = (index: number, patch: Partial<AnswerOption>) =>
     onChange(answers.map((answer, i) => (i === index ? { ...answer, ...patch } : answer)))
+  const remove = (index: number) => onChange(answers.filter((_, i) => i !== index))
+  const add = () => onChange([...answers, { id: crypto.randomUUID(), label: '', isCorrect: false }])
   return <fieldset>
     <legend>Réponses</legend>
     {answers.map((answer, index) => <div className="answer-option-row" key={answer.id}>
       <input type="checkbox" checked={answer.isCorrect} onChange={(event) => update(index, { isCorrect: event.target.checked })} title="Bonne réponse" />
       <input type="text" value={answer.label} onChange={(event) => update(index, { label: event.target.value })} />
+      <button type="button" className="secondary" onClick={() => remove(index)} disabled={answers.length <= 1}>🗑️</button>
     </div>)}
+    <button type="button" className="secondary" onClick={add}>➕ Ajouter une réponse</button>
   </fieldset>
 }
 
@@ -67,10 +71,16 @@ function CodeContentEditor({ content, onChange }: { content: CodeContent; onChan
 function TextContentEditor({ content, onChange }: { content: TextContent; onChange: (content: TextContent) => void }) {
   const update = (index: number, value: string) =>
     onChange({ ...content, expectedAnswers: content.expectedAnswers.map((answer, i) => (i === index ? value : answer)) })
+  const remove = (index: number) => onChange({ ...content, expectedAnswers: content.expectedAnswers.filter((_, i) => i !== index) })
+  const add = () => onChange({ ...content, expectedAnswers: [...content.expectedAnswers, ''] })
   return <>
     <fieldset>
       <legend>Réponses attendues</legend>
-      {content.expectedAnswers.map((answer, index) => <input key={index} type="text" value={answer} onChange={(event) => update(index, event.target.value)} />)}
+      {content.expectedAnswers.map((answer, index) => <div className="answer-option-row" key={index}>
+        <input type="text" value={answer} onChange={(event) => update(index, event.target.value)} />
+        <button type="button" className="secondary" onClick={() => remove(index)} disabled={content.expectedAnswers.length <= 1}>🗑️</button>
+      </div>)}
+      <button type="button" className="secondary" onClick={add}>➕ Ajouter une réponse</button>
     </fieldset>
     <label><input type="checkbox" checked={content.caseSensitive} onChange={(event) => onChange({ ...content, caseSensitive: event.target.checked })} /> Sensible à la casse</label>
   </>
@@ -106,11 +116,20 @@ function OrderingContentEditor({ content, onChange }: { content: OrderingContent
     ;[next[index], next[target]] = [next[target], next[index]]
     onChange({ ...content, correctOrder: next })
   }
+  const remove = (id: string) => onChange({ items: content.items.filter((item) => item.id !== id), correctOrder: content.correctOrder.filter((orderId) => orderId !== id) })
+  const add = () => {
+    const item = { id: crypto.randomUUID(), label: '' }
+    onChange({ items: [...content.items, item], correctOrder: [...content.correctOrder, item.id] })
+  }
   const labelOf = (id: string) => content.items.find((item) => item.id === id)?.label ?? id
   return <>
     <fieldset>
       <legend>Libellés</legend>
-      {content.items.map((item) => <input key={item.id} type="text" value={item.label} onChange={(event) => updateLabel(item.id, event.target.value)} />)}
+      {content.items.map((item) => <div className="answer-option-row" key={item.id}>
+        <input type="text" value={item.label} onChange={(event) => updateLabel(item.id, event.target.value)} />
+        <button type="button" className="secondary" onClick={() => remove(item.id)} disabled={content.items.length <= 2}>🗑️</button>
+      </div>)}
+      <button type="button" className="secondary" onClick={add}>➕ Ajouter un item</button>
     </fieldset>
     <fieldset>
       <legend>Ordre correct</legend>
@@ -129,14 +148,36 @@ function MatchingContentEditor({ content, onChange }: { content: MatchingContent
   const updateLeftLabel = (id: string, label: string) => onChange({ ...content, left: content.left.map((item) => (item.id === id ? { ...item, label } : item)) })
   const updateRightLabel = (id: string, label: string) => onChange({ ...content, right: content.right.map((item) => (item.id === id ? { ...item, label } : item)) })
   const updatePair = (leftId: string, rightId: string) => onChange({ ...content, correctPairs: { ...content.correctPairs, [leftId]: rightId } })
+  const addLeft = () => {
+    const item = { id: crypto.randomUUID(), label: '' }
+    onChange({ ...content, left: [...content.left, item], correctPairs: { ...content.correctPairs, [item.id]: content.right[0].id } })
+  }
+  const removeLeft = (id: string) => {
+    const { [id]: _removed, ...correctPairs } = content.correctPairs
+    onChange({ ...content, left: content.left.filter((item) => item.id !== id), correctPairs })
+  }
+  const addRight = () => onChange({ ...content, right: [...content.right, { id: crypto.randomUUID(), label: '' }] })
+  const removeRight = (id: string) => {
+    const right = content.right.filter((item) => item.id !== id)
+    const correctPairs = Object.fromEntries(Object.entries(content.correctPairs).map(([leftId, rightId]) => [leftId, rightId === id ? right[0].id : rightId]))
+    onChange({ ...content, right, correctPairs })
+  }
   return <>
     <fieldset>
       <legend>Éléments de gauche</legend>
-      {content.left.map((item) => <input key={item.id} type="text" value={item.label} onChange={(event) => updateLeftLabel(item.id, event.target.value)} />)}
+      {content.left.map((item) => <div className="answer-option-row" key={item.id}>
+        <input type="text" value={item.label} onChange={(event) => updateLeftLabel(item.id, event.target.value)} />
+        <button type="button" className="secondary" onClick={() => removeLeft(item.id)} disabled={content.left.length <= 1}>🗑️</button>
+      </div>)}
+      <button type="button" className="secondary" onClick={addLeft}>➕ Ajouter à gauche</button>
     </fieldset>
     <fieldset>
       <legend>Éléments de droite</legend>
-      {content.right.map((item) => <input key={item.id} type="text" value={item.label} onChange={(event) => updateRightLabel(item.id, event.target.value)} />)}
+      {content.right.map((item) => <div className="answer-option-row" key={item.id}>
+        <input type="text" value={item.label} onChange={(event) => updateRightLabel(item.id, event.target.value)} />
+        <button type="button" className="secondary" onClick={() => removeRight(item.id)} disabled={content.right.length <= 1}>🗑️</button>
+      </div>)}
+      <button type="button" className="secondary" onClick={addRight}>➕ Ajouter à droite</button>
     </fieldset>
     <fieldset>
       <legend>Bonnes associations</legend>
