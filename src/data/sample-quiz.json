@@ -34,9 +34,9 @@
       { "id": "b", "label": "Le traité de Vienne", "isCorrect": false },
       { "id": "c", "label": "Le traité de Rome", "isCorrect": false }
     ] } },
-    { "id": "hist-6", "type": "boolean", "theme": "histoire", "difficulty": "easy", "question": "Napoléon Bonaparte est né en Corse.", "tags": ["france"], "explanation": "Napoléon Bonaparte est né à Ajaccio, en Corse, en 1769.", "points": 1, "content": { "isTrue": true } },
+    { "id": "hist-6", "type": "boolean", "theme": "histoire", "difficulty": "easy", "question": "Napoléon Bonaparte est né en Corse.", "tags": ["france"], "explanation": "Napoléon Bonaparte est né à Ajaccio, en Corse, en 1769.", "points": 1, "timeLimitSeconds": 5, "content": { "isTrue": true } },
     { "id": "hist-7", "type": "cloze", "theme": "histoire", "difficulty": "easy", "question": "La ___ française a éclaté en 1789.", "tags": ["france"], "explanation": "La Révolution française a débuté en 1789 avec la prise de la Bastille.", "points": 1, "content": { "expectedAnswers": ["Révolution"], "caseSensitive": false } },
-    { "id": "hist-8", "type": "matching", "theme": "histoire", "difficulty": "medium", "question": "Associez chaque personnage historique à son fait marquant.", "tags": ["personnages"], "explanation": "Napoléon fut sacré empereur en 1804, César fut général et homme d'État romain, Louis XIV est surnommé le Roi Soleil, et Léonard de Vinci a peint la Joconde.", "points": 2, "content": {
+    { "id": "hist-8", "type": "matching", "theme": "histoire", "difficulty": "medium", "question": "Associez chaque personnage historique à son fait marquant.", "tags": ["personnages"], "explanation": "Napoléon fut sacré empereur en 1804, César fut général et homme d'État romain, Louis XIV est surnommé le Roi Soleil, et Léonard de Vinci a peint la Joconde.", "points": 2, "timeLimitSeconds": 45, "content": {
       "left": [
         { "id": "napoleon", "label": "Napoléon Bonaparte" },
         { "id": "cesar", "label": "Jules César" },
@@ -98,7 +98,7 @@
       { "id": "b", "label": "Le Brésil", "isCorrect": true },
       { "id": "c", "label": "Le Portugal", "isCorrect": false }
     ] } },
-    { "id": "geo-11", "type": "text", "theme": "geographie", "difficulty": "medium", "question": "Quel est ce monument antique ?", "tags": ["monuments"], "explanation": "Le Colisée, à Rome, est un amphithéâtre construit au 1er siècle qui pouvait accueillir environ 50 000 spectateurs.", "points": 2, "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Colosseo_2020.jpg/500px-Colosseo_2020.jpg", "imageAlt": "Le Colisée de Rome, amphithéâtre antique en pierre, vue extérieure.", "content": { "expectedAnswers": ["le Colisée", "Colisée", "le colisee", "colisee"], "caseSensitive": false } },
+    { "id": "geo-11", "type": "text", "theme": "geographie", "difficulty": "medium", "question": "Quel est ce monument antique ?", "tags": ["monuments"], "explanation": "Le Colisée, à Rome, est un amphithéâtre construit au 1er siècle qui pouvait accueillir environ 50 000 spectateurs.", "points": 2, "timeLimitSeconds": 30, "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Colosseo_2020.jpg/500px-Colosseo_2020.jpg", "imageAlt": "Le Colisée de Rome, amphithéâtre antique en pierre, vue extérieure.", "content": { "expectedAnswers": ["le Colisée", "Colisée", "le colisee", "colisee"], "caseSensitive": false } },
 
     { "id": "sci-1", "type": "qcm", "theme": "sciences", "difficulty": "easy", "question": "Quel est le symbole chimique de l'or ?", "tags": ["chimie"], "explanation": "Au vient du latin \"aurum\", qui signifie or.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Ag", "isCorrect": false },
