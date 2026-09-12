@@ -1,11 +1,41 @@
 import { useState } from 'react'
 import type {
   AnswerOption, BooleanContent, CodeContent, MatchingContent, NumericContent, OrderingContent,
-  QCMContent, Question, TextContent, Theme,
+  QCMContent, Question, QuestionType, TextContent, Theme,
 } from '../types/quiz'
 
 const toOptionalString = (value: string): string | undefined => (value.trim() === '' ? undefined : value.trim())
 const toOptionalNumber = (value: string): number | undefined => (value.trim() === '' ? undefined : Number(value))
+
+/** Squelette vide mais valide (au sens de `parseQuiz`) pour démarrer la création d'une question d'un type donné.
+ * Les types à liste ouverte (qcm/code/text/cloze) démarrent avec quelques entrées vides à compléter : il n'y a
+ * pas d'ajout/suppression d'options ou d'items dans cette version, seulement d'énoncés/réponses déjà présents. */
+function blankContent(type: QuestionType): Question['content'] {
+  switch (type) {
+    case 'qcm': return { multiple: false, answers: [0, 1, 2, 3].map(() => ({ id: crypto.randomUUID(), label: '', isCorrect: false })) } satisfies QCMContent
+    case 'code': return { language: '', snippet: '', answers: [0, 1, 2, 3].map(() => ({ id: crypto.randomUUID(), label: '', isCorrect: false })) } satisfies CodeContent
+    case 'text': return { expectedAnswers: [''], caseSensitive: false } satisfies TextContent
+    case 'cloze': return { expectedAnswers: [''], caseSensitive: false } satisfies TextContent
+    case 'boolean': return { isTrue: true } satisfies BooleanContent
+    case 'numeric': return { min: 0, max: 10, step: 1, target: 5, tolerance: 1 } satisfies NumericContent
+    case 'ordering': {
+      const items = [0, 1, 2].map(() => ({ id: crypto.randomUUID(), label: '' }))
+      return { items, correctOrder: items.map((item) => item.id) } satisfies OrderingContent
+    }
+    case 'matching': {
+      const left = [0, 1].map(() => ({ id: crypto.randomUUID(), label: '' }))
+      const right = [0, 1].map(() => ({ id: crypto.randomUUID(), label: '' }))
+      return { left, right, correctPairs: Object.fromEntries(left.map((item, index) => [item.id, right[index].id])) } satisfies MatchingContent
+    }
+  }
+}
+
+export function createBlankQuestion(type: QuestionType, themeId: string): Question {
+  return {
+    id: crypto.randomUUID(), type, theme: themeId, difficulty: 'easy', question: type === 'cloze' ? 'Complète : ___' : '',
+    tags: [], explanation: '', points: 10, content: blankContent(type),
+  } as Question
+}
 
 function AnswerOptionsEditor({ answers, onChange }: { answers: AnswerOption[]; onChange: (answers: AnswerOption[]) => void }) {
   const update = (index: number, patch: Partial<AnswerOption>) =>

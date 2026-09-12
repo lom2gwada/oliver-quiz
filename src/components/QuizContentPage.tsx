@@ -3,7 +3,7 @@ import type { Difficulty, Question, Quiz } from '../types/quiz'
 import type { HostedQuizSummary } from '../types/hostedQuiz'
 import { MermaidDiagram } from './MermaidDiagram'
 import { PieChart } from './PieChart'
-import { QuestionEditForm } from './QuestionEditForm'
+import { createBlankQuestion, QuestionEditForm } from './QuestionEditForm'
 import { QuestionImage } from './QuestionImage'
 import { QuizAccessManager } from './QuizAccessManager'
 import { TYPE_ICONS, TYPE_LABELS } from './QuizPage'
@@ -27,11 +27,16 @@ interface QuizContentPageProps {
   /** Édition en direct proposée seulement pour un quiz hébergé actif — jamais pour le quiz d'exemple. */
   canEditQuiz: boolean
   onSaveQuestion: (updated: Question) => Promise<void>
+  onAddQuestion: (created: Question) => Promise<void>
+  onDeleteQuestion: (id: string) => Promise<void>
   editError: string
 }
 
-export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExport, publishError, publishSuccess, isAdmin, canEditQuiz, onSaveQuestion, editError }: QuizContentPageProps) {
+export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExport, publishError, publishSuccess, isAdmin, canEditQuiz, onSaveQuestion, onAddQuestion, onDeleteQuestion, editError }: QuizContentPageProps) {
   const [editingQuestionId, setEditingQuestionId] = useState('')
+  const [creatingType, setCreatingType] = useState<Question['type']>('qcm')
+  const [creatingTheme, setCreatingTheme] = useState(quiz.themes[0]?.id ?? '')
+  const [draftQuestion, setDraftQuestion] = useState<Question | null>(null)
   const byTheme = quiz.themes
     .map((theme, index) => ({
       label: theme.label,
@@ -82,6 +87,21 @@ export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExpo
       <h3 className="stats-group-title profile-section-title">Gérer les accès</h3>
       <QuizAccessManager quizzes={hostedQuizzes} />
       <h3 className="stats-group-title profile-section-title">Toutes les questions ({quiz.questions.length})</h3>
+      {canEditQuiz && (draftQuestion ? <QuestionEditForm
+        question={draftQuestion}
+        themes={quiz.themes}
+        error={editError}
+        onCancel={() => setDraftQuestion(null)}
+        onSave={async (created) => { try { await onAddQuestion(created); setDraftQuestion(null) } catch { /* editError affiché dans le formulaire */ } }}
+      /> : <div className="question-create-bar">
+        <select value={creatingType} onChange={(event) => setCreatingType(event.target.value as Question['type'])}>
+          {QUESTION_TYPES.map((type) => <option key={type} value={type}>{TYPE_ICONS[type]} {TYPE_LABELS[type]}</option>)}
+        </select>
+        <select value={creatingTheme} onChange={(event) => setCreatingTheme(event.target.value)}>
+          {quiz.themes.map((theme) => <option key={theme.id} value={theme.id}>{theme.label}</option>)}
+        </select>
+        <button type="button" onClick={() => setDraftQuestion(createBlankQuestion(creatingType, creatingTheme))} disabled={!creatingTheme}>➕ Ajouter une question</button>
+      </div>)}
       {quiz.themes.map((theme) => {
         const themeQuestions = quiz.questions.filter((question) => question.theme === theme.id)
         if (!themeQuestions.length) return null
@@ -102,7 +122,10 @@ export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExpo
                 {question.diagram && <MermaidDiagram chart={question.diagram} />}
                 <p><strong>Réponse :</strong> {correctAnswer(question)}</p>
                 <p className="question-list-explanation">{question.explanation}</p>
-                {canEditQuiz && <button type="button" className="secondary edit-toggle" onClick={() => setEditingQuestionId(question.id)}>✏️ Modifier</button>}
+                {canEditQuiz && <div className="edit-toggle">
+                  <button type="button" className="secondary" onClick={() => setEditingQuestionId(question.id)}>✏️ Modifier</button>
+                  <button type="button" className="secondary" onClick={() => onDeleteQuestion(question.id)}>🗑️ Supprimer</button>
+                </div>}
               </>}
             </article>)}
           </div>
