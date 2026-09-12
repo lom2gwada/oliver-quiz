@@ -1,8 +1,14 @@
 import type { Profile } from '../types/profile'
 import { supabase } from './supabase'
 
+/** Filtre explicitement sur son propre id : depuis qu'un admin peut aussi voir tous les profils
+ * (pour la gestion des accès aux quiz hébergés), une requête sans filtre lui renverrait toutes les
+ * lignes au lieu d'une seule, et `.maybeSingle()` échouerait ("multiple rows returned"). */
 export async function fetchProfile(): Promise<Profile | null> {
-  const { data, error } = await supabase.from('profiles').select('pseudo, avatar, theme, isAdmin:is_admin').maybeSingle()
+  const { data: userData, error: userError } = await supabase.auth.getUser()
+  if (userError) throw userError
+  if (!userData.user) return null
+  const { data, error } = await supabase.from('profiles').select('pseudo, avatar, theme, isAdmin:is_admin').eq('id', userData.user.id).maybeSingle()
   if (error) throw error
   return data
 }

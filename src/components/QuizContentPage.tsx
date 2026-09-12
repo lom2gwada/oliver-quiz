@@ -14,12 +14,14 @@ const DIFFICULTY_LABELS: Record<Difficulty, string> = { easy: 'Facile', medium: 
 interface QuizContentPageProps {
   quiz: Quiz
   onBack: () => void
-  onFileChange: (file?: File) => void
-  fileError: string
+  onPublish: (file?: File) => void
+  onExport: () => void
+  publishError: string
+  publishSuccess: boolean
   isAdmin: boolean
 }
 
-export function QuizContentPage({ quiz, onBack, onFileChange, fileError, isAdmin }: QuizContentPageProps) {
+export function QuizContentPage({ quiz, onBack, onPublish, onExport, publishError, publishSuccess, isAdmin }: QuizContentPageProps) {
   const byTheme = quiz.themes
     .map((theme, index) => ({
       label: theme.label,
@@ -42,10 +44,6 @@ export function QuizContentPage({ quiz, onBack, onFileChange, fileError, isAdmin
       <button type="button" className="secondary" onClick={onBack}>Retour</button>
     </div>
     {quiz.metadata.description && <p className="quiz-description">{quiz.metadata.description}</p>}
-    <div className="quiz-import">
-      <label className="file-input">Importer un autre quiz (JSON)<input type="file" accept="application/json,.json" onChange={(event) => onFileChange(event.target.files?.[0])} /></label>
-      {fileError && <p className="alert" role="alert">{fileError}</p>}
-    </div>
     <h3 className="stats-group-title">Répartition des questions</h3>
     <div className="stats-grid">
       <PieChart title={`Thèmes — ${quiz.questions.length} questions`} data={byTheme} />
@@ -64,6 +62,13 @@ export function QuizContentPage({ quiz, onBack, onFileChange, fileError, isAdmin
       })}
     </div>
     {isAdmin && <>
+      <h3 className="stats-group-title profile-section-title">Publier un quiz</h3>
+      <div className="quiz-import">
+        <label className="file-input">Importer / mettre à jour un quiz (JSON)<input type="file" accept="application/json,.json" onChange={(event) => onPublish(event.target.files?.[0])} /></label>
+        <button type="button" className="secondary" onClick={onExport}>Exporter ce quiz (JSON)</button>
+        {publishError && <p className="alert" role="alert">{publishError}</p>}
+        {publishSuccess && <p className="profile-saved">Quiz publié — aucun accès n'est accordé automatiquement.</p>}
+      </div>
       <h3 className="stats-group-title profile-section-title">Toutes les questions ({quiz.questions.length})</h3>
       {quiz.themes.map((theme) => {
         const themeQuestions = quiz.questions.filter((question) => question.theme === theme.id)
