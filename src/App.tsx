@@ -11,7 +11,7 @@ import { StreakQuizPage, type StreakResult } from './components/StreakQuizPage'
 import { StreakResultPage } from './components/StreakResultPage'
 import { TimedQuizPage, type TimedResult } from './components/TimedQuizPage'
 import { TimedResultPage } from './components/TimedResultPage'
-import type { AnswersByQuestion, Difficulty, GameMode, Quiz, Question } from './types/quiz'
+import type { AnswersByQuestion, Difficulty, GameMode, Question, Quiz } from './types/quiz'
 import type { Profile } from './types/profile'
 import type { LeaderboardRow } from './types/leaderboard'
 import type { HostedQuizSummary } from './types/hostedQuiz'
@@ -44,6 +44,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const [answers, setAnswers] = useState<AnswersByQuestion>({})
   const [publishError, setPublishError] = useState('')
   const [publishSuccess, setPublishSuccess] = useState(false)
+  const [editError, setEditError] = useState('')
   const [quizLoadError, setQuizLoadError] = useState('')
   const [questionCount, setQuestionCount] = useState(10)
   const [sessionQuestions, setSessionQuestions] = useState<Quiz['questions']>([])
@@ -127,6 +128,21 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
       setPublishError(error instanceof Error ? error.message : 'Fichier JSON invalide.')
+    }
+  }
+
+  /** Admin uniquement, sur un quiz hébergé actif : remplace une question, revalide tout le quiz puis republie
+   * sous le même titre (mêmes accès `quiz_access` conservés). Rejette en cas d'échec pour laisser le formulaire ouvert. */
+  const saveQuestion = async (updated: Question) => {
+    setEditError('')
+    try {
+      const updatedQuiz = parseQuiz({ ...quiz, questions: quiz.questions.map((existing) => (existing.id === updated.id ? updated : existing)) })
+      await upsertQuiz(updatedQuiz.metadata.title, updatedQuiz)
+      setQuiz(updatedQuiz)
+      fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
+    } catch (error) {
+      setEditError(error instanceof Error ? error.message : 'Impossible d\'enregistrer cette question.')
+      throw error
     }
   }
 
@@ -227,7 +243,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'streakResults' && streakResult && <StreakResultPage {...streakResult} onRestart={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} />}
     {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
     {view === 'timedResults' && timedResult && <TimedResultPage {...timedResult} onRestart={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} />}
-    {view === 'content' && <QuizContentPage quiz={quiz} hostedQuizzes={hostedQuizzes} onBack={() => navigate('start')} onPublish={publishQuiz} onExport={exportQuiz} publishError={publishError} publishSuccess={publishSuccess} isAdmin={profile?.isAdmin ?? false} />}
+    {view === 'content' && <QuizContentPage quiz={quiz} hostedQuizzes={hostedQuizzes} onBack={() => navigate('start')} onPublish={publishQuiz} onExport={exportQuiz} publishError={publishError} publishSuccess={publishSuccess} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} editError={editError} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} onReplayMissed={replayMissed} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} initialMode={leaderboardMode} onBack={() => navigate(leaderboardBack)} />}
     {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} onViewHistory={() => viewHistory('profile')} onViewLeaderboard={() => viewLeaderboard('profile')} />}

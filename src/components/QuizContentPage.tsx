@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import type { Difficulty, Question, Quiz } from '../types/quiz'
 import type { HostedQuizSummary } from '../types/hostedQuiz'
 import { MermaidDiagram } from './MermaidDiagram'
 import { PieChart } from './PieChart'
+import { QuestionEditForm } from './QuestionEditForm'
 import { QuestionImage } from './QuestionImage'
 import { QuizAccessManager } from './QuizAccessManager'
 import { TYPE_ICONS, TYPE_LABELS } from './QuizPage'
@@ -22,9 +24,14 @@ interface QuizContentPageProps {
   publishError: string
   publishSuccess: boolean
   isAdmin: boolean
+  /** Édition en direct proposée seulement pour un quiz hébergé actif — jamais pour le quiz d'exemple. */
+  canEditQuiz: boolean
+  onSaveQuestion: (updated: Question) => Promise<void>
+  editError: string
 }
 
-export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExport, publishError, publishSuccess, isAdmin }: QuizContentPageProps) {
+export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExport, publishError, publishSuccess, isAdmin, canEditQuiz, onSaveQuestion, editError }: QuizContentPageProps) {
+  const [editingQuestionId, setEditingQuestionId] = useState('')
   const byTheme = quiz.themes
     .map((theme, index) => ({
       label: theme.label,
@@ -83,11 +90,20 @@ export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExpo
           <div className="question-list">
             {themeQuestions.map((question) => <article key={question.id} className="question-list-item">
               <div className="question-meta"><span>{TYPE_ICONS[question.type]} {TYPE_LABELS[question.type]}</span><span>{DIFFICULTY_LABELS[question.difficulty]}</span><span>{question.points} pts</span></div>
-              <p className="question-list-prompt">{question.question}</p>
-              {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
-              {question.diagram && <MermaidDiagram chart={question.diagram} />}
-              <p><strong>Réponse :</strong> {correctAnswer(question)}</p>
-              <p className="question-list-explanation">{question.explanation}</p>
+              {editingQuestionId === question.id ? <QuestionEditForm
+                question={question}
+                themes={quiz.themes}
+                error={editError}
+                onCancel={() => setEditingQuestionId('')}
+                onSave={async (updated) => { try { await onSaveQuestion(updated); setEditingQuestionId('') } catch { /* editError affiché par le parent, formulaire laissé ouvert */ } }}
+              /> : <>
+                <p className="question-list-prompt">{question.question}</p>
+                {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
+                {question.diagram && <MermaidDiagram chart={question.diagram} />}
+                <p><strong>Réponse :</strong> {correctAnswer(question)}</p>
+                <p className="question-list-explanation">{question.explanation}</p>
+                {canEditQuiz && <button type="button" className="secondary edit-toggle" onClick={() => setEditingQuestionId(question.id)}>✏️ Modifier</button>}
+              </>}
             </article>)}
           </div>
         </details>
