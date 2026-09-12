@@ -114,6 +114,8 @@ pre { padding: 1rem; overflow: auto; background: var(--code-bg); border: 1px sol
 .question-edit-form legend { padding: 0 .4rem; color: var(--text-soft); font-size: .85rem; }
 .answer-option-row { display: flex; align-items: center; gap: .6rem; }
 .answer-option-row input[type=text] { flex: 1; }
+.answer-option-row button { padding: .4rem .6rem; flex: none; }
+.question-edit-form fieldset > button { margin-top: .3rem; }
 .reorder-row { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }
 .reorder-controls { display: flex; gap: .3rem; }
 .reorder-controls button { padding: .3rem .5rem; }
