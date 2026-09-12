@@ -1,4 +1,4 @@
-import type { LeaderboardRow } from '../types/leaderboard'
+import type { LeaderboardRow, StreakLeaderboardRow, TimedLeaderboardRow } from '../types/leaderboard'
 import { supabase } from './supabase'
 
 export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
@@ -16,4 +16,19 @@ export async function fetchTopScore(quizTitle: string): Promise<LeaderboardRow |
     .limit(1).maybeSingle()
   if (error) throw error
   return data
+}
+
+export async function fetchStreakLeaderboard(): Promise<StreakLeaderboardRow[]> {
+  const { data, error } = await supabase.from('streak_leaderboard').select('*')
+    .order('best_streak', { ascending: false }).order('victory', { ascending: false }).order('elapsed_seconds', { ascending: true })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function fetchTimedLeaderboard(): Promise<TimedLeaderboardRow[]> {
+  // NULLS LAST : une partie de 0 seconde (pace non calculable) ne doit pas se retrouver en tête faute de valeur.
+  const { data, error } = await supabase.from('timed_leaderboard').select('*')
+    .order('pace_per_minute', { ascending: false, nullsFirst: false }).order('correct_count', { ascending: false })
+  if (error) throw error
+  return data ?? []
 }
