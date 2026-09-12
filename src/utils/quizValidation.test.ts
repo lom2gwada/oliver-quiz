@@ -79,6 +79,21 @@ describe('parseQuiz — shared question fields', () => {
     const bad = quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, imageUrl: 'https://example.com/x.jpg', imageAlt: 42 }])
     expect(() => parseQuiz(bad)).toThrow()
   })
+
+  it('parses a question with an optional time limit override', () => {
+    const result = parseQuiz(quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, timeLimitSeconds: 5 }]))
+    expect(result.questions[0]).toMatchObject({ timeLimitSeconds: 5 })
+  })
+
+  it('rejects a zero or negative timeLimitSeconds', () => {
+    const bad = quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, timeLimitSeconds: 0 }])
+    expect(() => parseQuiz(bad)).toThrow()
+  })
+
+  it('rejects a non-numeric timeLimitSeconds', () => {
+    const bad = quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, timeLimitSeconds: '5' }])
+    expect(() => parseQuiz(bad)).toThrow()
+  })
 })
 
 describe('parseQuiz — qcm', () => {

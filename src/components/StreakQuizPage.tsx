@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import type { AnswersByQuestion, Question, Quiz, UserAnswer } from '../types/quiz'
 import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
+import { questionTimeLimit } from '../utils/questionTimeLimits'
+import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { isCorrect } from './ResultPage'
 import { QuestionImage } from './QuestionImage'
 import { QuestionRenderer } from './QuestionRenderer'
@@ -41,6 +43,7 @@ export function StreakQuizPage({ quiz, pool, onFinish, onCancel }: StreakQuizPag
   // Pas de correction affichée question par question : comme le mode classique, tout se joue "à l'aveugle"
   // et le bilan complet n'apparaît qu'à la fin (voir StreakResultPage).
   const advance = () => {
+    if (!question) return
     const nextAnswers = answer === undefined ? answers : { ...answers, [question.id]: answer }
     const playedQuestions = order.slice(0, index + 1)
     if (!isCorrect(question, answer)) { onFinish({ streakCount: index, elapsedSeconds: elapsed, victory: false, playedQuestions, answers: nextAnswers }); return }
@@ -49,12 +52,13 @@ export function StreakQuizPage({ quiz, pool, onFinish, onCancel }: StreakQuizPag
     setIndex((value) => value + 1)
     setAnswer(undefined)
   }
+  const remaining = useQuestionTimer(question?.id ?? '', question ? questionTimeLimit(question) : null, advance)
 
   if (!question) return <section className="empty"><h2>Aucune question</h2><p>Modifiez les filtres pour lancer une partie.</p><button type="button" className="secondary" onClick={onCancel}>Retour</button></section>
   const theme = quiz.themes.find((item) => item.id === question.theme)?.label ?? question.theme
 
   return <section className="quiz-card">
-    <div className="question-meta"><span>{TYPE_ICONS[question.type]} {TYPE_LABELS[question.type]}</span><span>{theme}</span><span>{question.difficulty}</span><span>{question.points} pts</span><span>🔥 {streakCount}</span><span>⏱ {formatDuration(elapsed)}</span></div>
+    <div className="question-meta"><span>{TYPE_ICONS[question.type]} {TYPE_LABELS[question.type]}</span><span>{theme}</span><span>{question.difficulty}</span><span>{question.points} pts</span><span>🔥 {streakCount}</span>{remaining !== null && <span>⏳ {remaining}s</span>}<span>⏱ {formatDuration(elapsed)}</span></div>
     <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${((index + 1) / order.length) * 100}%` }} /></div>
     <p className="progress">Question {index + 1} / {order.length}</p>
     <div className="question-body" key={question.id}>

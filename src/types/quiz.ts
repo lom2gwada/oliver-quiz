@@ -86,6 +86,9 @@ export interface BaseQuestion {
   /** Optionnel, sur n'importe quel type de question — pas un type dédié : évite de dupliquer la logique QCM/texte libre. */
   imageUrl?: string
   imageAlt?: string
+  /** Temps limite en secondes pour répondre, à la charge de l'auteur du quiz d'estimer. Absent : le barème par
+   * défaut (type + difficulté, voir `utils/questionTimeLimits.ts`) s'applique — il n'y a pas de mode "sans limite". */
+  timeLimitSeconds?: number
 }
 
 export interface QCMQuestion extends BaseQuestion {
