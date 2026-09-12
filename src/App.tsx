@@ -14,9 +14,11 @@ import { TimedResultPage } from './components/TimedResultPage'
 import type { AnswersByQuestion, Difficulty, GameMode, Quiz, Question } from './types/quiz'
 import type { Profile } from './types/profile'
 import type { LeaderboardRow } from './types/leaderboard'
+import type { HostedQuizSummary } from './types/hostedQuiz'
 import { buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, saveQuestionResults, saveQuizResult, saveStreakResult, saveTimedResult } from './utils/quizHistory'
 import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchTopScore } from './utils/leaderboard'
+import { fetchAccessibleQuizzes, fetchQuizContent } from './utils/hostedQuizzes'
 import { applyTheme } from './utils/theme'
 import { parseQuiz } from './utils/quizValidation'
 import { isSoundMuted, playClick, setSoundMuted } from './utils/sound'
@@ -55,6 +57,9 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   useEffect(() => { fetchProfile().then(setProfile).catch(() => {}) }, [])
   useEffect(() => { applyTheme(profile?.theme ?? 'dark') }, [profile?.theme])
+  const [hostedQuizzes, setHostedQuizzes] = useState<HostedQuizSummary[]>([])
+  const [selectedHostedQuizId, setSelectedHostedQuizId] = useState('')
+  useEffect(() => { fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {}) }, [])
   const [topScore, setTopScore] = useState<LeaderboardRow | null>(null)
   useEffect(() => { if (view === 'start') fetchTopScore(quiz.metadata.title).then(setTopScore).catch(() => setTopScore(null)) }, [view, quiz.metadata.title])
   const [leaderboardBack, setLeaderboardBack] = useState<View>('profile')
@@ -103,6 +108,17 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setFileError('')
     } catch (error) {
       setFileError(error instanceof Error ? error.message : 'Fichier JSON invalide.')
+    }
+  }
+
+  const selectHostedQuiz = async (id: string) => {
+    setSelectedHostedQuizId(id)
+    if (!id) { setQuiz(initialQuiz); setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); return }
+    try {
+      setQuiz(parseQuiz(await fetchQuizContent(id)))
+      setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setFileError('')
+    } catch (error) {
+      setFileError(error instanceof Error ? error.message : 'Impossible de charger ce quiz.')
     }
   }
 
@@ -159,6 +175,12 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   return <main className="app-shell">
     <header><div><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>par {quiz.metadata.author}</p>{view === 'start' && quiz.metadata.description && <p className="quiz-description-preview">{quiz.metadata.description}</p>}{view === 'start' && topScore && <button type="button" className="top-score" onClick={() => viewLeaderboard('start')}>🏆 {topScore.avatar} {topScore.pseudo} — {topScore.best_score}%</button>}</div><div className="header-actions"><button type="button" className="secondary" onClick={toggleSound} aria-label={muted ? 'Activer le son' : 'Couper le son'}>{muted ? '🔇' : '🔊'}</button>{view === 'start' && <button type="button" className="secondary" onClick={() => navigate('profile')}>{profile ? `${profile.avatar} ${profile.pseudo}` : '👤 Profil'}</button>}{view === 'start' && <button type="button" className="secondary" onClick={() => navigate('content')}>⚙️ Quiz</button>}<button type="button" className="secondary" onClick={onLogout}>Se déconnecter</button></div></header>
     {view === 'start' && <section className="start-page">
+      {hostedQuizzes.length > 0 && <label className="quiz-select">Quiz
+        <select value={selectedHostedQuizId} onChange={(event) => { playClick(); selectHostedQuiz(event.target.value) }}>
+          <option value="">Culture générale (exemple)</option>
+          {hostedQuizzes.map((hosted) => <option key={hosted.id} value={hosted.id}>{hosted.title}</option>)}
+        </select>
+      </label>}
       <div className="mode-picker" role="group" aria-label="Mode de jeu">
         <button type="button" className={gameMode === 'classic' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('classic') }}>🎯 Classique</button>
         <button type="button" className={gameMode === 'streak' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('streak') }}>🔥 Sans-faute</button>
