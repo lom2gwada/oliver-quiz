@@ -131,18 +131,45 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     }
   }
 
-  /** Admin uniquement, sur un quiz hébergé actif : remplace une question, revalide tout le quiz puis republie
-   * sous le même titre (mêmes accès `quiz_access` conservés). Rejette en cas d'échec pour laisser le formulaire ouvert. */
+  /** Revalide l'ensemble du quiz avec la liste de questions donnée puis republie sous le même titre
+   * (mêmes accès `quiz_access` conservés, cf. upsert par titre). Partagé par édition/ajout/suppression. */
+  const republishQuestions = async (questions: Question[]) => {
+    const updatedQuiz = parseQuiz({ ...quiz, questions })
+    await upsertQuiz(updatedQuiz.metadata.title, updatedQuiz)
+    setQuiz(updatedQuiz)
+    fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
+  }
+
+  /** Admin uniquement, sur un quiz hébergé actif : remplace une question. Rejette en cas d'échec pour laisser le formulaire ouvert. */
   const saveQuestion = async (updated: Question) => {
     setEditError('')
     try {
-      const updatedQuiz = parseQuiz({ ...quiz, questions: quiz.questions.map((existing) => (existing.id === updated.id ? updated : existing)) })
-      await upsertQuiz(updatedQuiz.metadata.title, updatedQuiz)
-      setQuiz(updatedQuiz)
-      fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
+      await republishQuestions(quiz.questions.map((existing) => (existing.id === updated.id ? updated : existing)))
     } catch (error) {
       setEditError(error instanceof Error ? error.message : 'Impossible d\'enregistrer cette question.')
       throw error
+    }
+  }
+
+  /** Admin uniquement, sur un quiz hébergé actif : ajoute une nouvelle question. Rejette en cas d'échec pour laisser le formulaire ouvert. */
+  const addQuestion = async (created: Question) => {
+    setEditError('')
+    try {
+      await republishQuestions([...quiz.questions, created])
+    } catch (error) {
+      setEditError(error instanceof Error ? error.message : 'Impossible d\'ajouter cette question.')
+      throw error
+    }
+  }
+
+  /** Admin uniquement, sur un quiz hébergé actif : supprime définitivement une question, après confirmation. */
+  const deleteQuestion = async (id: string) => {
+    if (!window.confirm('Supprimer définitivement cette question ?')) return
+    setEditError('')
+    try {
+      await republishQuestions(quiz.questions.filter((question) => question.id !== id))
+    } catch (error) {
+      setEditError(error instanceof Error ? error.message : 'Impossible de supprimer cette question.')
     }
   }
 
@@ -243,7 +270,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'streakResults' && streakResult && <StreakResultPage {...streakResult} onRestart={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} />}
     {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
     {view === 'timedResults' && timedResult && <TimedResultPage {...timedResult} onRestart={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} />}
-    {view === 'content' && <QuizContentPage quiz={quiz} hostedQuizzes={hostedQuizzes} onBack={() => navigate('start')} onPublish={publishQuiz} onExport={exportQuiz} publishError={publishError} publishSuccess={publishSuccess} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} editError={editError} />}
+    {view === 'content' && <QuizContentPage quiz={quiz} hostedQuizzes={hostedQuizzes} onBack={() => navigate('start')} onPublish={publishQuiz} onExport={exportQuiz} publishError={publishError} publishSuccess={publishSuccess} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} onReplayMissed={replayMissed} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} initialMode={leaderboardMode} onBack={() => navigate(leaderboardBack)} />}
     {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} onViewHistory={() => viewHistory('profile')} onViewLeaderboard={() => viewLeaderboard('profile')} />}
