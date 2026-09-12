@@ -13,7 +13,7 @@ const toOptionalNumber = (value: string): number | undefined => (value.trim() ==
 function blankContent(type: QuestionType): Question['content'] {
   switch (type) {
     case 'qcm': return { multiple: false, answers: [0, 1, 2, 3].map(() => ({ id: crypto.randomUUID(), label: '', isCorrect: false })) } satisfies QCMContent
-    case 'code': return { language: '', snippet: '', answers: [0, 1, 2, 3].map(() => ({ id: crypto.randomUUID(), label: '', isCorrect: false })) } satisfies CodeContent
+    case 'code': return { language: '', snippet: '', multiple: false, answers: [0, 1, 2, 3].map(() => ({ id: crypto.randomUUID(), label: '', isCorrect: false })) } satisfies CodeContent
     case 'text': return { expectedAnswers: [''], caseSensitive: false } satisfies TextContent
     case 'cloze': return { expectedAnswers: [''], caseSensitive: false } satisfies TextContent
     case 'boolean': return { isTrue: true } satisfies BooleanContent
@@ -55,7 +55,7 @@ function AnswerOptionsEditor({ answers, onChange }: { answers: AnswerOption[]; o
 
 function QCMContentEditor({ content, onChange }: { content: QCMContent; onChange: (content: QCMContent) => void }) {
   return <>
-    <label><input type="checkbox" checked={content.multiple} onChange={(event) => onChange({ ...content, multiple: event.target.checked })} /> Plusieurs bonnes réponses possibles</label>
+    <label className="checkbox-field"><input type="checkbox" checked={content.multiple} onChange={(event) => onChange({ ...content, multiple: event.target.checked })} /> Plusieurs bonnes réponses possibles</label>
     <AnswerOptionsEditor answers={content.answers} onChange={(answers) => onChange({ ...content, answers })} />
   </>
 }
@@ -64,6 +64,7 @@ function CodeContentEditor({ content, onChange }: { content: CodeContent; onChan
   return <>
     <label>Langage<input type="text" value={content.language} onChange={(event) => onChange({ ...content, language: event.target.value })} /></label>
     <label>Extrait de code<textarea value={content.snippet} onChange={(event) => onChange({ ...content, snippet: event.target.value })} /></label>
+    <label className="checkbox-field"><input type="checkbox" checked={content.multiple} onChange={(event) => onChange({ ...content, multiple: event.target.checked })} /> Plusieurs bonnes réponses possibles</label>
     <AnswerOptionsEditor answers={content.answers} onChange={(answers) => onChange({ ...content, answers })} />
   </>
 }
@@ -82,7 +83,7 @@ function TextContentEditor({ content, onChange }: { content: TextContent; onChan
       </div>)}
       <button type="button" className="secondary" onClick={add}>➕ Ajouter une réponse</button>
     </fieldset>
-    <label><input type="checkbox" checked={content.caseSensitive} onChange={(event) => onChange({ ...content, caseSensitive: event.target.checked })} /> Sensible à la casse</label>
+    <label className="checkbox-field"><input type="checkbox" checked={content.caseSensitive} onChange={(event) => onChange({ ...content, caseSensitive: event.target.checked })} /> Sensible à la casse</label>
   </>
 }
 

@@ -54,8 +54,12 @@ function parseQuestion(value: unknown): Question {
   if (type === 'qcm' && typeof content.multiple === 'boolean' && validAnswers(content.answers)) {
     return { ...base, type, content: { multiple: content.multiple, answers: content.answers } }
   }
-  if (type === 'code' && typeof content.language === 'string' && typeof content.snippet === 'string' && validAnswers(content.answers)) {
-    return { ...base, type, content: { language: content.language, snippet: content.snippet, answers: content.answers } }
+  if (
+    type === 'code' && typeof content.language === 'string' && typeof content.snippet === 'string' &&
+    (content.multiple === undefined || typeof content.multiple === 'boolean') && validAnswers(content.answers)
+  ) {
+    // `multiple` optionnel (par défaut faux) : ajouté après coup, les questions "code" déjà publiées n'en ont pas.
+    return { ...base, type, content: { language: content.language, snippet: content.snippet, multiple: Boolean(content.multiple), answers: content.answers } }
   }
   if (type === 'text' && hasStrings(content.expectedAnswers) && typeof content.caseSensitive === 'boolean') {
     return { ...base, type, content: { expectedAnswers: content.expectedAnswers, caseSensitive: content.caseSensitive } }
