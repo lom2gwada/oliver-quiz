@@ -1,7 +1,9 @@
 import type { Difficulty, Question, Quiz } from '../types/quiz'
+import type { HostedQuizSummary } from '../types/hostedQuiz'
 import { MermaidDiagram } from './MermaidDiagram'
 import { PieChart } from './PieChart'
 import { QuestionImage } from './QuestionImage'
+import { QuizAccessManager } from './QuizAccessManager'
 import { TYPE_ICONS, TYPE_LABELS } from './QuizPage'
 import { correctAnswer } from './ResultPage'
 
@@ -13,6 +15,7 @@ const DIFFICULTY_LABELS: Record<Difficulty, string> = { easy: 'Facile', medium: 
 
 interface QuizContentPageProps {
   quiz: Quiz
+  hostedQuizzes: HostedQuizSummary[]
   onBack: () => void
   onPublish: (file?: File) => void
   onExport: () => void
@@ -21,7 +24,7 @@ interface QuizContentPageProps {
   isAdmin: boolean
 }
 
-export function QuizContentPage({ quiz, onBack, onPublish, onExport, publishError, publishSuccess, isAdmin }: QuizContentPageProps) {
+export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExport, publishError, publishSuccess, isAdmin }: QuizContentPageProps) {
   const byTheme = quiz.themes
     .map((theme, index) => ({
       label: theme.label,
@@ -69,6 +72,8 @@ export function QuizContentPage({ quiz, onBack, onPublish, onExport, publishErro
         {publishError && <p className="alert" role="alert">{publishError}</p>}
         {publishSuccess && <p className="profile-saved">Quiz publié — aucun accès n'est accordé automatiquement.</p>}
       </div>
+      <h3 className="stats-group-title profile-section-title">Gérer les accès</h3>
+      <QuizAccessManager quizzes={hostedQuizzes} />
       <h3 className="stats-group-title profile-section-title">Toutes les questions ({quiz.questions.length})</h3>
       {quiz.themes.map((theme) => {
         const themeQuestions = quiz.questions.filter((question) => question.theme === theme.id)

@@ -25,3 +25,33 @@ export async function upsertQuiz(title: string, content: unknown): Promise<void>
   )
   if (error) throw error
 }
+
+export interface ProfileSummary {
+  id: string
+  pseudo: string
+  avatar: string
+}
+
+/** Admin uniquement (RLS) : tout le monde, pour choisir à qui accorder l'accès à un quiz. */
+export async function fetchAllProfiles(): Promise<ProfileSummary[]> {
+  const { data, error } = await supabase.from('profiles').select('id, pseudo, avatar').order('pseudo')
+  if (error) throw error
+  return data ?? []
+}
+
+/** Admin uniquement (RLS) : les utilisateurs ayant déjà accès à ce quiz. */
+export async function fetchAccessGrants(quizId: string): Promise<string[]> {
+  const { data, error } = await supabase.from('quiz_access').select('user_id').eq('quiz_id', quizId)
+  if (error) throw error
+  return (data ?? []).map((row) => row.user_id)
+}
+
+export async function grantAccess(quizId: string, userId: string): Promise<void> {
+  const { error } = await supabase.from('quiz_access').insert({ quiz_id: quizId, user_id: userId })
+  if (error) throw error
+}
+
+export async function revokeAccess(quizId: string, userId: string): Promise<void> {
+  const { error } = await supabase.from('quiz_access').delete().eq('quiz_id', quizId).eq('user_id', userId)
+  if (error) throw error
+}
