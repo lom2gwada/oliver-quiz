@@ -18,7 +18,7 @@ import type { HostedQuizSummary } from './types/hostedQuiz'
 import { buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, saveQuestionResults, saveQuizResult, saveStreakResult, saveTimedResult } from './utils/quizHistory'
 import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchTopScore } from './utils/leaderboard'
-import { fetchAccessibleQuizzes, fetchQuizContent } from './utils/hostedQuizzes'
+import { fetchAccessibleQuizzes, fetchQuizContent, upsertQuiz } from './utils/hostedQuizzes'
 import { applyTheme } from './utils/theme'
 import { parseQuiz } from './utils/quizValidation'
 import { isSoundMuted, playClick, setSoundMuted } from './utils/sound'
@@ -42,7 +42,9 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const [gameMode, setGameMode] = useState<GameMode>('classic')
   const [view, setView] = useState<View>('start')
   const [answers, setAnswers] = useState<AnswersByQuestion>({})
-  const [fileError, setFileError] = useState('')
+  const [publishError, setPublishError] = useState('')
+  const [publishSuccess, setPublishSuccess] = useState(false)
+  const [quizLoadError, setQuizLoadError] = useState('')
   const [questionCount, setQuestionCount] = useState(10)
   const [sessionQuestions, setSessionQuestions] = useState<Quiz['questions']>([])
   // Une partie "reprendre mes erreurs" ne porte que sur un sous-ensemble ciblé de questions, pas sur le
@@ -101,25 +103,42 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const toggleTheme = (themeId: string) => setSelectedThemes((previous) =>
     previous.includes(themeId) ? previous.filter((id) => id !== themeId) : [...previous, themeId])
 
-  const loadFile = async (file?: File) => {
-    if (!file) return
+  const selectHostedQuiz = async (id: string) => {
+    setSelectedHostedQuizId(id)
+    if (!id) { setQuiz(initialQuiz); setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setQuizLoadError(''); return }
     try {
-      setQuiz(parseQuiz(JSON.parse(await file.text())))
-      setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setFileError('')
+      setQuiz(parseQuiz(await fetchQuizContent(id)))
+      setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setQuizLoadError('')
     } catch (error) {
-      setFileError(error instanceof Error ? error.message : 'Fichier JSON invalide.')
+      setQuizLoadError(error instanceof Error ? error.message : 'Impossible de charger ce quiz.')
     }
   }
 
-  const selectHostedQuiz = async (id: string) => {
-    setSelectedHostedQuizId(id)
-    if (!id) { setQuiz(initialQuiz); setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); return }
+  /** Admin uniquement : publie un quiz (crée ou met à jour par titre) — n'accorde jamais d'accès automatiquement. */
+  const publishQuiz = async (file?: File) => {
+    if (!file) return
+    setPublishSuccess(false)
     try {
-      setQuiz(parseQuiz(await fetchQuizContent(id)))
-      setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setFileError('')
+      const content = JSON.parse(await file.text())
+      const parsed = parseQuiz(content)
+      await upsertQuiz(parsed.metadata.title, content)
+      setPublishError('')
+      setPublishSuccess(true)
+      fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
-      setFileError(error instanceof Error ? error.message : 'Impossible de charger ce quiz.')
+      setPublishError(error instanceof Error ? error.message : 'Fichier JSON invalide.')
     }
+  }
+
+  /** Télécharge le quiz actuellement chargé (utile pour éditer hors-ligne un quiz déjà publié). */
+  const exportQuiz = () => {
+    const blob = new Blob([JSON.stringify(quiz, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${quiz.metadata.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}.json`
+    link.click()
+    URL.revokeObjectURL(url)
   }
 
   const startQuiz = () => {
@@ -181,6 +200,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
           {hostedQuizzes.map((hosted) => <option key={hosted.id} value={hosted.id}>{hosted.title}</option>)}
         </select>
       </label>}
+      {quizLoadError && <p className="alert" role="alert">{quizLoadError}</p>}
       <div className="mode-picker" role="group" aria-label="Mode de jeu">
         <button type="button" className={gameMode === 'classic' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('classic') }}>🎯 Classique</button>
         <button type="button" className={gameMode === 'streak' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('streak') }}>🔥 Sans-faute</button>
@@ -207,7 +227,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'streakResults' && streakResult && <StreakResultPage {...streakResult} onRestart={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} />}
     {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
     {view === 'timedResults' && timedResult && <TimedResultPage {...timedResult} onRestart={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} />}
-    {view === 'content' && <QuizContentPage quiz={quiz} onBack={() => navigate('start')} onFileChange={loadFile} fileError={fileError} isAdmin={profile?.isAdmin ?? false} />}
+    {view === 'content' && <QuizContentPage quiz={quiz} onBack={() => navigate('start')} onPublish={publishQuiz} onExport={exportQuiz} publishError={publishError} publishSuccess={publishSuccess} isAdmin={profile?.isAdmin ?? false} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} onReplayMissed={replayMissed} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} initialMode={leaderboardMode} onBack={() => navigate(leaderboardBack)} />}
     {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} onViewHistory={() => viewHistory('profile')} onViewLeaderboard={() => viewLeaderboard('profile')} />}

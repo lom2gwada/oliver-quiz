@@ -14,3 +14,14 @@ export async function fetchQuizContent(id: string): Promise<unknown> {
   if (error) throw error
   return data.content
 }
+
+/** Admin uniquement (RLS) : crée le quiz s'il n'existe pas, met à jour son contenu sinon (par `title`).
+ * N'accorde jamais d'accès automatiquement — c'est à l'admin de le faire ensuite, question par question. */
+export async function upsertQuiz(title: string, content: unknown): Promise<void> {
+  const { data: userData } = await supabase.auth.getUser()
+  const { error } = await supabase.from('quizzes').upsert(
+    { title, content, created_by: userData.user?.id, updated_at: new Date().toISOString() },
+    { onConflict: 'title' },
+  )
+  if (error) throw error
+}
