@@ -213,6 +213,26 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     }
   }
 
+  /** Admin uniquement, sur un quiz hébergé actif : ajoute un thème (aucune fonction de renommage/suppression
+   * pour l'instant). Bloque sur un libellé déjà utilisé pour ne pas avoir deux thèmes identiques dans les listes. */
+  const addTheme = async (label: string) => {
+    setEditError('')
+    if (quiz.themes.some((theme) => theme.label.toLowerCase() === label.toLowerCase())) {
+      setEditError('Un thème avec ce nom existe déjà.')
+      throw new Error('duplicate theme')
+    }
+    try {
+      const usedIds = new Set(quiz.themes.map((theme) => theme.id))
+      const updatedQuiz = parseQuiz({ ...quiz, themes: [...quiz.themes, { id: themeIdFrom(label, usedIds), label }] })
+      await upsertQuiz(updatedQuiz.metadata.title, updatedQuiz)
+      setQuiz(updatedQuiz)
+      fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
+    } catch (error) {
+      setEditError(error instanceof Error ? error.message : 'Impossible d\'ajouter ce thème.')
+      throw error
+    }
+  }
+
   /** Télécharge le quiz actuellement chargé (utile pour éditer hors-ligne un quiz déjà publié). */
   const exportQuiz = () => {
     const blob = new Blob([JSON.stringify(quiz, null, 2)], { type: 'application/json' })
@@ -310,7 +330,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'streakResults' && streakResult && <StreakResultPage {...streakResult} onRestart={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} />}
     {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
     {view === 'timedResults' && timedResult && <TimedResultPage {...timedResult} onRestart={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} />}
-    {view === 'content' && <QuizContentPage quiz={quiz} hostedQuizzes={hostedQuizzes} onBack={() => navigate('start')} onPublish={publishQuiz} onExport={exportQuiz} publishError={publishError} publishSuccess={publishSuccess} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onCreateQuiz={createQuiz} createError={createError} />}
+    {view === 'content' && <QuizContentPage quiz={quiz} hostedQuizzes={hostedQuizzes} onBack={() => navigate('start')} onPublish={publishQuiz} onExport={exportQuiz} publishError={publishError} publishSuccess={publishSuccess} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onCreateQuiz={createQuiz} createError={createError} onAddTheme={addTheme} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} onReplayMissed={replayMissed} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} initialMode={leaderboardMode} onBack={() => navigate(leaderboardBack)} />}
     {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} onViewHistory={() => viewHistory('profile')} onViewLeaderboard={() => viewLeaderboard('profile')} />}
