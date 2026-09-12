@@ -34,9 +34,12 @@ interface QuizContentPageProps {
   onCreateQuiz: (title: string, author: string, description: string, themeLabels: string[]) => Promise<void>
   createError: string
   onAddTheme: (label: string) => Promise<void>
+  selectedHostedQuizId: string
+  onSelectHostedQuiz: (id: string) => void
+  quizLoadError: string
 }
 
-export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExport, publishError, publishSuccess, isAdmin, canEditQuiz, onSaveQuestion, onAddQuestion, onDeleteQuestion, editError, onCreateQuiz, createError, onAddTheme }: QuizContentPageProps) {
+export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExport, publishError, publishSuccess, isAdmin, canEditQuiz, onSaveQuestion, onAddQuestion, onDeleteQuestion, editError, onCreateQuiz, createError, onAddTheme, selectedHostedQuizId, onSelectHostedQuiz, quizLoadError }: QuizContentPageProps) {
   const [editingQuestionId, setEditingQuestionId] = useState('')
   const [creatingType, setCreatingType] = useState<Question['type']>('qcm')
   const [creatingTheme, setCreatingTheme] = useState(quiz.themes[0]?.id ?? '')
@@ -72,6 +75,13 @@ export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExpo
       <h2>Quiz</h2>
       <button type="button" className="secondary" onClick={onBack}>Retour</button>
     </div>
+    {hostedQuizzes.length > 0 && <label className="quiz-select">Quiz
+      <select value={selectedHostedQuizId} onChange={(event) => onSelectHostedQuiz(event.target.value)}>
+        <option value="">Culture générale (exemple)</option>
+        {hostedQuizzes.map((hosted) => <option key={hosted.id} value={hosted.id}>{hosted.title}</option>)}
+      </select>
+    </label>}
+    {quizLoadError && <p className="alert" role="alert">{quizLoadError}</p>}
     {quiz.metadata.description && <p className="quiz-description">{quiz.metadata.description}</p>}
     <h3 className="stats-group-title">Répartition des questions</h3>
     <div className="stats-grid">
