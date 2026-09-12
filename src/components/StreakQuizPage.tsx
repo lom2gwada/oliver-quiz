@@ -20,11 +20,13 @@ export interface StreakResult {
 interface StreakQuizPageProps {
   quiz: Quiz
   pool: Question[]
+  /** Si vrai, chaque question a un temps limite (le sien, sinon le barème par défaut) — voir `questionTimeLimits.ts`. */
+  timeboxed: boolean
   onFinish: (result: StreakResult) => void
   onCancel: () => void
 }
 
-export function StreakQuizPage({ quiz, pool, onFinish, onCancel }: StreakQuizPageProps) {
+export function StreakQuizPage({ quiz, pool, timeboxed, onFinish, onCancel }: StreakQuizPageProps) {
   const order = useMemo(() => shuffle(pool), [pool])
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState<UserAnswer | undefined>(undefined)
@@ -52,7 +54,7 @@ export function StreakQuizPage({ quiz, pool, onFinish, onCancel }: StreakQuizPag
     setIndex((value) => value + 1)
     setAnswer(undefined)
   }
-  const remaining = useQuestionTimer(question?.id ?? '', question ? questionTimeLimit(question) : null, advance)
+  const remaining = useQuestionTimer(question?.id ?? '', timeboxed && question ? questionTimeLimit(question) : null, advance)
 
   if (!question) return <section className="empty"><h2>Aucune question</h2><p>Modifiez les filtres pour lancer une partie.</p><button type="button" className="secondary" onClick={onCancel}>Retour</button></section>
   const theme = quiz.themes.find((item) => item.id === question.theme)?.label ?? question.theme

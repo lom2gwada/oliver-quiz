@@ -19,11 +19,13 @@ interface TimedQuizPageProps {
   quiz: Quiz
   pool: Question[]
   durationSeconds: number
+  /** Si vrai, chaque question a un temps limite (le sien, sinon le barème par défaut) — voir `questionTimeLimits.ts`. */
+  timeboxed: boolean
   onFinish: (result: TimedResult) => void
   onCancel: () => void
 }
 
-export function TimedQuizPage({ quiz, pool, durationSeconds, onFinish, onCancel }: TimedQuizPageProps) {
+export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish, onCancel }: TimedQuizPageProps) {
   const [order, setOrder] = useState<Question[]>(() => shuffle(pool))
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState<UserAnswer | undefined>(undefined)
@@ -53,7 +55,7 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, onFinish, onCancel 
     setIndex((value) => value + 1)
     setAnswer(undefined)
   }
-  const questionRemaining = useQuestionTimer(question ? `${question.id}-${index}` : '', question ? questionTimeLimit(question) : null, advance)
+  const questionRemaining = useQuestionTimer(question ? `${question.id}-${index}` : '', timeboxed && question ? questionTimeLimit(question) : null, advance)
 
   const finishNow = () => {
     const finalAttempts = answer === undefined ? attempts : [...attempts, { question, answer }]

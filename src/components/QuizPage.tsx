@@ -20,11 +20,13 @@ function withShuffledAnswers(question: Question): Question {
 interface QuizPageProps {
   quiz: Quiz
   questions: Question[]
+  /** Si vrai, chaque question a un temps limite (le sien, sinon le barème par défaut) — voir `questionTimeLimits.ts`. */
+  timeboxed: boolean
   onFinish: (answers: AnswersByQuestion, elapsedSeconds: number) => void
   onCancel: () => void
 }
 
-export function QuizPage({ quiz, questions, onFinish, onCancel }: QuizPageProps) {
+export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel }: QuizPageProps) {
   const [current, setCurrent] = useState(0)
   const [answers, setAnswers] = useState<AnswersByQuestion>({})
   const [elapsed, setElapsed] = useState(0)
@@ -43,7 +45,7 @@ export function QuizPage({ quiz, questions, onFinish, onCancel }: QuizPageProps)
     if (current === shuffledQuestions.length - 1) onFinish(answers, elapsed)
     else setCurrent((value) => value + 1)
   }
-  const remaining = useQuestionTimer(question?.id ?? '', question ? questionTimeLimit(question) : null, goNext)
+  const remaining = useQuestionTimer(question?.id ?? '', timeboxed && question ? questionTimeLimit(question) : null, goNext)
 
   if (!question) return <section className="empty"><h2>Aucune question</h2><p>Modifiez les filtres pour lancer le quiz.</p><button type="button" className="secondary" onClick={onCancel}>Retour</button></section>
   const theme = quiz.themes.find((item) => item.id === question.theme)?.label ?? question.theme
