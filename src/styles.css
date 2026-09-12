@@ -103,6 +103,19 @@ pre { padding: 1rem; overflow: auto; background: var(--code-bg); border: 1px sol
 .question-list { display: grid; gap: 1rem; padding: 0 1rem 1rem; }
 .question-list-item { padding: 1rem; border-left: 4px solid var(--neutral-border); background: var(--surface-solid); border-radius: 0 .5rem .5rem 0; }
 .question-list-item .question-meta { margin-bottom: .6rem; }
+.question-list-item .edit-toggle { margin-top: .6rem; }
+.question-edit-form { display: grid; gap: .9rem; margin-top: .6rem; }
+.question-edit-form > label { display: grid; gap: .35rem; color: var(--text-soft); }
+.question-edit-form input[type=text], .question-edit-form input[type=number], .question-edit-form textarea, .question-edit-form select { width: 100%; background: var(--surface-solid); color: var(--text); border: 1px solid var(--border-input); border-radius: .45rem; padding: .7rem; font-family: inherit; }
+.question-edit-form textarea { resize: vertical; min-height: 4rem; }
+.question-edit-form fieldset { border: 1px solid var(--border); border-radius: .5rem; padding: .8rem; display: grid; gap: .5rem; }
+.question-edit-form legend { padding: 0 .4rem; color: var(--text-soft); font-size: .85rem; }
+.answer-option-row { display: flex; align-items: center; gap: .6rem; }
+.answer-option-row input[type=text] { flex: 1; }
+.reorder-row { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }
+.reorder-controls { display: flex; gap: .3rem; }
+.reorder-controls button { padding: .3rem .5rem; }
+.question-edit-actions { display: flex; gap: .8rem; }
 .question-list-prompt { font-weight: 700; color: var(--ink); }
 .question-list-explanation { margin-bottom: 0; }
 .pie-chart { margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 1.2rem; display: grid; justify-items: center; gap: .8rem; }
