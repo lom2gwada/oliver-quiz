@@ -30,7 +30,7 @@ describe('qcm', () => {
 describe('code', () => {
   const question: CodeQuestion = {
     ...shared, type: 'code', question: 'Q ?', points: 2,
-    content: { language: 'js', snippet: 'const x = 1', answers: [{ id: 'a', label: 'A', isCorrect: true }, { id: 'b', label: 'B', isCorrect: false }] },
+    content: { language: 'js', snippet: 'const x = 1', multiple: false, answers: [{ id: 'a', label: 'A', isCorrect: true }, { id: 'b', label: 'B', isCorrect: false }] },
   }
 
   it('is correct when the right answer is selected', () => expect(isCorrect(question, ['a'])).toBe(true))

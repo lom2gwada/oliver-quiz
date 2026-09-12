@@ -35,6 +35,7 @@ export interface TextContent {
 export interface CodeContent {
   language: string
   snippet: string
+  multiple: boolean
   answers: AnswerOption[]
 }
 

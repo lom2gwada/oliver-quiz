@@ -27,6 +27,6 @@ export function CodeQuestion({ question, answer, onChange }: { question: Questio
   const html = grammar ? Prism.highlight(question.content.snippet, grammar, language) : escapeHtml(question.content.snippet)
   return <>
     <pre className={`language-${language}`}><code dangerouslySetInnerHTML={{ __html: html }} /></pre>
-    <QCMQuestion question={{ ...question, type: 'qcm', content: { multiple: false, answers: question.content.answers } }} answer={answer} onChange={onChange} />
+    <QCMQuestion question={{ ...question, type: 'qcm', content: { multiple: question.content.multiple, answers: question.content.answers } }} answer={answer} onChange={onChange} />
   </>
 }
