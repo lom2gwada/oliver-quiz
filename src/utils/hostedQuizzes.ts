@@ -16,14 +16,16 @@ export async function fetchQuizContent(id: string): Promise<unknown> {
 }
 
 /** Admin uniquement (RLS) : crée le quiz s'il n'existe pas, met à jour son contenu sinon (par `title`).
- * N'accorde jamais d'accès automatiquement — c'est à l'admin de le faire ensuite, question par question. */
-export async function upsertQuiz(title: string, content: unknown): Promise<void> {
+ * N'accorde jamais d'accès automatiquement — c'est à l'admin de le faire ensuite, question par question.
+ * Renvoie l'id de la ligne (nouvelle ou existante), utile pour sélectionner un quiz venant d'être créé. */
+export async function upsertQuiz(title: string, content: unknown): Promise<string> {
   const { data: userData } = await supabase.auth.getUser()
-  const { error } = await supabase.from('quizzes').upsert(
+  const { data, error } = await supabase.from('quizzes').upsert(
     { title, content, created_by: userData.user?.id, updated_at: new Date().toISOString() },
     { onConflict: 'title' },
-  )
+  ).select('id').single()
   if (error) throw error
+  return data.id
 }
 
 export interface ProfileSummary {
