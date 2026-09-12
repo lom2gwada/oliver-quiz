@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { AnswersByQuestion, Question, Quiz, UserAnswer } from '../types/quiz'
 import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
+import { questionTimeLimit } from '../utils/questionTimeLimits'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { isCorrect } from './ResultPage'
 import { QuestionImage } from './QuestionImage'
@@ -19,13 +20,11 @@ export interface StreakResult {
 interface StreakQuizPageProps {
   quiz: Quiz
   pool: Question[]
-  /** Temps limite par question en secondes, `null`/`undefined` pour aucune limite. Écoulé, la question en cours est soumise en l'état. */
-  questionSeconds?: number | null
   onFinish: (result: StreakResult) => void
   onCancel: () => void
 }
 
-export function StreakQuizPage({ quiz, pool, questionSeconds, onFinish, onCancel }: StreakQuizPageProps) {
+export function StreakQuizPage({ quiz, pool, onFinish, onCancel }: StreakQuizPageProps) {
   const order = useMemo(() => shuffle(pool), [pool])
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState<UserAnswer | undefined>(undefined)
@@ -53,7 +52,7 @@ export function StreakQuizPage({ quiz, pool, questionSeconds, onFinish, onCancel
     setIndex((value) => value + 1)
     setAnswer(undefined)
   }
-  const remaining = useQuestionTimer(question?.id ?? '', questionSeconds ?? null, advance)
+  const remaining = useQuestionTimer(question?.id ?? '', question ? questionTimeLimit(question) : null, advance)
 
   if (!question) return <section className="empty"><h2>Aucune question</h2><p>Modifiez les filtres pour lancer une partie.</p><button type="button" className="secondary" onClick={onCancel}>Retour</button></section>
   const theme = quiz.themes.find((item) => item.id === question.theme)?.label ?? question.theme

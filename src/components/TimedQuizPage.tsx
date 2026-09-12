@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Question, QuestionAttempt, Quiz, UserAnswer } from '../types/quiz'
 import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
+import { questionTimeLimit } from '../utils/questionTimeLimits'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { QuestionImage } from './QuestionImage'
 import { QuestionRenderer } from './QuestionRenderer'
@@ -18,13 +19,11 @@ interface TimedQuizPageProps {
   quiz: Quiz
   pool: Question[]
   durationSeconds: number
-  /** Temps limite par question en secondes, `null`/`undefined` pour aucune limite. Écoulé, la question en cours est soumise en l'état. */
-  questionSeconds?: number | null
   onFinish: (result: TimedResult) => void
   onCancel: () => void
 }
 
-export function TimedQuizPage({ quiz, pool, durationSeconds, questionSeconds, onFinish, onCancel }: TimedQuizPageProps) {
+export function TimedQuizPage({ quiz, pool, durationSeconds, onFinish, onCancel }: TimedQuizPageProps) {
   const [order, setOrder] = useState<Question[]>(() => shuffle(pool))
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState<UserAnswer | undefined>(undefined)
@@ -54,7 +53,7 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, questionSeconds, on
     setIndex((value) => value + 1)
     setAnswer(undefined)
   }
-  const questionRemaining = useQuestionTimer(question ? `${question.id}-${index}` : '', questionSeconds ?? null, advance)
+  const questionRemaining = useQuestionTimer(question ? `${question.id}-${index}` : '', question ? questionTimeLimit(question) : null, advance)
 
   const finishNow = () => {
     const finalAttempts = answer === undefined ? attempts : [...attempts, { question, answer }]
