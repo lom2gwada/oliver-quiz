@@ -17,7 +17,7 @@ const bool: BooleanQuestion = {
 
 describe('buildQuizResultPayload', () => {
   it('computes the score and point totals', () => {
-    const payload = buildQuizResultPayload([qcm, bool], { q1: ['a'], q2: ['true'] }, themes, 42, 'Culture générale')
+    const payload = buildQuizResultPayload([qcm, bool], { q1: ['a'], q2: ['true'] }, themes, 42, 'Culture générale', true)
     expect(payload.score).toBe(100)
     expect(payload.earned_points).toBe(3)
     expect(payload.total_points).toBe(3)
@@ -27,57 +27,66 @@ describe('buildQuizResultPayload', () => {
   })
 
   it('computes a partial score when some answers are wrong', () => {
-    const payload = buildQuizResultPayload([qcm, bool], { q1: ['b'], q2: ['true'] }, themes, 0, 'Culture générale')
+    const payload = buildQuizResultPayload([qcm, bool], { q1: ['b'], q2: ['true'] }, themes, 0, 'Culture générale', true)
     expect(payload.score).toBe(67)
     expect(payload.earned_points).toBe(2)
   })
 
   it('resolves theme ids to labels and dedupes them', () => {
-    const payload = buildQuizResultPayload([qcm, bool], {}, themes, 0, 'Culture générale')
+    const payload = buildQuizResultPayload([qcm, bool], {}, themes, 0, 'Culture générale', true)
     expect(payload.themes).toEqual(['Histoire', 'Géographie'])
   })
 
   it('falls back to the raw id when a theme is unknown', () => {
     const orphan: QCMQuestion = { ...qcm, id: 'q3', theme: 'unknown' }
-    const payload = buildQuizResultPayload([orphan], {}, themes, 0, 'Culture générale')
+    const payload = buildQuizResultPayload([orphan], {}, themes, 0, 'Culture générale', true)
     expect(payload.themes).toEqual(['unknown'])
   })
 
   it('aggregates correctness by theme, type and difficulty', () => {
-    const payload = buildQuizResultPayload([qcm, bool], { q1: ['a'], q2: ['false'] }, themes, 0, 'Culture générale')
+    const payload = buildQuizResultPayload([qcm, bool], { q1: ['a'], q2: ['false'] }, themes, 0, 'Culture générale', true)
     expect(payload.by_theme).toEqual({ Histoire: { correct: 1, total: 1 }, Géographie: { correct: 0, total: 1 } })
     expect(payload.by_type).toEqual({ qcm: { correct: 1, total: 1 }, boolean: { correct: 0, total: 1 } })
     expect(payload.by_difficulty).toEqual({ easy: { correct: 1, total: 1 }, medium: { correct: 0, total: 1 } })
   })
 
   it('returns a score of 0 for an empty question set', () => {
-    const payload = buildQuizResultPayload([], {}, themes, 0, 'Culture générale')
+    const payload = buildQuizResultPayload([], {}, themes, 0, 'Culture générale', true)
     expect(payload.score).toBe(0)
     expect(payload.themes).toEqual([])
   })
 
   it('tags the payload with the given quiz title', () => {
-    expect(buildQuizResultPayload([qcm], {}, themes, 0, 'Test technique IT').quiz_title).toBe('Test technique IT')
+    expect(buildQuizResultPayload([qcm], {}, themes, 0, 'Test technique IT', true).quiz_title).toBe('Test technique IT')
+  })
+
+  it('records whether the run was played without any theme/difficulty filter', () => {
+    expect(buildQuizResultPayload([qcm], {}, themes, 0, 'Culture générale', true).unfiltered).toBe(true)
+    expect(buildQuizResultPayload([qcm], {}, themes, 0, 'Culture générale', false).unfiltered).toBe(false)
   })
 })
 
 describe('buildStreakResultPayload', () => {
   it('builds a payload with resolved, deduped theme labels', () => {
-    const payload = buildStreakResultPayload(7, 120, false, [qcm, bool, qcm], themes, 'Culture générale')
+    const payload = buildStreakResultPayload(7, 120, false, [qcm, bool, qcm], themes, 'Culture générale', true)
     expect(payload).toEqual({
       quiz_title: 'Culture générale', streak_count: 7, elapsed_seconds: 120, victory: false,
-      themes: ['Histoire', 'Géographie'],
+      themes: ['Histoire', 'Géographie'], unfiltered: true,
     })
   })
 
   it('falls back to the raw id when a theme is unknown', () => {
     const orphan: QCMQuestion = { ...qcm, id: 'q3', theme: 'unknown' }
-    const payload = buildStreakResultPayload(0, 0, false, [orphan], themes, 'Culture générale')
+    const payload = buildStreakResultPayload(0, 0, false, [orphan], themes, 'Culture générale', true)
     expect(payload.themes).toEqual(['unknown'])
   })
 
   it('marks a full clear as a victory', () => {
-    expect(buildStreakResultPayload(74, 300, true, [], themes, 'Culture générale').victory).toBe(true)
+    expect(buildStreakResultPayload(74, 300, true, [], themes, 'Culture générale', true).victory).toBe(true)
+  })
+
+  it('records whether the run was played without any theme/difficulty filter', () => {
+    expect(buildStreakResultPayload(1, 0, false, [], themes, 'Culture générale', false).unfiltered).toBe(false)
   })
 })
 
@@ -85,36 +94,40 @@ describe('buildTimedResultPayload', () => {
   it('counts correct attempts and resolves deduped theme labels', () => {
     const payload = buildTimedResultPayload(
       [{ question: qcm, answer: ['a'] }, { question: bool, answer: ['false'] }, { question: qcm, answer: ['a'] }],
-      300, 300, themes, 'Culture générale',
+      300, 300, themes, 'Culture générale', true,
     )
     expect(payload).toEqual({
       quiz_title: 'Culture générale', correct_count: 2, question_count: 3,
-      duration_seconds: 300, elapsed_seconds: 300, themes: ['Histoire', 'Géographie'],
+      duration_seconds: 300, elapsed_seconds: 300, themes: ['Histoire', 'Géographie'], unfiltered: true,
     })
   })
 
   it('counts a question answered more than once as separate attempts', () => {
-    const payload = buildTimedResultPayload([{ question: qcm, answer: ['a'] }, { question: qcm, answer: ['b'] }], 60, 300, themes, 'Culture générale')
+    const payload = buildTimedResultPayload([{ question: qcm, answer: ['a'] }, { question: qcm, answer: ['b'] }], 60, 300, themes, 'Culture générale', true)
     expect(payload.question_count).toBe(2)
     expect(payload.correct_count).toBe(1)
   })
 
   it('marks an unlimited-duration run with duration_seconds 0', () => {
-    expect(buildTimedResultPayload([], 45, 0, themes, 'Culture générale').duration_seconds).toBe(0)
+    expect(buildTimedResultPayload([], 45, 0, themes, 'Culture générale', true).duration_seconds).toBe(0)
   })
 
   it('falls back to the raw id when a theme is unknown', () => {
     const orphan: QCMQuestion = { ...qcm, id: 'q3', theme: 'unknown' }
-    const payload = buildTimedResultPayload([{ question: orphan, answer: undefined }], 0, 60, themes, 'Culture générale')
+    const payload = buildTimedResultPayload([{ question: orphan, answer: undefined }], 0, 60, themes, 'Culture générale', true)
     expect(payload.themes).toEqual(['unknown'])
     expect(payload.correct_count).toBe(0)
+  })
+
+  it('records whether the run was played without any theme/difficulty filter', () => {
+    expect(buildTimedResultPayload([], 0, 60, themes, 'Culture générale', false).unfiltered).toBe(false)
   })
 })
 
 function row(overrides: Partial<QuizResultRow>): QuizResultRow {
   return {
     id: '1', created_at: '2026-01-01T00:00:00Z', quiz_title: 'Culture générale', score: 50, earned_points: 1, total_points: 2,
-    elapsed_seconds: 60, question_count: 2, themes: [], by_theme: {}, by_type: {}, by_difficulty: {},
+    elapsed_seconds: 60, question_count: 2, themes: [], by_theme: {}, by_type: {}, by_difficulty: {}, unfiltered: true,
     ...overrides,
   }
 }
