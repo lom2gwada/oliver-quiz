@@ -23,6 +23,7 @@ describe('buildQuizResultPayload', () => {
     expect(payload.total_points).toBe(3)
     expect(payload.elapsed_seconds).toBe(42)
     expect(payload.question_count).toBe(2)
+    expect(payload.correct_count).toBe(2)
     expect(payload.quiz_title).toBe('Culture générale')
   })
 
@@ -30,6 +31,7 @@ describe('buildQuizResultPayload', () => {
     const payload = buildQuizResultPayload([qcm, bool], { q1: ['b'], q2: ['true'] }, themes, 0, 'Culture générale', true)
     expect(payload.score).toBe(67)
     expect(payload.earned_points).toBe(2)
+    expect(payload.correct_count).toBe(1)
   })
 
   it('resolves theme ids to labels and dedupes them', () => {
@@ -127,7 +129,7 @@ describe('buildTimedResultPayload', () => {
 function row(overrides: Partial<QuizResultRow>): QuizResultRow {
   return {
     id: '1', created_at: '2026-01-01T00:00:00Z', quiz_title: 'Culture générale', score: 50, earned_points: 1, total_points: 2,
-    elapsed_seconds: 60, question_count: 2, themes: [], by_theme: {}, by_type: {}, by_difficulty: {}, unfiltered: true,
+    elapsed_seconds: 60, question_count: 2, correct_count: 1, themes: [], by_theme: {}, by_type: {}, by_difficulty: {}, unfiltered: true,
     ...overrides,
   }
 }

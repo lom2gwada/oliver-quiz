@@ -17,7 +17,8 @@ function aggregate(questions: Question[], answers: AnswersByQuestion, keyOf: (qu
 
 /** Construit le résumé d'une partie terminée, prêt à être enregistré. Les thèmes sont figés en libellés (pas des ids) pour rester lisibles même si le quiz importé change ensuite. */
 export function buildQuizResultPayload(questions: Question[], answers: AnswersByQuestion, themes: Theme[], elapsedSeconds: number, quizTitle: string, unfiltered: boolean): QuizResultPayload {
-  const earnedPoints = questions.filter((question) => isCorrect(question, answers[question.id])).reduce((sum, question) => sum + question.points, 0)
+  const correctQuestions = questions.filter((question) => isCorrect(question, answers[question.id]))
+  const earnedPoints = correctQuestions.reduce((sum, question) => sum + question.points, 0)
   const totalPoints = questions.reduce((sum, question) => sum + question.points, 0)
   const themeLabel = (id: string) => themes.find((theme) => theme.id === id)?.label ?? id
 
@@ -28,6 +29,7 @@ export function buildQuizResultPayload(questions: Question[], answers: AnswersBy
     total_points: totalPoints,
     elapsed_seconds: elapsedSeconds,
     question_count: questions.length,
+    correct_count: correctQuestions.length,
     themes: Array.from(new Set(questions.map((question) => themeLabel(question.theme)))),
     by_theme: aggregate(questions, answers, (question) => themeLabel(question.theme)),
     by_type: aggregate(questions, answers, (question) => question.type),

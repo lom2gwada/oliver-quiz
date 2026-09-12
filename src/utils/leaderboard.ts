@@ -1,4 +1,4 @@
-import type { LeaderboardRow, StreakLeaderboardRow, TimedLeaderboardRow } from '../types/leaderboard'
+import type { LeaderboardRow, OverallLeaderboardRow, StreakLeaderboardRow, TimedLeaderboardRow } from '../types/leaderboard'
 import { supabase } from './supabase'
 
 export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
@@ -29,6 +29,16 @@ export async function fetchTimedLeaderboard(): Promise<TimedLeaderboardRow[]> {
   // NULLS LAST : une partie de 0 seconde (pace non calculable) ne doit pas se retrouver en tête faute de valeur.
   const { data, error } = await supabase.from('timed_leaderboard').select('*')
     .order('pace_per_minute', { ascending: false, nullsFirst: false }).order('correct_count', { ascending: false })
+  if (error) throw error
+  return data ?? []
+}
+
+/** Cumulé sur toutes les parties non filtrées, tous modes confondus — trié sur le volume de bonnes
+ * réponses en premier (pas le taux de réussite, sinon quelques parties parfaites battraient un gros
+ * volume de bonnes réponses à un excellent taux). */
+export async function fetchOverallLeaderboard(): Promise<OverallLeaderboardRow[]> {
+  const { data, error } = await supabase.from('overall_leaderboard').select('*')
+    .order('total_correct', { ascending: false }).order('success_rate', { ascending: false, nullsFirst: false })
   if (error) throw error
   return data ?? []
 }

@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import type { GameMode, Quiz } from '../types/quiz'
-import type { LeaderboardRow, StreakLeaderboardRow, TimedLeaderboardRow } from '../types/leaderboard'
-import { fetchLeaderboard, fetchStreakLeaderboard, fetchTimedLeaderboard } from '../utils/leaderboard'
+import type { LeaderboardRow, OverallLeaderboardRow, StreakLeaderboardRow, TimedLeaderboardRow } from '../types/leaderboard'
+import { fetchLeaderboard, fetchOverallLeaderboard, fetchStreakLeaderboard, fetchTimedLeaderboard } from '../utils/leaderboard'
 import { supabase } from '../utils/supabase'
 import { formatDuration } from '../utils/time'
 
 const RANK_MEDALS: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
 const MAX_ROWS = 10
+
+type LeaderboardTab = GameMode | 'overall'
 
 interface DisplayRow {
   userId: string
@@ -23,10 +25,11 @@ interface LeaderboardPageProps {
 }
 
 export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: LeaderboardPageProps) {
-  const [mode, setMode] = useState<GameMode>(initialMode)
+  const [mode, setMode] = useState<LeaderboardTab>(initialMode)
   const [rows, setRows] = useState<LeaderboardRow[] | null>(null)
   const [streakRows, setStreakRows] = useState<StreakLeaderboardRow[] | null>(null)
   const [timedRows, setTimedRows] = useState<TimedLeaderboardRow[] | null>(null)
+  const [overallRows, setOverallRows] = useState<OverallLeaderboardRow[] | null>(null)
   const [error, setError] = useState('')
   const [selectedQuiz, setSelectedQuiz] = useState<string | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
@@ -35,10 +38,11 @@ export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: Leade
     fetchLeaderboard().then(setRows).catch(() => setError('Impossible de charger le classement.'))
     fetchStreakLeaderboard().then(setStreakRows).catch(() => {})
     fetchTimedLeaderboard().then(setTimedRows).catch(() => {})
+    fetchOverallLeaderboard().then(setOverallRows).catch(() => {})
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null))
   }, [])
 
-  const activeRows = mode === 'classic' ? rows : mode === 'streak' ? streakRows : timedRows
+  const activeRows = mode === 'classic' ? rows : mode === 'streak' ? streakRows : mode === 'timed' ? timedRows : overallRows
   const quizTitles = activeRows ? Array.from(new Set(activeRows.map((row) => row.quiz_title))) : []
   const activeQuiz = selectedQuiz && quizTitles.includes(selectedQuiz) ? selectedQuiz : (quizTitles.includes(quiz.metadata.title) ? quiz.metadata.title : quizTitles[0])
 
@@ -63,14 +67,23 @@ export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: Leade
             details: `${row.themes.join(', ') || 'Tous les thèmes'} · ⏱ ${formatDuration(row.elapsed_seconds)}`,
             score: `${row.victory ? '🏆' : '🔥'} ${row.best_streak}`,
           }))
-        : (timedRows ?? []).filter((row) => row.quiz_title === activeQuiz)
-          .sort((a, b) => (b.pace_per_minute ?? -1) - (a.pace_per_minute ?? -1) || b.correct_count - a.correct_count)
-          .slice(0, MAX_ROWS)
-          .map((row) => ({
-            userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
-            details: `${row.correct_count}/${row.question_count} · ${row.duration_seconds === 0 ? 'Infini' : `${Math.round(row.duration_seconds / 60)} min`} · ⏱ ${formatDuration(row.elapsed_seconds)}`,
-            score: row.pace_per_minute !== null ? `${row.pace_per_minute}/min` : '—',
-          }))
+        : mode === 'timed'
+          ? (timedRows ?? []).filter((row) => row.quiz_title === activeQuiz)
+            .sort((a, b) => (b.pace_per_minute ?? -1) - (a.pace_per_minute ?? -1) || b.correct_count - a.correct_count)
+            .slice(0, MAX_ROWS)
+            .map((row) => ({
+              userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
+              details: `${row.correct_count}/${row.question_count} · ${row.duration_seconds === 0 ? 'Infini' : `${Math.round(row.duration_seconds / 60)} min`} · ⏱ ${formatDuration(row.elapsed_seconds)}`,
+              score: row.pace_per_minute !== null ? `${row.pace_per_minute}/min` : '—',
+            }))
+          : (overallRows ?? []).filter((row) => row.quiz_title === activeQuiz)
+            .sort((a, b) => b.total_correct - a.total_correct || (b.success_rate ?? -1) - (a.success_rate ?? -1))
+            .slice(0, MAX_ROWS)
+            .map((row) => ({
+              userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
+              details: `${row.total_attempted} tentées · ${row.games_played} partie${row.games_played > 1 ? 's' : ''} · ${row.success_rate ?? 0}% de réussite`,
+              score: `✓ ${row.total_correct}`,
+            }))
 
   return <section className="stats-page">
     <div className="stats-header">
@@ -81,6 +94,7 @@ export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: Leade
       <button type="button" className={mode === 'classic' ? 'mode-option active' : 'mode-option'} onClick={() => setMode('classic')}>🎯 Classique</button>
       <button type="button" className={mode === 'streak' ? 'mode-option active' : 'mode-option'} onClick={() => setMode('streak')}>🔥 Sans-faute</button>
       <button type="button" className={mode === 'timed' ? 'mode-option active' : 'mode-option'} onClick={() => setMode('timed')}>⏱️ Contre-la-montre</button>
+      <button type="button" className={mode === 'overall' ? 'mode-option active' : 'mode-option'} onClick={() => setMode('overall')}>🏅 Général</button>
     </div>
     {error && mode === 'classic' && <p className="alert" role="alert">{error}</p>}
     {!activeRows && <p>Chargement…</p>}
