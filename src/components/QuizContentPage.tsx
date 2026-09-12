@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Difficulty, Question, Quiz } from '../types/quiz'
 import type { HostedQuizSummary } from '../types/hostedQuiz'
+import { CreateQuizForm } from './CreateQuizForm'
 import { MermaidDiagram } from './MermaidDiagram'
 import { PieChart } from './PieChart'
 import { createBlankQuestion, QuestionEditForm } from './QuestionEditForm'
@@ -30,9 +31,11 @@ interface QuizContentPageProps {
   onAddQuestion: (created: Question) => Promise<void>
   onDeleteQuestion: (id: string) => Promise<void>
   editError: string
+  onCreateQuiz: (title: string, author: string, description: string, themeLabels: string[]) => Promise<void>
+  createError: string
 }
 
-export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExport, publishError, publishSuccess, isAdmin, canEditQuiz, onSaveQuestion, onAddQuestion, onDeleteQuestion, editError }: QuizContentPageProps) {
+export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExport, publishError, publishSuccess, isAdmin, canEditQuiz, onSaveQuestion, onAddQuestion, onDeleteQuestion, editError, onCreateQuiz, createError }: QuizContentPageProps) {
   const [editingQuestionId, setEditingQuestionId] = useState('')
   const [creatingType, setCreatingType] = useState<Question['type']>('qcm')
   const [creatingTheme, setCreatingTheme] = useState(quiz.themes[0]?.id ?? '')
@@ -77,6 +80,8 @@ export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExpo
       })}
     </div>
     {isAdmin && <>
+      <h3 className="stats-group-title profile-section-title">Créer un quiz</h3>
+      <CreateQuizForm error={createError} onCreate={onCreateQuiz} />
       <h3 className="stats-group-title profile-section-title">Publier un quiz</h3>
       <div className="quiz-import">
         <label className="file-input">Importer / mettre à jour un quiz (JSON)<input type="file" accept="application/json,.json" onChange={(event) => onPublish(event.target.files?.[0])} /></label>

@@ -35,6 +35,16 @@ function pickRandomQuestions<T>(questions: T[], count: number): T[] {
   return shuffle(questions).slice(0, Math.min(count, questions.length))
 }
 
+/** Dérive un id de thème stable et unique à partir de son libellé (pour la création d'un quiz de zéro). */
+function themeIdFrom(label: string, usedIds: Set<string>): string {
+  const base = label.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'theme'
+  let id = base
+  let suffix = 2
+  while (usedIds.has(id)) { id = `${base}-${suffix}`; suffix += 1 }
+  usedIds.add(id)
+  return id
+}
+
 export default function App({ onLogout }: { onLogout: () => void }) {
   const [quiz, setQuiz] = useState<Quiz>(initialQuiz)
   const [selectedThemes, setSelectedThemes] = useState<string[]>([])
@@ -45,6 +55,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const [publishError, setPublishError] = useState('')
   const [publishSuccess, setPublishSuccess] = useState(false)
   const [editError, setEditError] = useState('')
+  const [createError, setCreateError] = useState('')
   const [quizLoadError, setQuizLoadError] = useState('')
   const [questionCount, setQuestionCount] = useState(10)
   const [sessionQuestions, setSessionQuestions] = useState<Quiz['questions']>([])
@@ -112,6 +123,35 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setQuizLoadError('')
     } catch (error) {
       setQuizLoadError(error instanceof Error ? error.message : 'Impossible de charger ce quiz.')
+    }
+  }
+
+  /** Admin uniquement : crée un quiz vide de zéro (titre/auteur/description + thèmes de départ, aucune question).
+   * Bloque si le titre existe déjà (l'upsert par titre écraserait sinon silencieusement un quiz existant).
+   * Le nouveau quiz devient le quiz actif, prêt à recevoir des questions via "➕ Ajouter une question". */
+  const createQuiz = async (title: string, author: string, description: string, themeLabels: string[]) => {
+    setCreateError('')
+    if (hostedQuizzes.some((existing) => existing.title === title)) {
+      setCreateError('Un quiz avec ce titre existe déjà.')
+      throw new Error('duplicate title')
+    }
+    try {
+      const usedIds = new Set<string>()
+      const themes = themeLabels.map((label) => ({ id: themeIdFrom(label, usedIds), label }))
+      const newQuiz = parseQuiz({
+        version: '1.0',
+        metadata: { title, author, createdAt: new Date().toISOString(), description: description || undefined },
+        themes,
+        questions: [],
+      })
+      const id = await upsertQuiz(newQuiz.metadata.title, newQuiz)
+      setQuiz(newQuiz)
+      setSelectedHostedQuizId(id)
+      setSelectedThemes([]); setDifficulty(''); setSessionQuestions([])
+      fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : 'Impossible de créer ce quiz.')
+      throw error
     }
   }
 
@@ -270,7 +310,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'streakResults' && streakResult && <StreakResultPage {...streakResult} onRestart={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} />}
     {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
     {view === 'timedResults' && timedResult && <TimedResultPage {...timedResult} onRestart={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} />}
-    {view === 'content' && <QuizContentPage quiz={quiz} hostedQuizzes={hostedQuizzes} onBack={() => navigate('start')} onPublish={publishQuiz} onExport={exportQuiz} publishError={publishError} publishSuccess={publishSuccess} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} />}
+    {view === 'content' && <QuizContentPage quiz={quiz} hostedQuizzes={hostedQuizzes} onBack={() => navigate('start')} onPublish={publishQuiz} onExport={exportQuiz} publishError={publishError} publishSuccess={publishSuccess} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onCreateQuiz={createQuiz} createError={createError} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} onReplayMissed={replayMissed} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} initialMode={leaderboardMode} onBack={() => navigate(leaderboardBack)} />}
     {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} onViewHistory={() => viewHistory('profile')} onViewLeaderboard={() => viewLeaderboard('profile')} />}
