@@ -10,6 +10,8 @@ export interface QuizResultPayload {
   total_points: number
   elapsed_seconds: number
   question_count: number
+  /** Nombre de questions correctement répondues (pas les points — les points varient par difficulté). Alimente le classement général cumulé. */
+  correct_count: number
   themes: string[]
   by_theme: Record<string, StatBucket>
   by_type: Record<string, StatBucket>

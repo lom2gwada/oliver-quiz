@@ -33,3 +33,16 @@ export interface TimedLeaderboardRow {
   pace_per_minute: number | null
   themes: string[]
 }
+
+/** Cumulé sur toutes les parties (non filtrées) tous modes confondus, contrairement aux 3 autres
+ * classements qui ne gardent que la meilleure partie de chacun. */
+export interface OverallLeaderboardRow {
+  quiz_title: string
+  user_id: string
+  pseudo: string
+  avatar: string
+  total_correct: number
+  total_attempted: number
+  success_rate: number | null
+  games_played: number
+}
