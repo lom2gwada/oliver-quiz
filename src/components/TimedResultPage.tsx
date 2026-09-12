@@ -13,9 +13,10 @@ interface TimedResultPageProps {
   durationSeconds: number
   onRestart: () => void
   onViewHistory: () => void
+  onViewLeaderboard: () => void
 }
 
-export function TimedResultPage({ attempts, elapsedSeconds, onRestart, onViewHistory }: TimedResultPageProps) {
+export function TimedResultPage({ attempts, elapsedSeconds, onRestart, onViewHistory, onViewLeaderboard }: TimedResultPageProps) {
   const correctCount = attempts.filter((attempt) => isCorrect(attempt.question, attempt.answer)).length
   const perfect = attempts.length > 0 && correctCount === attempts.length
   useEffect(() => { perfect ? playVictory() : playFinish() }, [])
@@ -30,6 +31,7 @@ export function TimedResultPage({ attempts, elapsedSeconds, onRestart, onViewHis
     <button type="button" onClick={onRestart}>Recommencer</button>
     <div className="nav-links">
       <button type="button" className="secondary" onClick={onViewHistory}>🕓 Historique</button>
+      <button type="button" className="secondary" onClick={onViewLeaderboard}>🏆 Classement</button>
     </div>
     <div className="corrections">{attempts.map(({ question, answer }, index) => {
       const correct = isCorrect(question, answer)

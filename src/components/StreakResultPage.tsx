@@ -15,9 +15,10 @@ interface StreakResultPageProps {
   answers: AnswersByQuestion
   onRestart: () => void
   onViewHistory: () => void
+  onViewLeaderboard: () => void
 }
 
-export function StreakResultPage({ streakCount, elapsedSeconds, victory, playedQuestions, answers, onRestart, onViewHistory }: StreakResultPageProps) {
+export function StreakResultPage({ streakCount, elapsedSeconds, victory, playedQuestions, answers, onRestart, onViewHistory, onViewLeaderboard }: StreakResultPageProps) {
   useEffect(() => { victory ? playVictory() : playFinish() }, [])
   return <section className="results">
     {victory && <Confetti />}
@@ -31,6 +32,7 @@ export function StreakResultPage({ streakCount, elapsedSeconds, victory, playedQ
     <button type="button" onClick={onRestart}>Recommencer</button>
     <div className="nav-links">
       <button type="button" className="secondary" onClick={onViewHistory}>🕓 Historique</button>
+      <button type="button" className="secondary" onClick={onViewLeaderboard}>🏆 Classement</button>
     </div>
     <div className="corrections">{playedQuestions.map((question) => {
       const correct = isCorrect(question, answers[question.id])
