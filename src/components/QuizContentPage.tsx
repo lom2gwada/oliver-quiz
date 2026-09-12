@@ -33,13 +33,24 @@ interface QuizContentPageProps {
   editError: string
   onCreateQuiz: (title: string, author: string, description: string, themeLabels: string[]) => Promise<void>
   createError: string
+  onAddTheme: (label: string) => Promise<void>
 }
 
-export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExport, publishError, publishSuccess, isAdmin, canEditQuiz, onSaveQuestion, onAddQuestion, onDeleteQuestion, editError, onCreateQuiz, createError }: QuizContentPageProps) {
+export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExport, publishError, publishSuccess, isAdmin, canEditQuiz, onSaveQuestion, onAddQuestion, onDeleteQuestion, editError, onCreateQuiz, createError, onAddTheme }: QuizContentPageProps) {
   const [editingQuestionId, setEditingQuestionId] = useState('')
   const [creatingType, setCreatingType] = useState<Question['type']>('qcm')
   const [creatingTheme, setCreatingTheme] = useState(quiz.themes[0]?.id ?? '')
+  // `creatingTheme` peut devenir obsolète (thème d'un quiz précédent, ou d'avant l'ajout d'un thème) sans que ce
+  // composant ne se démonte — on retombe alors sur le premier thème du quiz actif plutôt que de fabriquer une
+  // question référençant un thème qui n'existe plus (ce que `parseQuiz` rejetterait à l'enregistrement).
+  const effectiveCreatingTheme = quiz.themes.some((theme) => theme.id === creatingTheme) ? creatingTheme : (quiz.themes[0]?.id ?? '')
   const [draftQuestion, setDraftQuestion] = useState<Question | null>(null)
+  const [newThemeLabel, setNewThemeLabel] = useState('')
+  const [addingTheme, setAddingTheme] = useState(false)
+  const addTheme = async () => {
+    setAddingTheme(true)
+    try { await onAddTheme(newThemeLabel.trim()); setNewThemeLabel('') } catch { /* editError affiché ci-dessous */ } finally { setAddingTheme(false) }
+  }
   const byTheme = quiz.themes
     .map((theme, index) => ({
       label: theme.label,
@@ -92,6 +103,11 @@ export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExpo
       <h3 className="stats-group-title profile-section-title">Gérer les accès</h3>
       <QuizAccessManager quizzes={hostedQuizzes} />
       <h3 className="stats-group-title profile-section-title">Toutes les questions ({quiz.questions.length})</h3>
+      {canEditQuiz && <div className="question-create-bar">
+        <input type="text" value={newThemeLabel} onChange={(event) => setNewThemeLabel(event.target.value)} placeholder="Nom du nouveau thème" />
+        <button type="button" className="secondary" onClick={addTheme} disabled={addingTheme || !newThemeLabel.trim()}>➕ Ajouter un thème</button>
+      </div>}
+      {canEditQuiz && editError && !draftQuestion && !editingQuestionId && <p className="alert" role="alert">{editError}</p>}
       {canEditQuiz && (draftQuestion ? <QuestionEditForm
         question={draftQuestion}
         themes={quiz.themes}
@@ -102,10 +118,10 @@ export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExpo
         <select value={creatingType} onChange={(event) => setCreatingType(event.target.value as Question['type'])}>
           {QUESTION_TYPES.map((type) => <option key={type} value={type}>{TYPE_ICONS[type]} {TYPE_LABELS[type]}</option>)}
         </select>
-        <select value={creatingTheme} onChange={(event) => setCreatingTheme(event.target.value)}>
+        <select value={effectiveCreatingTheme} onChange={(event) => setCreatingTheme(event.target.value)}>
           {quiz.themes.map((theme) => <option key={theme.id} value={theme.id}>{theme.label}</option>)}
         </select>
-        <button type="button" onClick={() => setDraftQuestion(createBlankQuestion(creatingType, creatingTheme))} disabled={!creatingTheme}>➕ Ajouter une question</button>
+        <button type="button" onClick={() => setDraftQuestion(createBlankQuestion(creatingType, effectiveCreatingTheme))} disabled={!effectiveCreatingTheme}>➕ Ajouter une question</button>
       </div>)}
       {quiz.themes.map((theme) => {
         const themeQuestions = quiz.questions.filter((question) => question.theme === theme.id)

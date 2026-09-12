@@ -200,11 +200,20 @@ interface QuestionEditFormProps {
 
 export function QuestionEditForm({ question, themes, error, onSave, onCancel }: QuestionEditFormProps) {
   const [draft, setDraft] = useState<Question>(question)
+  // Texte brut séparé de `draft.tags` : si l'input était contrôlé directement par `draft.tags.join(', ')`,
+  // taper une virgule la ferait aussitôt disparaître (split → filtre des entrées vides → rejoin sans la virgule
+  // en cours de frappe). On ne recalcule la liste de tags qu'à l'enregistrement.
+  const [tagsText, setTagsText] = useState(question.tags.join(', '))
   const [saving, setSaving] = useState(false)
 
   const save = async () => {
     setSaving(true)
-    try { await onSave(draft) } finally { setSaving(false) }
+    try {
+      const tags = tagsText.split(',').map((tag) => tag.trim()).filter(Boolean)
+      await onSave({ ...draft, tags })
+    } finally {
+      setSaving(false)
+    }
   }
 
   const contentEditor = (() => {
@@ -237,7 +246,7 @@ export function QuestionEditForm({ question, themes, error, onSave, onCancel }: 
     </label>
     <label>Points<input type="number" value={draft.points} onChange={(event) => setDraft({ ...draft, points: Number(event.target.value) })} /></label>
     <label>Tags (séparés par des virgules)
-      <input type="text" value={draft.tags.join(', ')} onChange={(event) => setDraft({ ...draft, tags: event.target.value.split(',').map((tag) => tag.trim()).filter(Boolean) })} />
+      <input type="text" value={tagsText} onChange={(event) => setTagsText(event.target.value)} />
     </label>
     <label>Image (URL)<input type="text" value={draft.imageUrl ?? ''} onChange={(event) => setDraft({ ...draft, imageUrl: toOptionalString(event.target.value) })} /></label>
     <label>Texte alternatif de l'image<input type="text" value={draft.imageAlt ?? ''} onChange={(event) => setDraft({ ...draft, imageAlt: toOptionalString(event.target.value) })} /></label>
