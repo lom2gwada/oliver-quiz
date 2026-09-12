@@ -1,4 +1,5 @@
 import type { Difficulty, Question, Quiz } from '../types/quiz'
+import { MermaidDiagram } from './MermaidDiagram'
 import { PieChart } from './PieChart'
 import { QuestionImage } from './QuestionImage'
 import { TYPE_ICONS, TYPE_LABELS } from './QuizPage'
@@ -74,6 +75,7 @@ export function QuizContentPage({ quiz, onBack, onFileChange, fileError, isAdmin
               <div className="question-meta"><span>{TYPE_ICONS[question.type]} {TYPE_LABELS[question.type]}</span><span>{DIFFICULTY_LABELS[question.difficulty]}</span><span>{question.points} pts</span></div>
               <p className="question-list-prompt">{question.question}</p>
               {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
+              {question.diagram && <MermaidDiagram chart={question.diagram} />}
               <p><strong>Réponse :</strong> {correctAnswer(question)}</p>
               <p className="question-list-explanation">{question.explanation}</p>
             </article>)}

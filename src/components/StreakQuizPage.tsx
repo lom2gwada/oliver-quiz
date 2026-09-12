@@ -5,6 +5,7 @@ import { shuffle } from '../utils/shuffle'
 import { questionTimeLimit } from '../utils/questionTimeLimits'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { isCorrect } from './ResultPage'
+import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
 import { QuestionRenderer } from './QuestionRenderer'
 import { TYPE_ICONS, TYPE_LABELS } from './QuizPage'
@@ -65,6 +66,7 @@ export function StreakQuizPage({ quiz, pool, timeboxed, onFinish, onCancel }: St
     <p className="progress">Question {index + 1} / {order.length}</p>
     <div className="question-body" key={question.id}>
       {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
+      {question.diagram && <MermaidDiagram chart={question.diagram} />}
       {question.type !== 'cloze' && <h2>{question.question}</h2>}
       <QuestionRenderer question={question} answer={answer} onChange={setAnswer} />
     </div>

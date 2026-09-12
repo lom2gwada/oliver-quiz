@@ -4,6 +4,7 @@ import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
 import { questionTimeLimit } from '../utils/questionTimeLimits'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
+import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
 import { QuestionRenderer } from './QuestionRenderer'
 
@@ -55,6 +56,7 @@ export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel }: Qui
     <p className="progress">Question {current + 1} / {shuffledQuestions.length}</p>
     <div className="question-body" key={question.id}>
       {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
+      {question.diagram && <MermaidDiagram chart={question.diagram} />}
       {question.type !== 'cloze' && <h2>{question.question}</h2>}
       <QuestionRenderer question={question} answer={answers[question.id]} onChange={updateAnswer} />
     </div>

@@ -3,6 +3,7 @@ import type { AnswersByQuestion, Difficulty, Question, Theme } from '../types/qu
 import { formatDuration } from '../utils/time'
 import { playFinish, playVictory } from '../utils/sound'
 import { Confetti } from './Confetti'
+import { MermaidDiagram } from './MermaidDiagram'
 import { PieChart } from './PieChart'
 import { QuestionImage } from './QuestionImage'
 
@@ -126,6 +127,7 @@ export function ResultPage({ questions, answers, themes, elapsedSeconds, onResta
       return <article className={`correction ${correct ? 'correct' : 'incorrect'}`} key={question.id}>
         <h3>{correct ? '✓ Bonne réponse' : '✗ Réponse incorrecte'} — {question.question}</h3>
         {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
+        {question.diagram && <MermaidDiagram chart={question.diagram} />}
         {!correct && <p><strong>Votre réponse :</strong> {userAnswer(question, answers[question.id])}</p>}
         {!correct && <p><strong>Bonne réponse :</strong> {correctAnswer(question)}</p>}
         <p>{question.explanation}</p>

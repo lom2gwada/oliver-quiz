@@ -94,6 +94,21 @@ describe('parseQuiz — shared question fields', () => {
     const bad = quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, timeLimitSeconds: '5' }])
     expect(() => parseQuiz(bad)).toThrow()
   })
+
+  it('parses a question with an optional Mermaid diagram', () => {
+    const result = parseQuiz(quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, diagram: 'classDiagram\n  A --> B' }]))
+    expect(result.questions[0]).toMatchObject({ diagram: 'classDiagram\n  A --> B' })
+  })
+
+  it('rejects an empty diagram', () => {
+    const bad = quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, diagram: '' }])
+    expect(() => parseQuiz(bad)).toThrow()
+  })
+
+  it('rejects a non-string diagram', () => {
+    const bad = quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, diagram: 42 }])
+    expect(() => parseQuiz(bad)).toThrow()
+  })
 })
 
 describe('parseQuiz — qcm', () => {

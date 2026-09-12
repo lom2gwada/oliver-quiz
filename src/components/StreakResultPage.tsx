@@ -3,6 +3,7 @@ import type { AnswersByQuestion, Question } from '../types/quiz'
 import { formatDuration } from '../utils/time'
 import { playFinish, playVictory } from '../utils/sound'
 import { Confetti } from './Confetti'
+import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
 import { correctAnswer, isCorrect, userAnswer } from './ResultPage'
 
@@ -36,6 +37,7 @@ export function StreakResultPage({ streakCount, elapsedSeconds, victory, playedQ
       return <article className={`correction ${correct ? 'correct' : 'incorrect'}`} key={question.id}>
         <h3>{correct ? '✓ Bonne réponse' : '✗ Réponse incorrecte'} — {question.question}</h3>
         {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
+        {question.diagram && <MermaidDiagram chart={question.diagram} />}
         {!correct && <p><strong>Votre réponse :</strong> {userAnswer(question, answers[question.id])}</p>}
         {!correct && <p><strong>Bonne réponse :</strong> {correctAnswer(question)}</p>}
         <p>{question.explanation}</p>
