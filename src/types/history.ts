@@ -38,6 +38,13 @@ export interface ChartGroup {
   data: { label: string; value: number; color: string }[]
 }
 
+export interface RadarAxis {
+  key: string
+  label: string
+  /** Taux de réussite, en pourcentage (0-100). */
+  value: number
+}
+
 export interface QuestionResultPayload {
   quiz_title: string
   question_id: string

@@ -135,6 +135,17 @@ pre { padding: 1rem; overflow: auto; background: var(--code-bg); border: 1px sol
 .quiz-select { display: grid; gap: .4rem; color: var(--text-soft); max-width: 280px; margin-bottom: 1.5rem; }
 .records-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .8rem; margin-bottom: 1.5rem; }.record-tile { background: var(--surface); border: 1px solid var(--border); border-radius: .8rem; padding: 1rem; display: grid; gap: .3rem; }.record-value { font-size: 1.6rem; font-weight: 800; color: var(--ink); }.record-label { font-size: .78rem; color: var(--text-muted); }
 .score-chart { margin: 0 0 2rem; }.score-chart svg { width: 100%; height: 140px; display: block; }.score-chart-baseline { fill: none; stroke: var(--border); stroke-width: .5; }.score-chart-area { fill: rgba(56, 189, 248, .15); stroke: none; }.score-chart-line { fill: none; stroke: var(--accent); stroke-width: 1.2; vector-effect: non-scaling-stroke; }.score-chart-labels { display: flex; justify-content: space-between; margin-top: .5rem; font-size: .78rem; color: var(--text-muted); }
+.radar-chart { margin: 0 0 2rem; background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 1.2rem; display: grid; gap: .8rem; justify-items: center; }
+.radar-chart svg { width: 100%; max-width: 360px; height: auto; display: block; overflow: visible; }
+.radar-chart-ring { fill: none; stroke: var(--border); stroke-width: .4; }
+.radar-chart-axis { stroke: var(--border); stroke-width: .4; }
+.radar-chart-shape { fill: rgba(56, 189, 248, .2); stroke: var(--accent); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.radar-chart-point { fill: var(--accent); }
+.radar-chart-label { fill: var(--text-muted); font-size: 3.4px; }
+.radar-chart figcaption { width: 100%; }
+.radar-chart ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: .3rem .8rem; }
+.radar-chart li { color: var(--text-soft); font-size: .85rem; }
+.radar-chart-note { color: var(--text-muted); font-size: .8rem; margin: .6rem 0 0; }
 .profile-form { display: grid; gap: 1.2rem; max-width: 420px; }.profile-form > label { display: grid; gap: .4rem; color: var(--text-soft); }.profile-form > label > input { width: 100%; background: var(--surface-solid); color: var(--text); border: 1px solid var(--border-input); border-radius: .45rem; padding: .7rem; }.profile-saved { color: var(--success-text); font-weight: 700; }
 .profile-section-title { margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border); }
 .nav-links { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import type { Question, Quiz } from '../types/quiz'
 import type { QuestionResultRow, QuizResultRow, StreakResultRow, TimedResultRow } from '../types/history'
-import { bucketsToChartGroups, computeMissedQuestions, computeRecords, fetchQuestionResults, fetchQuizHistory, fetchStreakHistory, fetchTimedHistory, sumBuckets } from '../utils/quizHistory'
+import { bucketsToChartGroups, bucketsToRadarAxes, computeMissedQuestions, computeRecords, fetchQuestionResults, fetchQuizHistory, fetchStreakHistory, fetchTimedHistory, sumBuckets } from '../utils/quizHistory'
 import { formatDuration } from '../utils/time'
 import { DIFFICULTY_LABELS } from './ResultPage'
 import { PieChart } from './PieChart'
+import { RadarChart } from './RadarChart'
 import { TYPE_LABELS } from './QuizPage'
 import { ScoreChart } from './ScoreChart'
 
@@ -37,9 +38,12 @@ export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => vo
 
   const records = quizRows ? computeRecords(quizRows) : null
   const chartPoints = quizRows ? [...quizRows].reverse().map((row) => ({ label: shortDate(row.created_at), score: row.score })) : []
-  const byTheme = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_theme), (key) => key) : []
+  const themeBuckets = quizRows ? sumBuckets(quizRows, (row) => row.by_theme) : {}
+  const byTheme = bucketsToChartGroups(themeBuckets, (key) => key)
   const byType = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_type), (key) => TYPE_LABELS[key as keyof typeof TYPE_LABELS] ?? key) : []
   const byDifficulty = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_difficulty), (key) => DIFFICULTY_LABELS[key as keyof typeof DIFFICULTY_LABELS] ?? key) : []
+  const radarAxes = bucketsToRadarAxes(themeBuckets, (key) => key)
+  const radarTruncated = Object.keys(themeBuckets).length > radarAxes.length
 
   const missedQuestions = activeQuiz ? computeMissedQuestions(questionRows, activeQuiz) : []
   const canReplay = activeQuiz === quiz.metadata.title
@@ -68,6 +72,11 @@ export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => vo
         <div className="record-tile"><span className="record-value">{formatDuration(records.totalPlaytimeSeconds)}</span><span className="record-label">Temps de jeu cumulé</span></div>
       </div>
       <ScoreChart points={chartPoints} />
+      {radarAxes.length >= 3 && <RadarChart
+        title="Taux de réussite par thème"
+        axes={radarAxes}
+        note={radarTruncated ? `Les ${radarAxes.length} thèmes les plus joués sont affichés.` : undefined}
+      />}
       <div className="stats-groups">
         <div className="stats-group">
           <h3 className="stats-group-title">Par thème</h3>
