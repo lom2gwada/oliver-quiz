@@ -1,5 +1,5 @@
 import type { AnswersByQuestion, Question, QuestionAttempt, Theme } from '../types/quiz'
-import type { ChartGroup, MissedQuestion, QuestionResultPayload, QuestionResultRow, QuizRecords, QuizResultPayload, QuizResultRow, StatBucket, StreakResultPayload, StreakResultRow, TimedResultPayload, TimedResultRow } from '../types/history'
+import type { ChartGroup, MissedQuestion, QuestionResultPayload, QuestionResultRow, QuizRecords, QuizResultPayload, QuizResultRow, RadarAxis, StatBucket, StreakResultPayload, StreakResultRow, TimedResultPayload, TimedResultRow } from '../types/history'
 import { isCorrect } from '../components/ResultPage'
 import { supabase } from './supabase'
 
@@ -163,6 +163,15 @@ export async function fetchTimedHistory(): Promise<TimedResultRow[]> {
     .order('correct_count', { ascending: false }).order('created_at', { ascending: false })
   if (error) throw error
   return data ?? []
+}
+
+/** Convertit des buckets cumulés en axes de radar (taux de réussite, %), limité aux `maxAxes` catégories les
+ * plus jouées — au-delà d'une dizaine d'axes un radar devient illisible (cas des quiz à 20+ thèmes). */
+export function bucketsToRadarAxes(buckets: Record<string, StatBucket>, labelOf: (key: string) => string, maxAxes = 8): RadarAxis[] {
+  return Object.entries(buckets)
+    .sort(([, a], [, b]) => b.total - a.total)
+    .slice(0, maxAxes)
+    .map(([key, bucket]) => ({ key, label: labelOf(key), value: bucket.total ? Math.round((bucket.correct / bucket.total) * 100) : 0 }))
 }
 
 /** Convertit des buckets cumulés en groupes prêts pour `PieChart`. */

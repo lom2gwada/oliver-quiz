@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BooleanQuestion, QCMQuestion, Theme } from '../types/quiz'
 import type { QuestionResultRow, QuizResultRow } from '../types/history'
-import { bucketsToChartGroups, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, computeMissedQuestions, computeRecords, sumBuckets } from './quizHistory'
+import { bucketsToChartGroups, bucketsToRadarAxes, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, computeMissedQuestions, computeRecords, sumBuckets } from './quizHistory'
 
 const themes: Theme[] = [{ id: 'histoire', label: 'Histoire' }, { id: 'geo', label: 'Géographie' }]
 
@@ -198,6 +198,27 @@ describe('bucketsToChartGroups', () => {
   it('applies the label resolver to each key', () => {
     const groups = bucketsToChartGroups({ qcm: { correct: 1, total: 1 } }, () => 'QCM')
     expect(groups[0].label).toBe('QCM')
+  })
+})
+
+describe('bucketsToRadarAxes', () => {
+  it('turns each bucket into a success-rate axis', () => {
+    const axes = bucketsToRadarAxes({ Histoire: { correct: 3, total: 5 }, Géo: { correct: 2, total: 2 } }, (key) => key)
+    expect(axes).toEqual([
+      { key: 'Histoire', label: 'Histoire', value: 60 },
+      { key: 'Géo', label: 'Géo', value: 100 },
+    ])
+  })
+
+  it('treats an empty bucket as a 0% axis rather than dividing by zero', () => {
+    const axes = bucketsToRadarAxes({ Histoire: { correct: 0, total: 0 } }, (key) => key)
+    expect(axes[0].value).toBe(0)
+  })
+
+  it('sorts by attempt volume and caps at maxAxes', () => {
+    const buckets = { A: { correct: 1, total: 1 }, B: { correct: 1, total: 10 }, C: { correct: 1, total: 5 } }
+    const axes = bucketsToRadarAxes(buckets, (key) => key, 2)
+    expect(axes.map((axis) => axis.key)).toEqual(['B', 'C'])
   })
 })
 
