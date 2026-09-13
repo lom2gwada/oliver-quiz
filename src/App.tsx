@@ -18,7 +18,7 @@ import type { HostedQuizSummary } from './types/hostedQuiz'
 import { buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, saveQuestionResults, saveQuizResult, saveStreakResult, saveTimedResult } from './utils/quizHistory'
 import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchTopScore } from './utils/leaderboard'
-import { fetchAccessibleQuizzes, fetchQuizContent, upsertQuiz } from './utils/hostedQuizzes'
+import { fetchAccessibleQuizzes, fetchQuizContent, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
 import { applyTheme } from './utils/theme'
 import { parseQuiz } from './utils/quizValidation'
 import { isSoundMuted, playClick, setSoundMuted } from './utils/sound'
@@ -233,6 +233,26 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     }
   }
 
+  /** Admin uniquement, sur un quiz hébergé actif : modifie titre/auteur/description. Passe par `updateQuiz`
+   * (mise à jour par id) plutôt que `upsertQuiz` (par titre) — un simple upsert avec le nouveau titre créerait
+   * une ligne en double au lieu de renommer, ou fusionnerait silencieusement avec un autre quiz du même titre. */
+  const updateQuizMeta = async (title: string, author: string, description: string) => {
+    setEditError('')
+    if (hostedQuizzes.some((existing) => existing.id !== selectedHostedQuizId && existing.title === title)) {
+      setEditError('Un autre quiz porte déjà ce titre.')
+      throw new Error('duplicate title')
+    }
+    try {
+      const updatedQuiz = parseQuiz({ ...quiz, metadata: { ...quiz.metadata, title, author, description: description || undefined } })
+      await updateQuiz(selectedHostedQuizId, updatedQuiz.metadata.title, updatedQuiz)
+      setQuiz(updatedQuiz)
+      fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
+    } catch (error) {
+      setEditError(error instanceof Error ? error.message : 'Impossible de mettre à jour ce quiz.')
+      throw error
+    }
+  }
+
   /** Télécharge le quiz actuellement chargé (utile pour éditer hors-ligne un quiz déjà publié). */
   const exportQuiz = () => {
     const blob = new Blob([JSON.stringify(quiz, null, 2)], { type: 'application/json' })
@@ -330,7 +350,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'streakResults' && streakResult && <StreakResultPage {...streakResult} onRestart={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} />}
     {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
     {view === 'timedResults' && timedResult && <TimedResultPage {...timedResult} onRestart={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} />}
-    {view === 'content' && <QuizContentPage quiz={quiz} hostedQuizzes={hostedQuizzes} onBack={() => navigate('start')} onPublish={publishQuiz} onExport={exportQuiz} publishError={publishError} publishSuccess={publishSuccess} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onCreateQuiz={createQuiz} createError={createError} onAddTheme={addTheme} selectedHostedQuizId={selectedHostedQuizId} onSelectHostedQuiz={(id) => { playClick(); selectHostedQuiz(id) }} quizLoadError={quizLoadError} />}
+    {view === 'content' && <QuizContentPage quiz={quiz} hostedQuizzes={hostedQuizzes} onBack={() => navigate('start')} onPublish={publishQuiz} onExport={exportQuiz} publishError={publishError} publishSuccess={publishSuccess} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onCreateQuiz={createQuiz} createError={createError} onAddTheme={addTheme} selectedHostedQuizId={selectedHostedQuizId} onSelectHostedQuiz={(id) => { playClick(); selectHostedQuiz(id) }} quizLoadError={quizLoadError} onUpdateQuizMeta={updateQuizMeta} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} onReplayMissed={replayMissed} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} initialMode={leaderboardMode} onBack={() => navigate(leaderboardBack)} />}
     {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} onViewHistory={() => viewHistory('profile')} onViewLeaderboard={() => viewLeaderboard('profile')} />}

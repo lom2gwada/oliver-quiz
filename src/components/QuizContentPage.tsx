@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Difficulty, Question, Quiz } from '../types/quiz'
 import type { HostedQuizSummary } from '../types/hostedQuiz'
 import { CreateQuizForm } from './CreateQuizForm'
+import { EditQuizMetaForm } from './EditQuizMetaForm'
 import { MermaidDiagram } from './MermaidDiagram'
 import { PieChart } from './PieChart'
 import { createBlankQuestion, QuestionEditForm } from './QuestionEditForm'
@@ -37,9 +38,10 @@ interface QuizContentPageProps {
   selectedHostedQuizId: string
   onSelectHostedQuiz: (id: string) => void
   quizLoadError: string
+  onUpdateQuizMeta: (title: string, author: string, description: string) => Promise<void>
 }
 
-export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExport, publishError, publishSuccess, isAdmin, canEditQuiz, onSaveQuestion, onAddQuestion, onDeleteQuestion, editError, onCreateQuiz, createError, onAddTheme, selectedHostedQuizId, onSelectHostedQuiz, quizLoadError }: QuizContentPageProps) {
+export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExport, publishError, publishSuccess, isAdmin, canEditQuiz, onSaveQuestion, onAddQuestion, onDeleteQuestion, editError, onCreateQuiz, createError, onAddTheme, selectedHostedQuizId, onSelectHostedQuiz, quizLoadError, onUpdateQuizMeta }: QuizContentPageProps) {
   const [editingQuestionId, setEditingQuestionId] = useState('')
   const [creatingType, setCreatingType] = useState<Question['type']>('qcm')
   const [creatingTheme, setCreatingTheme] = useState(quiz.themes[0]?.id ?? '')
@@ -83,6 +85,13 @@ export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExpo
     </label>}
     {quizLoadError && <p className="alert" role="alert">{quizLoadError}</p>}
     {quiz.metadata.description && <p className="quiz-description">{quiz.metadata.description}</p>}
+    {canEditQuiz && <EditQuizMetaForm
+      title={quiz.metadata.title}
+      author={quiz.metadata.author}
+      description={quiz.metadata.description ?? ''}
+      error={editError}
+      onSave={onUpdateQuizMeta}
+    />}
     <h3 className="stats-group-title">Répartition des questions</h3>
     <div className="stats-grid">
       <PieChart title={`Thèmes — ${quiz.questions.length} questions`} data={byTheme} />

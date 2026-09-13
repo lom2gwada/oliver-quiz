@@ -28,6 +28,13 @@ export async function upsertQuiz(title: string, content: unknown): Promise<strin
   return data.id
 }
 
+/** Admin uniquement (RLS) : met à jour un quiz existant par `id` — nécessaire dès qu'on renomme un quiz,
+ * puisque `upsertQuiz` (par `title`) fusionnerait sinon silencieusement avec la ligne portant l'ancien titre. */
+export async function updateQuiz(id: string, title: string, content: unknown): Promise<void> {
+  const { error } = await supabase.from('quizzes').update({ title, content, updated_at: new Date().toISOString() }).eq('id', id)
+  if (error) throw error
+}
+
 export interface ProfileSummary {
   id: string
   pseudo: string
