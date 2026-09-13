@@ -59,7 +59,7 @@ export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => vo
     {error && <p className="alert" role="alert">{error}</p>}
     {!error && !rows && <p>Chargement…</p>}
     {rows && !rows.length && <p>Aucune partie enregistrée pour l'instant.</p>}
-    {quizTitles.length > 1 && <label className="quiz-select">Quiz
+    {quizTitles.length > 0 && <label className="quiz-select">Quiz
       <select value={activeQuiz} onChange={(event) => setSelectedQuiz(event.target.value)}>
         {quizTitles.map((title) => <option key={title} value={title}>{title}</option>)}
       </select>

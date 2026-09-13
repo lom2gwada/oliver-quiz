@@ -99,7 +99,7 @@ export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: Leade
     {error && mode === 'classic' && <p className="alert" role="alert">{error}</p>}
     {!activeRows && <p>Chargement…</p>}
     {activeRows && !activeRows.length && <p>Aucun score enregistré pour l'instant{mode !== 'classic' ? ' dans ce mode' : ''}.</p>}
-    {quizTitles.length > 1 && <label className="quiz-select">Quiz
+    {quizTitles.length > 0 && <label className="quiz-select">Quiz
       <select value={activeQuiz} onChange={(event) => setSelectedQuiz(event.target.value)}>
         {quizTitles.map((title) => <option key={title} value={title}>{title}</option>)}
       </select>
