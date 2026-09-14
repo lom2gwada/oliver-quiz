@@ -9,7 +9,7 @@ export function ClozeQuestion({ question, answer, onChange }: { question: Questi
   const after = question.question.slice(splitIndex + (match?.[0].length ?? 0))
   return <h2 className="cloze">
     {before}
-    <input className="cloze-input" type="text" value={typeof answer === 'string' ? answer : ''} onChange={(event) => onChange(event.target.value)} aria-label="Réponse" />
+    <input className="cloze-input" type="text" value={typeof answer === 'string' ? answer : ''} onChange={(event) => onChange(event.target.value)} aria-label="Réponse" autoFocus />
     {after}
   </h2>
 }
