@@ -175,13 +175,13 @@ export function bucketsToRadarAxes(buckets: Record<string, StatBucket>, labelOf:
 }
 
 /** Convertit des buckets cumulés en groupes prêts pour `PieChart`. */
-export function bucketsToChartGroups(buckets: Record<string, StatBucket>, labelOf: (key: string) => string): ChartGroup[] {
+export function bucketsToChartGroups(buckets: Record<string, StatBucket>, labelOf: (key: string) => string, succeededLabel = 'Réussi', missedLabel = 'Raté'): ChartGroup[] {
   return Object.entries(buckets).map(([key, bucket]) => ({
     key,
     label: labelOf(key),
     data: [
-      { label: 'Réussi', value: bucket.correct, color: '#34d399' },
-      { label: 'Raté', value: bucket.total - bucket.correct, color: '#fb7185' },
+      { label: succeededLabel, value: bucket.correct, color: '#34d399' },
+      { label: missedLabel, value: bucket.total - bucket.correct, color: '#fb7185' },
     ].filter((slice) => slice.value > 0),
   }))
 }

@@ -141,4 +141,39 @@ export const en = {
   'streak.mentionRun': "🔥 Nice streak, next one's the one",
 
   'timed.correctAnswers': (count: number) => `correct answer${count !== 1 ? 's' : ''}`,
+
+  'common.loading': 'Loading…',
+  'common.allThemes': 'All themes',
+  'common.unlimited': 'Unlimited',
+  'common.minutesShort': (minutes: number) => `${minutes} min`,
+  'common.durationIcon': (formatted: string) => `⏱ ${formatted}`,
+
+  'history.title': 'Game history',
+  'history.errorLoad': 'Could not load the history.',
+  'history.emptyState': 'No games recorded yet.',
+  'history.gamesPlayed': 'Games played',
+  'history.bestScore': 'Best score',
+  'history.averageScore': 'Average score',
+  'history.totalPlaytime': 'Total playtime',
+  'history.radarTitle': 'Success rate by theme',
+  'history.radarNote': (count: number) => `Showing the ${count} most played themes.`,
+  'history.byType': 'By question type',
+  'history.streakSectionTitle': 'Streak mode',
+  'history.bestStreak': 'Best streak',
+  'history.timedSectionTitle': 'Time attack mode',
+  'history.missedTitle': 'Questions to revisit',
+  'history.replayMissed': 'Retry my mistakes',
+  'history.missedRatio': (wrong: number, attempts: number) => `Missed ${wrong} out of ${attempts} times`,
+
+  'leaderboard.title': 'Leaderboard',
+  'leaderboard.modeOverall': '🏅 Overall',
+  'leaderboard.errorLoad': 'Could not load the leaderboard.',
+  'leaderboard.emptyState': (inMode: boolean) => `No score recorded yet${inMode ? ' in this mode' : ''}.`,
+  'leaderboard.detailsClassic': (earned: number, total: number, count: number, duration: string) =>
+    `${earned}/${total} pts · ${count} question${count !== 1 ? 's' : ''} · ⏱ ${duration}`,
+  'leaderboard.detailsStreak': (themes: string, duration: string) => `${themes} · ⏱ ${duration}`,
+  'leaderboard.detailsTimed': (correct: number, total: number, durationLabel: string, elapsed: string) =>
+    `${correct}/${total} · ${durationLabel} · ⏱ ${elapsed}`,
+  'leaderboard.detailsOverall': (attempted: number, games: number, rate: number) =>
+    `${attempted} attempted · ${games} game${games !== 1 ? 's' : ''} · ${rate}% success rate`,
 } satisfies Record<TranslationKey, string | ((...args: never[]) => string)>
