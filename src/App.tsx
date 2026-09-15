@@ -20,6 +20,8 @@ import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchTopScore } from './utils/leaderboard'
 import { fetchAccessibleQuizzes, fetchQuizContent, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
 import { applyTheme } from './utils/theme'
+import { LanguageProvider, translate } from './i18n'
+import type { Language, TranslationKey } from './i18n'
 import { parseQuiz } from './utils/quizValidation'
 import { isSoundMuted, playClick, setSoundMuted } from './utils/sound'
 import { shuffle } from './utils/shuffle'
@@ -71,6 +73,14 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   useEffect(() => { fetchProfile().then(setProfile).catch(() => {}) }, [])
   useEffect(() => { applyTheme(profile?.theme ?? 'dark') }, [profile?.theme])
+  // La langue doit faire re-render tout l'arbre (contrairement au thème, un simple attribut DOM) : elle vit
+  // comme un état React fourni via `LanguageProvider`, synchronisé depuis le profil comme le thème l'est.
+  const [language, setLanguage] = useState<Language>('fr')
+  useEffect(() => { setLanguage(profile?.language ?? 'fr') }, [profile?.language])
+  // `App` rend lui-même `LanguageProvider` plus bas : il ne peut donc pas consommer son propre contexte via
+  // `useTranslation()` (un composant ne voit pas le contexte qu'il fournit à ses descendants) — on appelle
+  // directement `translate` avec l'état local `language` à la place.
+  const t = (key: TranslationKey, ...args: unknown[]) => translate(language, key, ...args)
   const [hostedQuizzes, setHostedQuizzes] = useState<HostedQuizSummary[]>([])
   const [selectedHostedQuizId, setSelectedHostedQuizId] = useState('')
   useEffect(() => { fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {}) }, [])
@@ -91,7 +101,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     const onPopState = (event: PopStateEvent) => {
       const nextView = (event.state?.view as View | undefined) ?? 'start'
       if ((viewRef.current === 'quiz' || viewRef.current === 'streak' || viewRef.current === 'timed') && nextView !== viewRef.current) {
-        if (!window.confirm('Abandonner la partie en cours ? Votre progression sera perdue.')) {
+        if (!window.confirm(t('start.confirmAbandon'))) {
           window.history.pushState({ view: viewRef.current }, '')
           return
         }
@@ -122,7 +132,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       setQuiz(parseQuiz(await fetchQuizContent(id)))
       setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setQuizLoadError('')
     } catch (error) {
-      setQuizLoadError(error instanceof Error ? error.message : 'Impossible de charger ce quiz.')
+      setQuizLoadError(error instanceof Error ? error.message : t('admin.errorLoadQuiz'))
     }
   }
 
@@ -132,7 +142,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const createQuiz = async (title: string, author: string, description: string, themeLabels: string[]) => {
     setCreateError('')
     if (hostedQuizzes.some((existing) => existing.title === title)) {
-      setCreateError('Un quiz avec ce titre existe déjà.')
+      setCreateError(t('admin.errorDuplicateTitle'))
       throw new Error('duplicate title')
     }
     try {
@@ -150,7 +160,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       setSelectedThemes([]); setDifficulty(''); setSessionQuestions([])
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
-      setCreateError(error instanceof Error ? error.message : 'Impossible de créer ce quiz.')
+      setCreateError(error instanceof Error ? error.message : t('admin.errorCreateQuiz'))
       throw error
     }
   }
@@ -167,7 +177,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       setPublishSuccess(true)
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
-      setPublishError(error instanceof Error ? error.message : 'Fichier JSON invalide.')
+      setPublishError(error instanceof Error ? error.message : t('admin.errorInvalidJson'))
     }
   }
 
@@ -186,7 +196,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     try {
       await republishQuestions(quiz.questions.map((existing) => (existing.id === updated.id ? updated : existing)))
     } catch (error) {
-      setEditError(error instanceof Error ? error.message : 'Impossible d\'enregistrer cette question.')
+      setEditError(error instanceof Error ? error.message : t('admin.errorSaveQuestion'))
       throw error
     }
   }
@@ -197,19 +207,19 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     try {
       await republishQuestions([...quiz.questions, created])
     } catch (error) {
-      setEditError(error instanceof Error ? error.message : 'Impossible d\'ajouter cette question.')
+      setEditError(error instanceof Error ? error.message : t('admin.errorAddQuestion'))
       throw error
     }
   }
 
   /** Admin uniquement, sur un quiz hébergé actif : supprime définitivement une question, après confirmation. */
   const deleteQuestion = async (id: string) => {
-    if (!window.confirm('Supprimer définitivement cette question ?')) return
+    if (!window.confirm(t('admin.confirmDeleteQuestion'))) return
     setEditError('')
     try {
       await republishQuestions(quiz.questions.filter((question) => question.id !== id))
     } catch (error) {
-      setEditError(error instanceof Error ? error.message : 'Impossible de supprimer cette question.')
+      setEditError(error instanceof Error ? error.message : t('admin.errorDeleteQuestion'))
     }
   }
 
@@ -218,7 +228,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const addTheme = async (label: string) => {
     setEditError('')
     if (quiz.themes.some((theme) => theme.label.toLowerCase() === label.toLowerCase())) {
-      setEditError('Un thème avec ce nom existe déjà.')
+      setEditError(t('admin.errorDuplicateTheme'))
       throw new Error('duplicate theme')
     }
     try {
@@ -228,7 +238,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       setQuiz(updatedQuiz)
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
-      setEditError(error instanceof Error ? error.message : 'Impossible d\'ajouter ce thème.')
+      setEditError(error instanceof Error ? error.message : t('admin.errorAddTheme'))
       throw error
     }
   }
@@ -239,7 +249,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const updateQuizMeta = async (title: string, author: string, description: string) => {
     setEditError('')
     if (hostedQuizzes.some((existing) => existing.id !== selectedHostedQuizId && existing.title === title)) {
-      setEditError('Un autre quiz porte déjà ce titre.')
+      setEditError(t('admin.errorDuplicateTitleOther'))
       throw new Error('duplicate title')
     }
     try {
@@ -248,7 +258,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       setQuiz(updatedQuiz)
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
-      setEditError(error instanceof Error ? error.message : 'Impossible de mettre à jour ce quiz.')
+      setEditError(error instanceof Error ? error.message : t('admin.errorUpdateQuiz'))
       throw error
     }
   }
@@ -314,31 +324,31 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     setMuted(!muted)
   }
 
-  return <main className="app-shell">
-    <header><div><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>par {quiz.metadata.author}</p>{view === 'start' && quiz.metadata.description && <p className="quiz-description-preview">{quiz.metadata.description}</p>}{view === 'start' && topScore && <button type="button" className="top-score" onClick={() => viewLeaderboard('start')}>🏆 {topScore.avatar} {topScore.pseudo} — {topScore.best_score}%</button>}</div><div className="header-actions"><button type="button" className="secondary" onClick={toggleSound} aria-label={muted ? 'Activer le son' : 'Couper le son'}>{muted ? '🔇' : '🔊'}</button>{view === 'start' && <button type="button" className="secondary" onClick={() => navigate('profile')}>{profile ? `${profile.avatar} ${profile.pseudo}` : '👤 Profil'}</button>}{view === 'start' && <button type="button" className="secondary" onClick={() => navigate('content')}>⚙️ Quiz</button>}<button type="button" className="secondary" onClick={onLogout}>Se déconnecter</button></div></header>
+  return <LanguageProvider language={language}><main className="app-shell">
+    <header><div><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>{t('nav.by', quiz.metadata.author)}</p>{view === 'start' && quiz.metadata.description && <p className="quiz-description-preview">{quiz.metadata.description}</p>}{view === 'start' && topScore && <button type="button" className="top-score" onClick={() => viewLeaderboard('start')}>🏆 {topScore.avatar} {topScore.pseudo} — {topScore.best_score}%</button>}</div><div className="header-actions"><button type="button" className="secondary" onClick={toggleSound} aria-label={muted ? t('nav.unmuteSound') : t('nav.muteSound')}>{muted ? '🔇' : '🔊'}</button>{view === 'start' && <button type="button" className="secondary" onClick={() => navigate('profile')}>{profile ? `${profile.avatar} ${profile.pseudo}` : t('nav.profile')}</button>}{view === 'start' && <button type="button" className="secondary" onClick={() => navigate('content')}>{t('nav.quiz')}</button>}<button type="button" className="secondary" onClick={onLogout}>{t('common.logout')}</button></div></header>
     {view === 'start' && <section className="start-page">
-      {hostedQuizzes.length > 0 && <label className="quiz-select">Quiz
+      {hostedQuizzes.length > 0 && <label className="quiz-select">{t('start.quizLabel')}
         <select value={selectedHostedQuizId} onChange={(event) => { playClick(); selectHostedQuiz(event.target.value) }}>
           <option value="">Culture générale (exemple)</option>
           {hostedQuizzes.map((hosted) => <option key={hosted.id} value={hosted.id}>{hosted.title}</option>)}
         </select>
       </label>}
       {quizLoadError && <p className="alert" role="alert">{quizLoadError}</p>}
-      <div className="mode-picker" role="group" aria-label="Mode de jeu">
-        <button type="button" className={gameMode === 'classic' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('classic') }}>🎯 Classique</button>
-        <button type="button" className={gameMode === 'streak' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('streak') }}>🔥 Sans-faute</button>
-        <button type="button" className={gameMode === 'timed' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('timed') }}>⏱️ Contre-la-montre</button>
+      <div className="mode-picker" role="group" aria-label={t('start.modeGroupLabel')}>
+        <button type="button" className={gameMode === 'classic' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('classic') }}>{t('common.modeClassic')}</button>
+        <button type="button" className={gameMode === 'streak' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('streak') }}>{t('common.modeStreak')}</button>
+        <button type="button" className={gameMode === 'timed' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('timed') }}>{t('common.modeTimed')}</button>
       </div>
       <FilterPanel themes={quiz.themes} selectedThemes={selectedThemes} difficulty={difficulty} onThemeToggle={toggleTheme} onDifficultyChange={setDifficulty} />
-      {gameMode === 'classic' && <label className="question-count">Nombre de questions<select value={questionCount} onChange={(event) => { playClick(); setQuestionCount(Number(event.target.value)) }}>{questionCounts.map((count) => <option key={count} value={count} disabled={count > filteredQuestions.length}>{count} {count === 1 ? 'question' : 'questions'}{count > filteredQuestions.length ? ' (indisponible)' : ''}</option>)}<option value={filteredQuestions.length}>Toutes les questions ({filteredQuestions.length})</option></select></label>}
-      {gameMode === 'streak' && <p className="mode-hint">Répondez correctement à la chaîne, sans limite de temps : la partie s'arrête à la première erreur.</p>}
-      {gameMode === 'timed' && <label className="question-count">Durée<select value={durationMinutes} onChange={(event) => { playClick(); setDurationMinutes(Number(event.target.value)) }}>{durationOptions.map((minutes) => <option key={minutes} value={minutes}>{minutes === 0 ? 'Infini' : `${minutes} minutes`}</option>)}</select></label>}
+      {gameMode === 'classic' && <label className="question-count">{t('start.questionCountLabel')}<select value={questionCount} onChange={(event) => { playClick(); setQuestionCount(Number(event.target.value)) }}>{questionCounts.map((count) => <option key={count} value={count} disabled={count > filteredQuestions.length}>{t('start.questionCountOption', count, count > filteredQuestions.length)}</option>)}<option value={filteredQuestions.length}>{t('start.allQuestionsOption', filteredQuestions.length)}</option></select></label>}
+      {gameMode === 'streak' && <p className="mode-hint">{t('start.streakHint')}</p>}
+      {gameMode === 'timed' && <label className="question-count">{t('start.durationLabel')}<select value={durationMinutes} onChange={(event) => { playClick(); setDurationMinutes(Number(event.target.value)) }}>{durationOptions.map((minutes) => <option key={minutes} value={minutes}>{t('start.durationOption', minutes)}</option>)}</select></label>}
       <label className="theme-checkbox timer-toggle">
         <input type="checkbox" checked={timeboxed} onChange={(event) => { playClick(); setTimeboxed(event.target.checked) }} />
-        ⏳ Chrono par question
+        {t('start.timerToggle')}
       </label>
-      <p>{filteredQuestions.length} question{filteredQuestions.length > 1 ? 's' : ''} disponible{filteredQuestions.length > 1 ? 's' : ''}{gameMode === 'classic' ? ` — ${Math.min(questionCount, filteredQuestions.length)} seront tirées aléatoirement.` : gameMode === 'timed' ? ' — elles peuvent revenir plusieurs fois si le temps le permet.' : '.'}</p>
-      <button type="button" onClick={gameMode === 'classic' ? startQuiz : gameMode === 'streak' ? startStreak : startTimed} disabled={!filteredQuestions.length}>{gameMode === 'classic' ? 'Démarrer le quiz' : gameMode === 'streak' ? 'Démarrer la série' : 'Démarrer le chrono'}</button>
+      <p>{t('start.availability', filteredQuestions.length, gameMode, Math.min(questionCount, filteredQuestions.length))}</p>
+      <button type="button" onClick={gameMode === 'classic' ? startQuiz : gameMode === 'streak' ? startStreak : startTimed} disabled={!filteredQuestions.length}>{gameMode === 'classic' ? t('start.startClassic') : gameMode === 'streak' ? t('start.startStreak') : t('start.startTimed')}</button>
     </section>}
     {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} timeboxed={timeboxed} onFinish={(nextAnswers, duration) => {
       setAnswers(nextAnswers); setElapsedSeconds(duration); replace('results')
@@ -353,6 +363,6 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'content' && <QuizContentPage quiz={quiz} hostedQuizzes={hostedQuizzes} onBack={() => navigate('start')} onPublish={publishQuiz} onExport={exportQuiz} publishError={publishError} publishSuccess={publishSuccess} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onCreateQuiz={createQuiz} createError={createError} onAddTheme={addTheme} selectedHostedQuizId={selectedHostedQuizId} onSelectHostedQuiz={(id) => { playClick(); selectHostedQuiz(id) }} quizLoadError={quizLoadError} onUpdateQuizMeta={updateQuizMeta} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} onReplayMissed={replayMissed} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} initialMode={leaderboardMode} onBack={() => navigate(leaderboardBack)} />}
-    {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} onViewHistory={() => viewHistory('profile')} onViewLeaderboard={() => viewLeaderboard('profile')} />}
-  </main>
+    {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} onViewHistory={() => viewHistory('profile')} onViewLeaderboard={() => viewLeaderboard('profile')} onPreviewLanguage={setLanguage} />}
+  </main></LanguageProvider>
 }
