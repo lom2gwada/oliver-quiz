@@ -120,6 +120,17 @@ export const en = {
   'admin.diagramLabel': 'Diagram (Mermaid)',
   'admin.timeLimitLabel': 'Time limit (seconds, empty = default scale)',
 
+  'auth.loginTitle': 'Log in',
+  'auth.emailLabel': 'Email',
+  'auth.emailOrPasswordError': 'Incorrect email or password.',
+  'auth.loggingIn': 'Logging in…',
+  'auth.login': 'Log in',
+  'auth.invalidInviteLink': 'Invalid or expired invite link. Please request a new invitation.',
+  'auth.setPasswordTitle': 'Create your password',
+  'auth.setPasswordError': 'Could not set the password. Please request a new link and try again.',
+  'auth.validating': 'Validating…',
+  'auth.validate': 'Validate',
+
   'profile.title': 'Profile',
   'profile.pseudoLabel': 'Nickname',
   'profile.pseudoPlaceholder': 'Your first name or nickname',
