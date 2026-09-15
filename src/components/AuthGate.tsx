@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
 import { supabase } from '../utils/supabase'
+import { translate } from '../i18n'
 import { hasAuthLinkError, needsPasswordSetup } from '../utils/authLink'
 import App from '../App'
 import { Login } from './Login'
@@ -25,8 +26,8 @@ export function AuthGate() {
     return () => subscription.subscription.unsubscribe()
   }, [])
 
-  if (loading) return <main className="app-shell"><p>Chargement…</p></main>
-  if (!session) return <Login initialError={linkError ? "Lien d'invitation invalide ou expiré. Redemandez une invitation." : ''} />
+  if (loading) return <main className="app-shell"><p>{translate('fr', 'common.loading')}</p></main>
+  if (!session) return <Login initialError={linkError ? translate('fr', 'auth.invalidInviteLink') : ''} />
   if (settingPassword) return <SetPassword onDone={() => setSettingPassword(false)} />
   return <App onLogout={() => supabase.auth.signOut()} />
 }

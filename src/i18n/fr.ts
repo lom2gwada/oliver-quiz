@@ -118,6 +118,17 @@ export const fr = {
   'admin.diagramLabel': 'Diagramme (Mermaid)',
   'admin.timeLimitLabel': 'Temps limite (secondes, vide = barème par défaut)',
 
+  'auth.loginTitle': 'Connexion',
+  'auth.emailLabel': 'Email',
+  'auth.emailOrPasswordError': 'Email ou mot de passe incorrect.',
+  'auth.loggingIn': 'Connexion…',
+  'auth.login': 'Se connecter',
+  'auth.invalidInviteLink': "Lien d'invitation invalide ou expiré. Redemandez une invitation.",
+  'auth.setPasswordTitle': 'Créer votre mot de passe',
+  'auth.setPasswordError': 'Impossible de définir le mot de passe. Redemandez un lien et réessayez.',
+  'auth.validating': 'Validation…',
+  'auth.validate': 'Valider',
+
   'profile.title': 'Profil',
   'profile.pseudoLabel': 'Pseudo',
   'profile.pseudoPlaceholder': 'Ton prénom ou pseudo',
