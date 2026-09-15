@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import type { QuestionAttempt } from '../types/quiz'
+import { useTranslation } from '../i18n'
 import { formatDuration } from '../utils/time'
 import { playFinish, playVictory } from '../utils/sound'
 import { Confetti } from './Confetti'
@@ -17,30 +18,31 @@ interface TimedResultPageProps {
 }
 
 export function TimedResultPage({ attempts, elapsedSeconds, onRestart, onViewHistory, onViewLeaderboard }: TimedResultPageProps) {
+  const { t } = useTranslation()
   const correctCount = attempts.filter((attempt) => isCorrect(attempt.question, attempt.answer)).length
   const perfect = attempts.length > 0 && correctCount === attempts.length
   useEffect(() => { perfect ? playVictory() : playFinish() }, [])
   return <section className="results">
     {perfect && <Confetti />}
     <div className="score">
-      <p>Votre score</p>
+      <p>{t('result.yourScore')}</p>
       <strong>{correctCount} / {attempts.length}</strong>
-      <span>bonne{correctCount > 1 ? 's' : ''} réponse{correctCount > 1 ? 's' : ''}</span>
-      <p className="duration">⏱ Temps : {formatDuration(elapsedSeconds)}</p>
+      <span>{t('timed.correctAnswers', correctCount)}</span>
+      <p className="duration">{t('result.duration', formatDuration(elapsedSeconds))}</p>
     </div>
-    <button type="button" onClick={onRestart}>Recommencer</button>
+    <button type="button" onClick={onRestart}>{t('result.restart')}</button>
     <div className="nav-links">
-      <button type="button" className="secondary" onClick={onViewHistory}>🕓 Historique</button>
-      <button type="button" className="secondary" onClick={onViewLeaderboard}>🏆 Classement</button>
+      <button type="button" className="secondary" onClick={onViewHistory}>{t('common.viewHistory')}</button>
+      <button type="button" className="secondary" onClick={onViewLeaderboard}>{t('common.viewLeaderboard')}</button>
     </div>
     <div className="corrections">{attempts.map(({ question, answer }, index) => {
       const correct = isCorrect(question, answer)
       return <article className={`correction ${correct ? 'correct' : 'incorrect'}`} key={`${question.id}-${index}`}>
-        <h3>{correct ? '✓ Bonne réponse' : '✗ Réponse incorrecte'} — {question.question}</h3>
+        <h3>{correct ? t('result.correct') : t('result.incorrect')} — {question.question}</h3>
         {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
         {question.diagram && <MermaidDiagram chart={question.diagram} />}
-        {!correct && <p><strong>Votre réponse :</strong> {userAnswer(question, answer)}</p>}
-        {!correct && <p><strong>Bonne réponse :</strong> {correctAnswer(question)}</p>}
+        {!correct && <p><strong>{t('result.yourAnswer')}</strong> {userAnswer(question, answer, t)}</p>}
+        {!correct && <p><strong>{t('result.correctAnswerLabel')}</strong> {correctAnswer(question, t)}</p>}
         <p>{question.explanation}</p>
       </article>
     })}</div>
