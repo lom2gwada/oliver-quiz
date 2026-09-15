@@ -139,4 +139,39 @@ export const fr = {
   'streak.mentionRun': '🔥 Belle série, la prochaine sera la bonne',
 
   'timed.correctAnswers': (count: number) => `bonne${count > 1 ? 's' : ''} réponse${count > 1 ? 's' : ''}`,
+
+  'common.loading': 'Chargement…',
+  'common.allThemes': 'Tous les thèmes',
+  'common.unlimited': 'Infini',
+  'common.minutesShort': (minutes: number) => `${minutes} min`,
+  'common.durationIcon': (formatted: string) => `⏱ ${formatted}`,
+
+  'history.title': 'Historique des parties',
+  'history.errorLoad': "Impossible de charger l'historique.",
+  'history.emptyState': "Aucune partie enregistrée pour l'instant.",
+  'history.gamesPlayed': 'Parties jouées',
+  'history.bestScore': 'Meilleur score',
+  'history.averageScore': 'Score moyen',
+  'history.totalPlaytime': 'Temps de jeu cumulé',
+  'history.radarTitle': 'Taux de réussite par thème',
+  'history.radarNote': (count: number) => `Les ${count} thèmes les plus joués sont affichés.`,
+  'history.byType': 'Par type de question',
+  'history.streakSectionTitle': 'Mode sans-faute',
+  'history.bestStreak': 'Meilleure série',
+  'history.timedSectionTitle': 'Mode contre-la-montre',
+  'history.missedTitle': 'Questions à retravailler',
+  'history.replayMissed': 'Reprendre mes erreurs',
+  'history.missedRatio': (wrong: number, attempts: number) => `Ratée ${wrong} fois sur ${attempts}`,
+
+  'leaderboard.title': 'Classement',
+  'leaderboard.modeOverall': '🏅 Général',
+  'leaderboard.errorLoad': 'Impossible de charger le classement.',
+  'leaderboard.emptyState': (inMode: boolean) => `Aucun score enregistré pour l'instant${inMode ? ' dans ce mode' : ''}.`,
+  'leaderboard.detailsClassic': (earned: number, total: number, count: number, duration: string) =>
+    `${earned}/${total} pts · ${count} question${count > 1 ? 's' : ''} · ⏱ ${duration}`,
+  'leaderboard.detailsStreak': (themes: string, duration: string) => `${themes} · ⏱ ${duration}`,
+  'leaderboard.detailsTimed': (correct: number, total: number, durationLabel: string, elapsed: string) =>
+    `${correct}/${total} · ${durationLabel} · ⏱ ${elapsed}`,
+  'leaderboard.detailsOverall': (attempted: number, games: number, rate: number) =>
+    `${attempted} tentées · ${games} partie${games > 1 ? 's' : ''} · ${rate}% de réussite`,
 }

@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react'
-import type { Question, Quiz } from '../types/quiz'
+import type { Difficulty, Question, Quiz } from '../types/quiz'
 import type { QuestionResultRow, QuizResultRow, StreakResultRow, TimedResultRow } from '../types/history'
+import type { Language } from '../i18n/types'
+import { useTranslation } from '../i18n'
 import { bucketsToChartGroups, bucketsToRadarAxes, computeMissedQuestions, computeRecords, fetchQuestionResults, fetchQuizHistory, fetchStreakHistory, fetchTimedHistory, sumBuckets } from '../utils/quizHistory'
 import { formatDuration } from '../utils/time'
-import { DIFFICULTY_LABELS } from './ResultPage'
 import { PieChart } from './PieChart'
 import { RadarChart } from './RadarChart'
-import { TYPE_LABELS } from './QuizPage'
+import { difficultyLabel, typeLabel } from './QuizPage'
 import { ScoreChart } from './ScoreChart'
 
-const shortDate = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
-const longDate = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+const shortDate = (iso: string, language: Language) => new Date(iso).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'short' })
+const longDate = (iso: string, language: Language) => new Date(iso).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 
 export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => void; quiz: Quiz; onReplayMissed: (questions: Question[]) => void }) {
+  const { t, language } = useTranslation()
   const [rows, setRows] = useState<QuizResultRow[] | null>(null)
   const [questionRows, setQuestionRows] = useState<QuestionResultRow[]>([])
   const [streakRows, setStreakRows] = useState<StreakResultRow[]>([])
@@ -21,7 +23,7 @@ export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => vo
   const [selectedQuiz, setSelectedQuiz] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchQuizHistory().then(setRows).catch(() => setError("Impossible de charger l'historique."))
+    fetchQuizHistory().then(setRows).catch(() => setError(t('history.errorLoad')))
     fetchQuestionResults().then(setQuestionRows).catch(() => {})
     fetchStreakHistory().then(setStreakRows).catch(() => {})
     fetchTimedHistory().then(setTimedRows).catch(() => {})
@@ -34,14 +36,14 @@ export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => vo
   const bestStreak = quizStreakRows.length ? Math.max(...quizStreakRows.map((row) => row.streak_count)) : 0
   const quizTimedRows = timedRows.filter((row) => row.quiz_title === activeQuiz)
   const bestTimedCount = quizTimedRows.length ? Math.max(...quizTimedRows.map((row) => row.correct_count)) : 0
-  const timedDurationLabel = (row: TimedResultRow) => row.duration_seconds === 0 ? 'Infini' : `${Math.round(row.duration_seconds / 60)} min`
+  const timedDurationLabel = (row: TimedResultRow) => row.duration_seconds === 0 ? t('common.unlimited') : t('common.minutesShort', Math.round(row.duration_seconds / 60))
 
   const records = quizRows ? computeRecords(quizRows) : null
-  const chartPoints = quizRows ? [...quizRows].reverse().map((row) => ({ label: shortDate(row.created_at), score: row.score })) : []
+  const chartPoints = quizRows ? [...quizRows].reverse().map((row) => ({ label: shortDate(row.created_at, language), score: row.score })) : []
   const themeBuckets = quizRows ? sumBuckets(quizRows, (row) => row.by_theme) : {}
-  const byTheme = bucketsToChartGroups(themeBuckets, (key) => key)
-  const byType = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_type), (key) => TYPE_LABELS[key as keyof typeof TYPE_LABELS] ?? key) : []
-  const byDifficulty = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_difficulty), (key) => DIFFICULTY_LABELS[key as keyof typeof DIFFICULTY_LABELS] ?? key) : []
+  const byTheme = bucketsToChartGroups(themeBuckets, (key) => key, t('result.succeeded'), t('result.missed'))
+  const byType = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_type), (key) => typeLabel(t, key as Question['type']), t('result.succeeded'), t('result.missed')) : []
+  const byDifficulty = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_difficulty), (key) => difficultyLabel(t, key as Difficulty), t('result.succeeded'), t('result.missed')) : []
   const radarAxes = bucketsToRadarAxes(themeBuckets, (key) => key)
   const radarTruncated = Object.keys(themeBuckets).length > radarAxes.length
 
@@ -53,93 +55,93 @@ export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => vo
 
   return <section className="stats-page">
     <div className="stats-header">
-      <h2>Historique des parties</h2>
-      <button type="button" className="secondary" onClick={onBack}>Retour</button>
+      <h2>{t('history.title')}</h2>
+      <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
     </div>
     {error && <p className="alert" role="alert">{error}</p>}
-    {!error && !rows && <p>Chargement…</p>}
-    {rows && !rows.length && <p>Aucune partie enregistrée pour l'instant.</p>}
-    {quizTitles.length > 0 && <label className="quiz-select">Quiz
+    {!error && !rows && <p>{t('common.loading')}</p>}
+    {rows && !rows.length && <p>{t('history.emptyState')}</p>}
+    {quizTitles.length > 0 && <label className="quiz-select">{t('start.quizLabel')}
       <select value={activeQuiz} onChange={(event) => setSelectedQuiz(event.target.value)}>
         {quizTitles.map((title) => <option key={title} value={title}>{title}</option>)}
       </select>
     </label>}
     {records && records.gamesPlayed > 0 && <>
       <div className="records-grid">
-        <div className="record-tile"><span className="record-value">{records.gamesPlayed}</span><span className="record-label">Parties jouées</span></div>
-        <div className="record-tile"><span className="record-value">{records.bestScore}%</span><span className="record-label">Meilleur score</span></div>
-        <div className="record-tile"><span className="record-value">{records.averageScore}%</span><span className="record-label">Score moyen</span></div>
-        <div className="record-tile"><span className="record-value">{formatDuration(records.totalPlaytimeSeconds)}</span><span className="record-label">Temps de jeu cumulé</span></div>
+        <div className="record-tile"><span className="record-value">{records.gamesPlayed}</span><span className="record-label">{t('history.gamesPlayed')}</span></div>
+        <div className="record-tile"><span className="record-value">{records.bestScore}%</span><span className="record-label">{t('history.bestScore')}</span></div>
+        <div className="record-tile"><span className="record-value">{records.averageScore}%</span><span className="record-label">{t('history.averageScore')}</span></div>
+        <div className="record-tile"><span className="record-value">{formatDuration(records.totalPlaytimeSeconds)}</span><span className="record-label">{t('history.totalPlaytime')}</span></div>
       </div>
       <ScoreChart points={chartPoints} />
       {radarAxes.length >= 3 && <RadarChart
-        title="Taux de réussite par thème"
+        title={t('history.radarTitle')}
         axes={radarAxes}
-        note={radarTruncated ? `Les ${radarAxes.length} thèmes les plus joués sont affichés.` : undefined}
+        note={radarTruncated ? t('history.radarNote', radarAxes.length) : undefined}
       />}
       <div className="stats-groups">
         <div className="stats-group">
-          <h3 className="stats-group-title">Par thème</h3>
+          <h3 className="stats-group-title">{t('result.byTheme')}</h3>
           <div className="stats-grid">{byTheme.map((group) => <PieChart key={`theme-${group.key}`} title={group.label} data={group.data} />)}</div>
         </div>
         <div className="stats-group">
-          <h3 className="stats-group-title">Par type de question</h3>
+          <h3 className="stats-group-title">{t('history.byType')}</h3>
           <div className="stats-grid">{byType.map((group) => <PieChart key={`type-${group.key}`} title={group.label} data={group.data} />)}</div>
         </div>
         <div className="stats-group">
-          <h3 className="stats-group-title">Par difficulté</h3>
+          <h3 className="stats-group-title">{t('result.byDifficulty')}</h3>
           <div className="stats-grid">{byDifficulty.map((group) => <PieChart key={`difficulty-${group.key}`} title={group.label} data={group.data} />)}</div>
         </div>
       </div>
     </>}
     {quizStreakRows.length > 0 && <div className="stats-group">
-      <h3 className="stats-group-title profile-section-title">Mode sans-faute</h3>
+      <h3 className="stats-group-title profile-section-title">{t('history.streakSectionTitle')}</h3>
       <div className="records-grid">
-        <div className="record-tile"><span className="record-value">🔥 {bestStreak}</span><span className="record-label">Meilleure série</span></div>
-        <div className="record-tile"><span className="record-value">{quizStreakRows.length}</span><span className="record-label">Parties jouées</span></div>
+        <div className="record-tile"><span className="record-value">🔥 {bestStreak}</span><span className="record-label">{t('history.bestStreak')}</span></div>
+        <div className="record-tile"><span className="record-value">{quizStreakRows.length}</span><span className="record-label">{t('history.gamesPlayed')}</span></div>
       </div>
       <ul className="history-list">
         {quizStreakRows.slice(0, 10).map((row) => <li className="history-item" key={row.id}>
           <span className="history-score">{row.victory ? '🏆' : '🔥'} {row.streak_count}</span>
-          <span className="history-date">{longDate(row.created_at)}</span>
-          <span className="history-themes">{row.themes.join(', ') || 'Tous les thèmes'}</span>
+          <span className="history-date">{longDate(row.created_at, language)}</span>
+          <span className="history-themes">{row.themes.join(', ') || t('common.allThemes')}</span>
         </li>)}
       </ul>
     </div>}
     {quizTimedRows.length > 0 && <div className="stats-group">
-      <h3 className="stats-group-title profile-section-title">Mode contre-la-montre</h3>
+      <h3 className="stats-group-title profile-section-title">{t('history.timedSectionTitle')}</h3>
       <div className="records-grid">
-        <div className="record-tile"><span className="record-value">✅ {bestTimedCount}</span><span className="record-label">Meilleur score</span></div>
-        <div className="record-tile"><span className="record-value">{quizTimedRows.length}</span><span className="record-label">Parties jouées</span></div>
+        <div className="record-tile"><span className="record-value">✅ {bestTimedCount}</span><span className="record-label">{t('history.bestScore')}</span></div>
+        <div className="record-tile"><span className="record-value">{quizTimedRows.length}</span><span className="record-label">{t('history.gamesPlayed')}</span></div>
       </div>
       <ul className="history-list">
         {quizTimedRows.slice(0, 10).map((row) => <li className="history-item" key={row.id}>
           <span className="history-score">✅ {row.correct_count} / {row.question_count}</span>
-          <span className="history-date">{longDate(row.created_at)}</span>
-          <span className="history-themes">{row.themes.join(', ') || 'Tous les thèmes'}</span>
+          <span className="history-date">{longDate(row.created_at, language)}</span>
+          <span className="history-themes">{row.themes.join(', ') || t('common.allThemes')}</span>
           <span>{timedDurationLabel(row)}</span>
         </li>)}
       </ul>
     </div>}
     {missedQuestions.length > 0 && <div className="missed-questions">
       <div className="stats-group-header">
-        <h3 className="stats-group-title">Questions à retravailler</h3>
-        {replayQuestions.length > 0 && <button type="button" onClick={() => onReplayMissed(replayQuestions)}>Reprendre mes erreurs</button>}
+        <h3 className="stats-group-title">{t('history.missedTitle')}</h3>
+        {replayQuestions.length > 0 && <button type="button" onClick={() => onReplayMissed(replayQuestions)}>{t('history.replayMissed')}</button>}
       </div>
       <ul className="missed-list">
         {missedQuestions.map((missed) => <li className="missed-item" key={missed.questionId}>
           <span>{missed.questionText}</span>
-          <span className="missed-ratio">Ratée {missed.wrongCount} fois sur {missed.attempts}</span>
+          <span className="missed-ratio">{t('history.missedRatio', missed.wrongCount, missed.attempts)}</span>
         </li>)}
       </ul>
     </div>}
     {quizRows && quizRows.length > 0 && <ul className="history-list">
       {quizRows.map((row) => <li className="history-item" key={row.id}>
         <span className="history-score">{row.score}%</span>
-        <span className="history-date">{longDate(row.created_at)}</span>
+        <span className="history-date">{longDate(row.created_at, language)}</span>
         <span className="history-themes">{row.themes.join(', ')}</span>
-        <span>{row.earned_points} / {row.total_points} pts</span>
-        <span>⏱ {formatDuration(row.elapsed_seconds)}</span>
+        <span>{t('result.pointsEarned', row.earned_points, row.total_points)}</span>
+        <span>{t('common.durationIcon', formatDuration(row.elapsed_seconds))}</span>
       </li>)}
     </ul>}
   </section>

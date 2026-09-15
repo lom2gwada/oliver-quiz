@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { GameMode, Quiz } from '../types/quiz'
 import type { LeaderboardRow, OverallLeaderboardRow, StreakLeaderboardRow, TimedLeaderboardRow } from '../types/leaderboard'
+import { useTranslation } from '../i18n'
 import { fetchLeaderboard, fetchOverallLeaderboard, fetchStreakLeaderboard, fetchTimedLeaderboard } from '../utils/leaderboard'
 import { supabase } from '../utils/supabase'
 import { formatDuration } from '../utils/time'
@@ -25,6 +26,7 @@ interface LeaderboardPageProps {
 }
 
 export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: LeaderboardPageProps) {
+  const { t } = useTranslation()
   const [mode, setMode] = useState<LeaderboardTab>(initialMode)
   const [rows, setRows] = useState<LeaderboardRow[] | null>(null)
   const [streakRows, setStreakRows] = useState<StreakLeaderboardRow[] | null>(null)
@@ -35,7 +37,7 @@ export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: Leade
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchLeaderboard().then(setRows).catch(() => setError('Impossible de charger le classement.'))
+    fetchLeaderboard().then(setRows).catch(() => setError(t('leaderboard.errorLoad')))
     fetchStreakLeaderboard().then(setStreakRows).catch(() => {})
     fetchTimedLeaderboard().then(setTimedRows).catch(() => {})
     fetchOverallLeaderboard().then(setOverallRows).catch(() => {})
@@ -55,7 +57,7 @@ export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: Leade
         .slice(0, MAX_ROWS)
         .map((row) => ({
           userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
-          details: `${row.earned_points}/${row.total_points} pts · ${row.question_count} question${row.question_count > 1 ? 's' : ''} · ⏱ ${formatDuration(row.elapsed_seconds)}`,
+          details: t('leaderboard.detailsClassic', row.earned_points, row.total_points, row.question_count, formatDuration(row.elapsed_seconds)),
           score: `${row.best_score}%`,
         }))
       : mode === 'streak'
@@ -64,7 +66,7 @@ export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: Leade
           .slice(0, MAX_ROWS)
           .map((row) => ({
             userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
-            details: `${row.themes.join(', ') || 'Tous les thèmes'} · ⏱ ${formatDuration(row.elapsed_seconds)}`,
+            details: t('leaderboard.detailsStreak', row.themes.join(', ') || t('common.allThemes'), formatDuration(row.elapsed_seconds)),
             score: `${row.victory ? '🏆' : '🔥'} ${row.best_streak}`,
           }))
         : mode === 'timed'
@@ -73,7 +75,7 @@ export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: Leade
             .slice(0, MAX_ROWS)
             .map((row) => ({
               userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
-              details: `${row.correct_count}/${row.question_count} · ${row.duration_seconds === 0 ? 'Infini' : `${Math.round(row.duration_seconds / 60)} min`} · ⏱ ${formatDuration(row.elapsed_seconds)}`,
+              details: t('leaderboard.detailsTimed', row.correct_count, row.question_count, row.duration_seconds === 0 ? t('common.unlimited') : t('common.minutesShort', Math.round(row.duration_seconds / 60)), formatDuration(row.elapsed_seconds)),
               score: row.pace_per_minute !== null ? `${row.pace_per_minute}/min` : '—',
             }))
           : (overallRows ?? []).filter((row) => row.quiz_title === activeQuiz)
@@ -81,25 +83,25 @@ export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: Leade
             .slice(0, MAX_ROWS)
             .map((row) => ({
               userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
-              details: `${row.total_attempted} tentées · ${row.games_played} partie${row.games_played > 1 ? 's' : ''} · ${row.success_rate ?? 0}% de réussite`,
+              details: t('leaderboard.detailsOverall', row.total_attempted, row.games_played, row.success_rate ?? 0),
               score: `✓ ${row.total_correct}`,
             }))
 
   return <section className="stats-page">
     <div className="stats-header">
-      <h2>Classement</h2>
-      <button type="button" className="secondary" onClick={onBack}>Retour</button>
+      <h2>{t('leaderboard.title')}</h2>
+      <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
     </div>
-    <div className="mode-picker" role="group" aria-label="Mode de jeu">
-      <button type="button" className={mode === 'classic' ? 'mode-option active' : 'mode-option'} onClick={() => setMode('classic')}>🎯 Classique</button>
-      <button type="button" className={mode === 'streak' ? 'mode-option active' : 'mode-option'} onClick={() => setMode('streak')}>🔥 Sans-faute</button>
-      <button type="button" className={mode === 'timed' ? 'mode-option active' : 'mode-option'} onClick={() => setMode('timed')}>⏱️ Contre-la-montre</button>
-      <button type="button" className={mode === 'overall' ? 'mode-option active' : 'mode-option'} onClick={() => setMode('overall')}>🏅 Général</button>
+    <div className="mode-picker" role="group" aria-label={t('start.modeGroupLabel')}>
+      <button type="button" className={mode === 'classic' ? 'mode-option active' : 'mode-option'} onClick={() => setMode('classic')}>{t('common.modeClassic')}</button>
+      <button type="button" className={mode === 'streak' ? 'mode-option active' : 'mode-option'} onClick={() => setMode('streak')}>{t('common.modeStreak')}</button>
+      <button type="button" className={mode === 'timed' ? 'mode-option active' : 'mode-option'} onClick={() => setMode('timed')}>{t('common.modeTimed')}</button>
+      <button type="button" className={mode === 'overall' ? 'mode-option active' : 'mode-option'} onClick={() => setMode('overall')}>{t('leaderboard.modeOverall')}</button>
     </div>
     {error && mode === 'classic' && <p className="alert" role="alert">{error}</p>}
-    {!activeRows && <p>Chargement…</p>}
-    {activeRows && !activeRows.length && <p>Aucun score enregistré pour l'instant{mode !== 'classic' ? ' dans ce mode' : ''}.</p>}
-    {quizTitles.length > 0 && <label className="quiz-select">Quiz
+    {!activeRows && <p>{t('common.loading')}</p>}
+    {activeRows && !activeRows.length && <p>{t('leaderboard.emptyState', mode !== 'classic')}</p>}
+    {quizTitles.length > 0 && <label className="quiz-select">{t('start.quizLabel')}
       <select value={activeQuiz} onChange={(event) => setSelectedQuiz(event.target.value)}>
         {quizTitles.map((title) => <option key={title} value={title}>{title}</option>)}
       </select>
