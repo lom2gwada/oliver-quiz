@@ -30,7 +30,7 @@ interface QuizDetailPageProps {
   onAddTheme: (label: string) => Promise<void>
   quizLoadError: string
   onUpdateQuizMeta: (title: string, author: string, description: string) => Promise<void>
-  onDeleteQuiz: (id: string, title: string) => Promise<void>
+  onDeleteQuiz: (id: string, title: string, deleteHistoryToo: boolean) => Promise<void>
   deleteQuizError: string
 }
 
@@ -38,6 +38,7 @@ interface QuizDetailPageProps {
  * export, gestion des accès et des questions — tout scopé à ce quiz, plus de sélecteur ni de création ici. */
 export function QuizDetailPage({ quiz, hostedQuizId, onBack, onExport, isAdmin, canEditQuiz, onSaveQuestion, onAddQuestion, onDeleteQuestion, editError, onAddTheme, quizLoadError, onUpdateQuizMeta, onDeleteQuiz, deleteQuizError }: QuizDetailPageProps) {
   const { t } = useTranslation()
+  const [deleteHistoryToo, setDeleteHistoryToo] = useState(false)
   const [editingQuestionId, setEditingQuestionId] = useState('')
   const [creatingType, setCreatingType] = useState<Question['type']>('qcm')
   const [creatingTheme, setCreatingTheme] = useState(quiz.themes[0]?.id ?? '')
@@ -83,7 +84,13 @@ export function QuizDetailPage({ quiz, hostedQuizId, onBack, onExport, isAdmin, 
       onSave={onUpdateQuizMeta}
     />}
     {isAdmin && <button type="button" className="secondary" onClick={onExport}>{t('admin.exportButton')}</button>}
-    {canEditQuiz && <button type="button" className="danger" onClick={() => onDeleteQuiz(hostedQuizId, quiz.metadata.title)}>{t('admin.deleteQuizButton')}</button>}
+    {canEditQuiz && <>
+      <label className="theme-checkbox">
+        <input type="checkbox" checked={deleteHistoryToo} onChange={(event) => setDeleteHistoryToo(event.target.checked)} />
+        {t('admin.deleteHistoryTooLabel')}
+      </label>
+      <button type="button" className="danger" onClick={() => onDeleteQuiz(hostedQuizId, quiz.metadata.title, deleteHistoryToo)}>{t('admin.deleteQuizButton')}</button>
+    </>}
     {deleteQuizError && <p className="alert" role="alert">{deleteQuizError}</p>}
     <h3 className="stats-group-title">{t('admin.questionBreakdownTitle')}</h3>
     <div className="stats-grid">

@@ -16,7 +16,7 @@ import type { AnswersByQuestion, Difficulty, GameMode, Question, Quiz } from './
 import type { Profile } from './types/profile'
 import type { LeaderboardRow } from './types/leaderboard'
 import type { HostedQuizSummary } from './types/hostedQuiz'
-import { buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, saveQuestionResults, saveQuizResult, saveStreakResult, saveTimedResult } from './utils/quizHistory'
+import { buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, deleteQuizHistory, saveQuestionResults, saveQuizResult, saveStreakResult, saveTimedResult } from './utils/quizHistory'
 import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchTopScore } from './utils/leaderboard'
 import { deleteQuiz, fetchAccessibleQuizzes, fetchQuizContent, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
@@ -280,15 +280,19 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   }
 
   /** Admin uniquement : supprime définitivement un quiz hébergé après confirmation. `quiz_access` est nettoyé
-   * automatiquement (FK `on delete cascade`) ; l'historique déjà enregistré n'est pas affecté (référencé par
-   * titre, pas par id). Si le quiz supprimé était le quiz actif, retombe sur le quiz d'exemple. */
-  const deleteHostedQuiz = async (id: string, title: string) => {
-    if (!window.confirm(t('admin.confirmDeleteQuiz', title))) return
+   * automatiquement (FK `on delete cascade`). Par défaut l'historique déjà enregistré n'est pas affecté
+   * (référencé par titre, pas par id) — `deleteHistoryToo` permet de le purger explicitement en plus.
+   * Si le quiz supprimé était le quiz actif, retombe sur le quiz d'exemple. */
+  const deleteHostedQuiz = async (id: string, title: string, deleteHistoryToo: boolean) => {
+    if (!window.confirm(t('admin.confirmDeleteQuiz', title, deleteHistoryToo))) return
     setDeleteQuizError('')
     try {
       await deleteQuiz(id)
       setHostedQuizzes((current) => current.filter((existing) => existing.id !== id))
       if (selectedHostedQuizId === id) { setQuiz(initialQuiz); setSelectedHostedQuizId('') }
+      if (deleteHistoryToo) {
+        try { await deleteQuizHistory(title) } catch { setDeleteQuizError(t('admin.errorDeleteQuizHistory')); return }
+      }
       navigate('quizzes')
     } catch (error) {
       setDeleteQuizError(error instanceof Error ? error.message : t('admin.errorDeleteQuiz'))

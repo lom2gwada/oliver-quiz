@@ -56,8 +56,11 @@ export const en = {
   'admin.errorDuplicateTitleOther': 'Another quiz already has this title.',
   'admin.errorUpdateQuiz': 'Could not update this quiz.',
   'admin.deleteQuizButton': '🗑️ Delete this quiz',
-  'admin.confirmDeleteQuiz': (title: string) => `Permanently delete "${title}"? All its questions and every granted access will be lost. This action cannot be undone.`,
+  'admin.deleteHistoryTooLabel': "Also delete this quiz's history (games and leaderboard, for every player)",
+  'admin.confirmDeleteQuiz': (title: string, includeHistory: boolean) =>
+    `Permanently delete "${title}"? All its questions and every granted access will be lost.${includeHistory ? " This quiz's history and leaderboard will also be deleted for every player." : ' Its history and leaderboard will remain visible.'} This action cannot be undone.`,
   'admin.errorDeleteQuiz': 'Could not delete this quiz.',
+  'admin.errorDeleteQuizHistory': 'The quiz was deleted, but its history could not be cleared.',
 
   'admin.sampleQuizOption': 'General knowledge (sample)',
   'admin.hostedQuizzesTitle': 'Your hosted quizzes',

@@ -54,8 +54,11 @@ export const fr = {
   'admin.errorDuplicateTitleOther': 'Un autre quiz porte déjà ce titre.',
   'admin.errorUpdateQuiz': 'Impossible de mettre à jour ce quiz.',
   'admin.deleteQuizButton': '🗑️ Supprimer ce quiz',
-  'admin.confirmDeleteQuiz': (title: string) => `Supprimer définitivement "${title}" ? Toutes ses questions et tous les accès accordés seront perdus. Cette action est irréversible.`,
+  'admin.deleteHistoryTooLabel': "Supprimer aussi l'historique de ce quiz (parties et classement, tous joueurs confondus)",
+  'admin.confirmDeleteQuiz': (title: string, includeHistory: boolean) =>
+    `Supprimer définitivement "${title}" ? Toutes ses questions et tous les accès accordés seront perdus.${includeHistory ? " L'historique et le classement de ce quiz seront également supprimés pour tous les joueurs." : " L'historique et le classement resteront visibles."} Cette action est irréversible.`,
   'admin.errorDeleteQuiz': 'Impossible de supprimer ce quiz.',
+  'admin.errorDeleteQuizHistory': "Le quiz a été supprimé, mais son historique n'a pas pu être purgé.",
 
   'admin.sampleQuizOption': 'Culture générale (exemple)',
   'admin.hostedQuizzesTitle': 'Vos quiz hébergés',
