@@ -55,6 +55,9 @@ export const en = {
   'admin.errorAddTheme': 'Could not add this theme.',
   'admin.errorDuplicateTitleOther': 'Another quiz already has this title.',
   'admin.errorUpdateQuiz': 'Could not update this quiz.',
+  'admin.deleteQuizButton': '🗑️ Delete this quiz',
+  'admin.confirmDeleteQuiz': (title: string) => `Permanently delete "${title}"? All its questions and every granted access will be lost. This action cannot be undone.`,
+  'admin.errorDeleteQuiz': 'Could not delete this quiz.',
 
   'admin.sampleQuizOption': 'General knowledge (sample)',
   'admin.hostedQuizzesTitle': 'Your hosted quizzes',

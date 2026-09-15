@@ -53,6 +53,9 @@ export const fr = {
   'admin.errorAddTheme': "Impossible d'ajouter ce thème.",
   'admin.errorDuplicateTitleOther': 'Un autre quiz porte déjà ce titre.',
   'admin.errorUpdateQuiz': 'Impossible de mettre à jour ce quiz.',
+  'admin.deleteQuizButton': '🗑️ Supprimer ce quiz',
+  'admin.confirmDeleteQuiz': (title: string) => `Supprimer définitivement "${title}" ? Toutes ses questions et tous les accès accordés seront perdus. Cette action est irréversible.`,
+  'admin.errorDeleteQuiz': 'Impossible de supprimer ce quiz.',
 
   'admin.sampleQuizOption': 'Culture générale (exemple)',
   'admin.hostedQuizzesTitle': 'Vos quiz hébergés',
