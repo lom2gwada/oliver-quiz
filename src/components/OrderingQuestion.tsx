@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react'
 import type { OrderingQuestion as Question, UserAnswer } from '../types/quiz'
+import { useTranslation } from '../i18n'
 import { playClick } from '../utils/sound'
 
 export function OrderingQuestion({ question, answer, onChange }: { question: Question; answer?: UserAnswer; onChange: (value: string[]) => void }) {
+  const { t } = useTranslation()
   const order = Array.isArray(answer) && answer.length ? answer : question.content.items.map((item) => item.id)
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const itemRefs = useRef(new Map<string, HTMLLIElement>())
@@ -56,7 +58,7 @@ export function OrderingQuestion({ question, answer, onChange }: { question: Que
       return <li key={id} ref={(el) => { if (el) itemRefs.current.set(id, el); else itemRefs.current.delete(id) }} className={dragIndex === index ? 'dragging' : ''}>
         <span className="ordering-handle" onPointerDown={startDrag(index)} aria-hidden="true">⠿</span>
         <span className="ordering-label">{item.label}</span>
-        <span><button type="button" onClick={() => move(index, -1)} disabled={index === 0} aria-label="Monter">↑</button><button type="button" onClick={() => move(index, 1)} disabled={index === order.length - 1} aria-label="Descendre">↓</button></span>
+        <span><button type="button" onClick={() => move(index, -1)} disabled={index === 0} aria-label={t('quiz.moveUp')}>↑</button><button type="button" onClick={() => move(index, 1)} disabled={index === order.length - 1} aria-label={t('quiz.moveDown')}>↓</button></span>
       </li>
     })}
   </ol>

@@ -1,4 +1,5 @@
 import type { Difficulty, Theme } from '../types/quiz'
+import { useTranslation } from '../i18n'
 import { playClick } from '../utils/sound'
 
 interface FilterPanelProps {
@@ -10,23 +11,24 @@ interface FilterPanelProps {
 }
 
 export function FilterPanel({ themes, selectedThemes, difficulty, onThemeToggle, onDifficultyChange }: FilterPanelProps) {
-  return <section className="filter-panel" aria-label="Filtres du quiz">
+  const { t } = useTranslation()
+  return <section className="filter-panel" aria-label={t('filter.ariaLabel')}>
     <fieldset className="theme-filter">
-      <legend>Thèmes</legend>
+      <legend>{t('filter.themesLegend')}</legend>
       <div className="theme-checkboxes">
         {themes.map((item) => <label key={item.id} className="theme-checkbox">
           <input type="checkbox" checked={selectedThemes.includes(item.id)} onChange={() => { playClick(); onThemeToggle(item.id) }} />
           {item.label}
         </label>)}
       </div>
-      <p className="theme-hint">{selectedThemes.length ? `${selectedThemes.length} thème${selectedThemes.length > 1 ? 's' : ''} sélectionné${selectedThemes.length > 1 ? 's' : ''}` : 'Tous les thèmes'}</p>
+      <p className="theme-hint">{t('filter.themesSelected', selectedThemes.length)}</p>
     </fieldset>
-    <label>Difficulté
+    <label>{t('filter.difficultyLabel')}
       <select value={difficulty} onChange={(event) => { playClick(); onDifficultyChange(event.target.value as Difficulty | '') }}>
-        <option value="">Toutes les difficultés</option>
-        <option value="easy">Facile</option>
-        <option value="medium">Intermédiaire</option>
-        <option value="hard">Difficile</option>
+        <option value="">{t('filter.allDifficulties')}</option>
+        <option value="easy">{t('quiz.difficultyEasy')}</option>
+        <option value="medium">{t('quiz.difficultyMedium')}</option>
+        <option value="hard">{t('quiz.difficultyHard')}</option>
       </select>
     </label>
   </section>
