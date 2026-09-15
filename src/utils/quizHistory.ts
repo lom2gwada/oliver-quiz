@@ -165,6 +165,18 @@ export async function fetchTimedHistory(): Promise<TimedResultRow[]> {
   return data ?? []
 }
 
+/** Admin uniquement (RLS) : supprime tout l'historique (toutes les parties, tous joueurs confondus) d'un
+ * quiz, identifié par son titre — utilisé quand un admin choisit de purger l'historique en supprimant un
+ * quiz hébergé. Volontairement pas de cascade automatique depuis `quizzes` : l'historique reste par défaut
+ * après une suppression de quiz (cf. `deleteQuiz`), ceci n'est qu'une purge explicite optionnelle. */
+export async function deleteQuizHistory(quizTitle: string): Promise<void> {
+  const tables = ['quiz_results', 'question_results', 'streak_results', 'timed_results'] as const
+  for (const table of tables) {
+    const { error } = await supabase.from(table).delete().eq('quiz_title', quizTitle)
+    if (error) throw error
+  }
+}
+
 /** Convertit des buckets cumulés en axes de radar (taux de réussite, %), limité aux `maxAxes` catégories les
  * plus jouées — au-delà d'une dizaine d'axes un radar devient illisible (cas des quiz à 20+ thèmes). */
 export function bucketsToRadarAxes(buckets: Record<string, StatBucket>, labelOf: (key: string) => string, maxAxes = 8): RadarAxis[] {
