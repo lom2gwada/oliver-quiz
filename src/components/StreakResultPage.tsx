@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import type { AnswersByQuestion, Question } from '../types/quiz'
+import { useTranslation } from '../i18n'
 import { formatDuration } from '../utils/time'
 import { playFinish, playVictory } from '../utils/sound'
 import { Confetti } from './Confetti'
@@ -19,29 +20,30 @@ interface StreakResultPageProps {
 }
 
 export function StreakResultPage({ streakCount, elapsedSeconds, victory, playedQuestions, answers, onRestart, onViewHistory, onViewLeaderboard }: StreakResultPageProps) {
+  const { t } = useTranslation()
   useEffect(() => { victory ? playVictory() : playFinish() }, [])
   return <section className="results">
     {victory && <Confetti />}
     <div className="score">
-      <p>{victory ? 'Sans-faute total !' : 'Votre série'}</p>
+      <p>{victory ? t('streak.titleVictory') : t('streak.titleRun')}</p>
       <strong>{streakCount}</strong>
-      <span>bonne{streakCount > 1 ? 's' : ''} réponse{streakCount > 1 ? 's' : ''} d'affilée</span>
-      <p className="mention">{victory ? '🏆 Vous avez tout réussi' : '🔥 Belle série, la prochaine sera la bonne'}</p>
-      <p className="duration">⏱ Temps : {formatDuration(elapsedSeconds)}</p>
+      <span>{t('streak.answersInARow', streakCount)}</span>
+      <p className="mention">{victory ? t('streak.mentionVictory') : t('streak.mentionRun')}</p>
+      <p className="duration">{t('result.duration', formatDuration(elapsedSeconds))}</p>
     </div>
-    <button type="button" onClick={onRestart}>Recommencer</button>
+    <button type="button" onClick={onRestart}>{t('result.restart')}</button>
     <div className="nav-links">
-      <button type="button" className="secondary" onClick={onViewHistory}>🕓 Historique</button>
-      <button type="button" className="secondary" onClick={onViewLeaderboard}>🏆 Classement</button>
+      <button type="button" className="secondary" onClick={onViewHistory}>{t('common.viewHistory')}</button>
+      <button type="button" className="secondary" onClick={onViewLeaderboard}>{t('common.viewLeaderboard')}</button>
     </div>
     <div className="corrections">{playedQuestions.map((question) => {
       const correct = isCorrect(question, answers[question.id])
       return <article className={`correction ${correct ? 'correct' : 'incorrect'}`} key={question.id}>
-        <h3>{correct ? '✓ Bonne réponse' : '✗ Réponse incorrecte'} — {question.question}</h3>
+        <h3>{correct ? t('result.correct') : t('result.incorrect')} — {question.question}</h3>
         {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
         {question.diagram && <MermaidDiagram chart={question.diagram} />}
-        {!correct && <p><strong>Votre réponse :</strong> {userAnswer(question, answers[question.id])}</p>}
-        {!correct && <p><strong>Bonne réponse :</strong> {correctAnswer(question)}</p>}
+        {!correct && <p><strong>{t('result.yourAnswer')}</strong> {userAnswer(question, answers[question.id], t)}</p>}
+        {!correct && <p><strong>{t('result.correctAnswerLabel')}</strong> {correctAnswer(question, t)}</p>}
         <p>{question.explanation}</p>
       </article>
     })}</div>
