@@ -10,11 +10,7 @@ import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
 import { QuestionRenderer } from './QuestionRenderer'
 
-/** @deprecated Chaînes françaises figées, gardées le temps que les écrans qui l'importent encore
- * (HistoryPage.tsx, QuizContentPage.tsx) migrent vers `typeLabel(t, type)` dans une PR i18n suivante. */
 export const TYPE_ICONS: Record<Question['type'], string> = { qcm: '🧩', code: '💻', text: '✍️', ordering: '🔀', boolean: '⚖️', cloze: '📝', matching: '🔗', numeric: '🎚️' }
-/** @deprecated voir `TYPE_ICONS` ci-dessus. */
-export const TYPE_LABELS: Record<Question['type'], string> = { qcm: 'QCM', code: 'Code', text: 'Texte', ordering: 'Ordre', boolean: 'Vrai/Faux', cloze: 'Texte à trous', matching: 'Association', numeric: 'Estimation' }
 
 const TYPE_LABEL_KEYS: Record<Question['type'], TranslationKey> = {
   qcm: 'quiz.typeQcm', code: 'quiz.typeCode', text: 'quiz.typeText', ordering: 'quiz.typeOrdering',

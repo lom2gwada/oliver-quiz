@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { AnswersByQuestion, Difficulty, Question, Theme } from '../types/quiz'
+import type { AnswersByQuestion, Question, Theme } from '../types/quiz'
 import type { TranslationKey } from '../i18n'
 import { translate, useTranslation } from '../i18n'
 import { formatDuration } from '../utils/time'
@@ -9,10 +9,6 @@ import { MermaidDiagram } from './MermaidDiagram'
 import { PieChart } from './PieChart'
 import { QuestionImage } from './QuestionImage'
 import { difficultyLabel } from './QuizPage'
-
-/** @deprecated Chaînes françaises figées, gardées le temps que `HistoryPage.tsx` (qui l'importe encore)
- * migre vers `difficultyLabel(t, difficulty)` (voir `QuizPage.tsx`) dans une PR i18n suivante. */
-export const DIFFICULTY_LABELS: Record<Difficulty, string> = { easy: 'Facile', medium: 'Intermédiaire', hard: 'Difficile' }
 
 type TFunction = (key: TranslationKey, ...args: unknown[]) => string
 /** Traducteur français par défaut : `userAnswer`/`correctAnswer` sont appelées par des écrans pas encore
