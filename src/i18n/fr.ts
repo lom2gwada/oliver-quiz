@@ -55,6 +55,7 @@ export const fr = {
   'admin.errorUpdateQuiz': 'Impossible de mettre à jour ce quiz.',
 
   'admin.sampleQuizOption': 'Culture générale (exemple)',
+  'admin.hostedQuizzesTitle': 'Vos quiz hébergés',
   'admin.questionBreakdownTitle': 'Répartition des questions',
   'admin.byThemesChartTitle': (count: number) => `Thèmes — ${count} questions`,
   'admin.byTypesChartTitle': (count: number) => `Types — ${count} questions`,

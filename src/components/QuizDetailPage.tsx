@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import type { Difficulty, Question, Quiz } from '../types/quiz'
-import type { HostedQuizSummary } from '../types/hostedQuiz'
 import { useTranslation } from '../i18n'
-import { CreateQuizForm } from './CreateQuizForm'
 import { EditQuizMetaForm } from './EditQuizMetaForm'
 import { MermaidDiagram } from './MermaidDiagram'
 import { PieChart } from './PieChart'
@@ -17,14 +15,11 @@ const QUESTION_TYPES: Question['type'][] = ['qcm', 'text', 'code', 'ordering', '
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard']
 const DIFFICULTY_COLORS: Record<Difficulty, string> = { easy: '#34d399', medium: '#38bdf8', hard: '#fb7185' }
 
-interface QuizContentPageProps {
+interface QuizDetailPageProps {
   quiz: Quiz
-  hostedQuizzes: HostedQuizSummary[]
+  hostedQuizId: string
   onBack: () => void
-  onPublish: (file?: File) => void
   onExport: () => void
-  publishError: string
-  publishSuccess: boolean
   isAdmin: boolean
   /** Édition en direct proposée seulement pour un quiz hébergé actif — jamais pour le quiz d'exemple. */
   canEditQuiz: boolean
@@ -32,16 +27,14 @@ interface QuizContentPageProps {
   onAddQuestion: (created: Question) => Promise<void>
   onDeleteQuestion: (id: string) => Promise<void>
   editError: string
-  onCreateQuiz: (title: string, author: string, description: string, themeLabels: string[]) => Promise<void>
-  createError: string
   onAddTheme: (label: string) => Promise<void>
-  selectedHostedQuizId: string
-  onSelectHostedQuiz: (id: string) => void
   quizLoadError: string
   onUpdateQuizMeta: (title: string, author: string, description: string) => Promise<void>
 }
 
-export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExport, publishError, publishSuccess, isAdmin, canEditQuiz, onSaveQuestion, onAddQuestion, onDeleteQuestion, editError, onCreateQuiz, createError, onAddTheme, selectedHostedQuizId, onSelectHostedQuiz, quizLoadError, onUpdateQuizMeta }: QuizContentPageProps) {
+/** Page d'un seul quiz hébergé (ou du quiz d'exemple, en lecture seule) : méta, graphiques de répartition,
+ * export, gestion des accès et des questions — tout scopé à ce quiz, plus de sélecteur ni de création ici. */
+export function QuizDetailPage({ quiz, hostedQuizId, onBack, onExport, isAdmin, canEditQuiz, onSaveQuestion, onAddQuestion, onDeleteQuestion, editError, onAddTheme, quizLoadError, onUpdateQuizMeta }: QuizDetailPageProps) {
   const { t } = useTranslation()
   const [editingQuestionId, setEditingQuestionId] = useState('')
   const [creatingType, setCreatingType] = useState<Question['type']>('qcm')
@@ -75,15 +68,9 @@ export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExpo
 
   return <section className="stats-page">
     <div className="stats-header">
-      <h2>{t('start.quizLabel')}</h2>
+      <h2>{quiz.metadata.title}</h2>
       <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
     </div>
-    {hostedQuizzes.length > 0 && <label className="quiz-select">{t('start.quizLabel')}
-      <select value={selectedHostedQuizId} onChange={(event) => onSelectHostedQuiz(event.target.value)}>
-        <option value="">{t('admin.sampleQuizOption')}</option>
-        {hostedQuizzes.map((hosted) => <option key={hosted.id} value={hosted.id}>{hosted.title}</option>)}
-      </select>
-    </label>}
     {quizLoadError && <p className="alert" role="alert">{quizLoadError}</p>}
     {quiz.metadata.description && <p className="quiz-description">{quiz.metadata.description}</p>}
     {canEditQuiz && <EditQuizMetaForm
@@ -93,6 +80,7 @@ export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExpo
       error={editError}
       onSave={onUpdateQuizMeta}
     />}
+    {isAdmin && <button type="button" className="secondary" onClick={onExport}>{t('admin.exportButton')}</button>}
     <h3 className="stats-group-title">{t('admin.questionBreakdownTitle')}</h3>
     <div className="stats-grid">
       <PieChart title={t('admin.byThemesChartTitle', quiz.questions.length)} data={byTheme} />
@@ -111,17 +99,10 @@ export function QuizContentPage({ quiz, hostedQuizzes, onBack, onPublish, onExpo
       })}
     </div>
     {isAdmin && <>
-      <h3 className="stats-group-title profile-section-title">{t('admin.createQuizTitle')}</h3>
-      <CreateQuizForm error={createError} onCreate={onCreateQuiz} />
-      <h3 className="stats-group-title profile-section-title">{t('admin.publishQuizTitle')}</h3>
-      <div className="quiz-import">
-        <label className="file-input">{t('admin.importLabel')}<input type="file" accept="application/json,.json" onChange={(event) => onPublish(event.target.files?.[0])} /></label>
-        <button type="button" className="secondary" onClick={onExport}>{t('admin.exportButton')}</button>
-        {publishError && <p className="alert" role="alert">{publishError}</p>}
-        {publishSuccess && <p className="profile-saved">{t('admin.publishSuccess')}</p>}
-      </div>
-      <h3 className="stats-group-title profile-section-title">{t('admin.manageAccessTitle')}</h3>
-      <QuizAccessManager quizzes={hostedQuizzes} />
+      {hostedQuizId && <>
+        <h3 className="stats-group-title profile-section-title">{t('admin.manageAccessTitle')}</h3>
+        <QuizAccessManager quiz={{ id: hostedQuizId, title: quiz.metadata.title }} />
+      </>}
       <h3 className="stats-group-title profile-section-title">{t('admin.allQuestionsTitle', quiz.questions.length)}</h3>
       {canEditQuiz && <div className="question-create-bar">
         <input type="text" value={newThemeLabel} onChange={(event) => setNewThemeLabel(event.target.value)} placeholder={t('admin.newThemePlaceholder')} />

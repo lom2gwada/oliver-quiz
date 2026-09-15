@@ -57,6 +57,7 @@ export const en = {
   'admin.errorUpdateQuiz': 'Could not update this quiz.',
 
   'admin.sampleQuizOption': 'General knowledge (sample)',
+  'admin.hostedQuizzesTitle': 'Your hosted quizzes',
   'admin.questionBreakdownTitle': 'Question breakdown',
   'admin.byThemesChartTitle': (count: number) => `Themes — ${count} question${count !== 1 ? 's' : ''}`,
   'admin.byTypesChartTitle': (count: number) => `Types — ${count} question${count !== 1 ? 's' : ''}`,
