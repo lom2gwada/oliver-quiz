@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { AnswersByQuestion, Question, Quiz, UserAnswer } from '../types/quiz'
+import { useTranslation } from '../i18n'
 import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
 import { questionTimeLimit } from '../utils/questionTimeLimits'
@@ -8,7 +9,7 @@ import { isCorrect } from './ResultPage'
 import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
 import { QuestionRenderer } from './QuestionRenderer'
-import { TYPE_ICONS, TYPE_LABELS } from './QuizPage'
+import { TYPE_ICONS, difficultyLabel, typeLabel } from './QuizPage'
 
 export interface StreakResult {
   streakCount: number
@@ -28,6 +29,7 @@ interface StreakQuizPageProps {
 }
 
 export function StreakQuizPage({ quiz, pool, timeboxed, onFinish, onCancel }: StreakQuizPageProps) {
+  const { t } = useTranslation()
   const order = useMemo(() => shuffle(pool), [pool])
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState<UserAnswer | undefined>(undefined)
@@ -41,7 +43,7 @@ export function StreakQuizPage({ quiz, pool, timeboxed, onFinish, onCancel }: St
     return () => clearInterval(interval)
   }, [])
 
-  const cancelQuiz = () => { if (window.confirm('Abandonner la partie en cours ? Votre série sera perdue.')) onCancel() }
+  const cancelQuiz = () => { if (window.confirm(t('quiz.confirmAbandonStreak'))) onCancel() }
 
   // Pas de correction affichée question par question : comme le mode classique, tout se joue "à l'aveugle"
   // et le bilan complet n'apparaît qu'à la fin (voir StreakResultPage).
@@ -57,13 +59,13 @@ export function StreakQuizPage({ quiz, pool, timeboxed, onFinish, onCancel }: St
   }
   const remaining = useQuestionTimer(question?.id ?? '', timeboxed && question ? questionTimeLimit(question) : null, advance)
 
-  if (!question) return <section className="empty"><h2>Aucune question</h2><p>Modifiez les filtres pour lancer une partie.</p><button type="button" className="secondary" onClick={onCancel}>Retour</button></section>
+  if (!question) return <section className="empty"><h2>{t('quiz.emptyTitle')}</h2><p>{t('quiz.emptyHintRun')}</p><button type="button" className="secondary" onClick={onCancel}>{t('common.back')}</button></section>
   const theme = quiz.themes.find((item) => item.id === question.theme)?.label ?? question.theme
 
   return <section className="quiz-card">
-    <div className="question-meta"><span>{TYPE_ICONS[question.type]} {TYPE_LABELS[question.type]}</span><span>{theme}</span><span>{question.difficulty}</span><span>{question.points} pts</span><span>🔥 {streakCount}</span>{remaining !== null && <span>⏳ {remaining}s</span>}<span>⏱ {formatDuration(elapsed)}</span></div>
+    <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span><span>🔥 {streakCount}</span>{remaining !== null && <span>⏳ {remaining}s</span>}<span>⏱ {formatDuration(elapsed)}</span></div>
     <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${((index + 1) / order.length) * 100}%` }} /></div>
-    <p className="progress">Question {index + 1} / {order.length}</p>
+    <p className="progress">{t('quiz.questionProgress', index + 1, order.length)}</p>
     <div className="question-body" key={question.id}>
       {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
       {question.diagram && <MermaidDiagram chart={question.diagram} />}
@@ -71,8 +73,8 @@ export function StreakQuizPage({ quiz, pool, timeboxed, onFinish, onCancel }: St
       <QuestionRenderer question={question} answer={answer} onChange={setAnswer} />
     </div>
     <div className="quiz-actions">
-      <button type="button" className="secondary" onClick={cancelQuiz}>Abandonner</button>
-      <button type="button" onClick={advance}>{index + 1 === order.length ? 'Voir ma correction' : 'Suivante'}</button>
+      <button type="button" className="secondary" onClick={cancelQuiz}>{t('quiz.abandon')}</button>
+      <button type="button" onClick={advance}>{index + 1 === order.length ? t('quiz.viewCorrection') : t('quiz.next')}</button>
     </div>
   </section>
 }

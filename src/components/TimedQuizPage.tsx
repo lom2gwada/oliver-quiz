@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Question, QuestionAttempt, Quiz, UserAnswer } from '../types/quiz'
+import { useTranslation } from '../i18n'
 import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
 import { questionTimeLimit } from '../utils/questionTimeLimits'
@@ -7,7 +8,7 @@ import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
 import { QuestionRenderer } from './QuestionRenderer'
-import { TYPE_ICONS, TYPE_LABELS } from './QuizPage'
+import { TYPE_ICONS, difficultyLabel, typeLabel } from './QuizPage'
 
 export interface TimedResult {
   attempts: QuestionAttempt[]
@@ -27,6 +28,7 @@ interface TimedQuizPageProps {
 }
 
 export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish, onCancel }: TimedQuizPageProps) {
+  const { t } = useTranslation()
   const [order, setOrder] = useState<Question[]>(() => shuffle(pool))
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState<UserAnswer | undefined>(undefined)
@@ -45,7 +47,7 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elapsed])
 
-  const cancelQuiz = () => { if (window.confirm('Abandonner la partie en cours ? Votre progression sera perdue.')) onCancel() }
+  const cancelQuiz = () => { if (window.confirm(t('start.confirmAbandon'))) onCancel() }
 
   // Pas de correction affichée question par question (comme le mode sans-faute) : le bilan complet
   // n'apparaît qu'à la fin. Si le pool filtré est épuisé avant la fin du temps, on remélange et ça continue.
@@ -63,14 +65,14 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish
     onFinish({ attempts: finalAttempts, elapsedSeconds: elapsed, durationSeconds })
   }
 
-  if (!question) return <section className="empty"><h2>Aucune question</h2><p>Modifiez les filtres pour lancer une partie.</p><button type="button" className="secondary" onClick={onCancel}>Retour</button></section>
+  if (!question) return <section className="empty"><h2>{t('quiz.emptyTitle')}</h2><p>{t('quiz.emptyHintRun')}</p><button type="button" className="secondary" onClick={onCancel}>{t('common.back')}</button></section>
   const theme = quiz.themes.find((item) => item.id === question.theme)?.label ?? question.theme
   const remaining = durationSeconds > 0 ? Math.max(0, durationSeconds - elapsed) : null
 
   return <section className="quiz-card">
-    <div className="question-meta"><span>{TYPE_ICONS[question.type]} {TYPE_LABELS[question.type]}</span><span>{theme}</span><span>{question.difficulty}</span><span>{question.points} pts</span><span>✅ {attempts.length}</span>{questionRemaining !== null && <span>⏳ {questionRemaining}s</span>}<span>⏱ {remaining !== null ? formatDuration(remaining) : formatDuration(elapsed)}</span></div>
+    <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span><span>✅ {attempts.length}</span>{questionRemaining !== null && <span>⏳ {questionRemaining}s</span>}<span>⏱ {remaining !== null ? formatDuration(remaining) : formatDuration(elapsed)}</span></div>
     {durationSeconds > 0 && <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${Math.min(100, (elapsed / durationSeconds) * 100)}%` }} /></div>}
-    <p className="progress">Question {attempts.length + 1}</p>
+    <p className="progress">{t('quiz.questionNumber', attempts.length + 1)}</p>
     <div className="question-body" key={`${question.id}-${index}`}>
       {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
       {question.diagram && <MermaidDiagram chart={question.diagram} />}
@@ -78,10 +80,10 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish
       <QuestionRenderer question={question} answer={answer} onChange={setAnswer} />
     </div>
     <div className="quiz-actions">
-      <button type="button" className="secondary" onClick={cancelQuiz}>Abandonner</button>
+      <button type="button" className="secondary" onClick={cancelQuiz}>{t('quiz.abandon')}</button>
       <div className="quiz-nav">
-        <button type="button" className="secondary" onClick={finishNow}>Terminer</button>
-        <button type="button" onClick={advance}>Suivante</button>
+        <button type="button" className="secondary" onClick={finishNow}>{t('quiz.finish')}</button>
+        <button type="button" onClick={advance}>{t('quiz.next')}</button>
       </div>
     </div>
   </section>
