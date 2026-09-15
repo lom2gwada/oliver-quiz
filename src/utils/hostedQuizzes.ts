@@ -35,6 +35,14 @@ export async function updateQuiz(id: string, title: string, content: unknown): P
   if (error) throw error
 }
 
+/** Admin uniquement (RLS) : supprime définitivement un quiz hébergé. `quiz_access` est nettoyé automatiquement
+ * (FK `on delete cascade`) ; l'historique déjà enregistré (parties, classement) n'est pas affecté puisqu'il
+ * référence le quiz par `quiz_title` (texte), pas par id. */
+export async function deleteQuiz(id: string): Promise<void> {
+  const { error } = await supabase.from('quizzes').delete().eq('id', id)
+  if (error) throw error
+}
+
 export interface ProfileSummary {
   id: string
   pseudo: string
