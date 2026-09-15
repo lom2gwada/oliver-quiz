@@ -3,6 +3,7 @@ import type {
   AnswerOption, BooleanContent, CodeContent, MatchingContent, NumericContent, OrderingContent,
   QCMContent, Question, QuestionType, TextContent, Theme,
 } from '../types/quiz'
+import { useTranslation } from '../i18n'
 
 const toOptionalString = (value: string): string | undefined => (value.trim() === '' ? undefined : value.trim())
 const toOptionalNumber = (value: string): number | undefined => (value.trim() === '' ? undefined : Number(value))
@@ -30,84 +31,91 @@ function blankContent(type: QuestionType): Question['content'] {
   }
 }
 
-export function createBlankQuestion(type: QuestionType, themeId: string): Question {
+export function createBlankQuestion(type: QuestionType, themeId: string, clozeSeedText = 'Complète : ___'): Question {
   return {
-    id: crypto.randomUUID(), type, theme: themeId, difficulty: 'easy', question: type === 'cloze' ? 'Complète : ___' : '',
+    id: crypto.randomUUID(), type, theme: themeId, difficulty: 'easy', question: type === 'cloze' ? clozeSeedText : '',
     tags: [], explanation: '', points: 10, content: blankContent(type),
   } as Question
 }
 
 function AnswerOptionsEditor({ answers, onChange }: { answers: AnswerOption[]; onChange: (answers: AnswerOption[]) => void }) {
+  const { t } = useTranslation()
   const update = (index: number, patch: Partial<AnswerOption>) =>
     onChange(answers.map((answer, i) => (i === index ? { ...answer, ...patch } : answer)))
   const remove = (index: number) => onChange(answers.filter((_, i) => i !== index))
   const add = () => onChange([...answers, { id: crypto.randomUUID(), label: '', isCorrect: false }])
   return <fieldset>
-    <legend>Réponses</legend>
+    <legend>{t('admin.answersLegend')}</legend>
     {answers.map((answer, index) => <div className="answer-option-row" key={answer.id}>
-      <input type="checkbox" checked={answer.isCorrect} onChange={(event) => update(index, { isCorrect: event.target.checked })} title="Bonne réponse" />
+      <input type="checkbox" checked={answer.isCorrect} onChange={(event) => update(index, { isCorrect: event.target.checked })} title={t('admin.correctAnswerTitle')} />
       <input type="text" value={answer.label} onChange={(event) => update(index, { label: event.target.value })} />
       <button type="button" className="secondary" onClick={() => remove(index)} disabled={answers.length <= 1}>🗑️</button>
     </div>)}
-    <button type="button" className="secondary" onClick={add}>➕ Ajouter une réponse</button>
+    <button type="button" className="secondary" onClick={add}>{t('admin.addAnswerButton')}</button>
   </fieldset>
 }
 
 function QCMContentEditor({ content, onChange }: { content: QCMContent; onChange: (content: QCMContent) => void }) {
+  const { t } = useTranslation()
   return <>
-    <label className="checkbox-field"><input type="checkbox" checked={content.multiple} onChange={(event) => onChange({ ...content, multiple: event.target.checked })} /> Plusieurs bonnes réponses possibles</label>
+    <label className="checkbox-field"><input type="checkbox" checked={content.multiple} onChange={(event) => onChange({ ...content, multiple: event.target.checked })} /> {t('admin.multipleAnswersLabel')}</label>
     <AnswerOptionsEditor answers={content.answers} onChange={(answers) => onChange({ ...content, answers })} />
   </>
 }
 
 function CodeContentEditor({ content, onChange }: { content: CodeContent; onChange: (content: CodeContent) => void }) {
+  const { t } = useTranslation()
   return <>
-    <label>Langage<input type="text" value={content.language} onChange={(event) => onChange({ ...content, language: event.target.value })} /></label>
-    <label>Extrait de code<textarea value={content.snippet} onChange={(event) => onChange({ ...content, snippet: event.target.value })} /></label>
-    <label className="checkbox-field"><input type="checkbox" checked={content.multiple} onChange={(event) => onChange({ ...content, multiple: event.target.checked })} /> Plusieurs bonnes réponses possibles</label>
+    <label>{t('admin.languageLabel')}<input type="text" value={content.language} onChange={(event) => onChange({ ...content, language: event.target.value })} /></label>
+    <label>{t('admin.codeSnippetLabel')}<textarea value={content.snippet} onChange={(event) => onChange({ ...content, snippet: event.target.value })} /></label>
+    <label className="checkbox-field"><input type="checkbox" checked={content.multiple} onChange={(event) => onChange({ ...content, multiple: event.target.checked })} /> {t('admin.multipleAnswersLabel')}</label>
     <AnswerOptionsEditor answers={content.answers} onChange={(answers) => onChange({ ...content, answers })} />
   </>
 }
 
 function TextContentEditor({ content, onChange }: { content: TextContent; onChange: (content: TextContent) => void }) {
+  const { t } = useTranslation()
   const update = (index: number, value: string) =>
     onChange({ ...content, expectedAnswers: content.expectedAnswers.map((answer, i) => (i === index ? value : answer)) })
   const remove = (index: number) => onChange({ ...content, expectedAnswers: content.expectedAnswers.filter((_, i) => i !== index) })
   const add = () => onChange({ ...content, expectedAnswers: [...content.expectedAnswers, ''] })
   return <>
     <fieldset>
-      <legend>Réponses attendues</legend>
+      <legend>{t('admin.expectedAnswersLegend')}</legend>
       {content.expectedAnswers.map((answer, index) => <div className="answer-option-row" key={index}>
         <input type="text" value={answer} onChange={(event) => update(index, event.target.value)} />
         <button type="button" className="secondary" onClick={() => remove(index)} disabled={content.expectedAnswers.length <= 1}>🗑️</button>
       </div>)}
-      <button type="button" className="secondary" onClick={add}>➕ Ajouter une réponse</button>
+      <button type="button" className="secondary" onClick={add}>{t('admin.addAnswerButton')}</button>
     </fieldset>
-    <label className="checkbox-field"><input type="checkbox" checked={content.caseSensitive} onChange={(event) => onChange({ ...content, caseSensitive: event.target.checked })} /> Sensible à la casse</label>
+    <label className="checkbox-field"><input type="checkbox" checked={content.caseSensitive} onChange={(event) => onChange({ ...content, caseSensitive: event.target.checked })} /> {t('admin.caseSensitiveLabel')}</label>
   </>
 }
 
 function BooleanContentEditor({ content, onChange }: { content: BooleanContent; onChange: (content: BooleanContent) => void }) {
-  return <label>Réponse correcte
+  const { t } = useTranslation()
+  return <label>{t('admin.correctAnswerSelectLabel')}
     <select value={content.isTrue ? 'true' : 'false'} onChange={(event) => onChange({ isTrue: event.target.value === 'true' })}>
-      <option value="true">Vrai</option>
-      <option value="false">Faux</option>
+      <option value="true">{t('quiz.true')}</option>
+      <option value="false">{t('quiz.false')}</option>
     </select>
   </label>
 }
 
 function NumericContentEditor({ content, onChange }: { content: NumericContent; onChange: (content: NumericContent) => void }) {
+  const { t } = useTranslation()
   return <>
-    <label>Minimum<input type="number" value={content.min} onChange={(event) => onChange({ ...content, min: Number(event.target.value) })} /></label>
-    <label>Maximum<input type="number" value={content.max} onChange={(event) => onChange({ ...content, max: Number(event.target.value) })} /></label>
-    <label>Pas<input type="number" value={content.step} onChange={(event) => onChange({ ...content, step: Number(event.target.value) })} /></label>
-    <label>Cible<input type="number" value={content.target} onChange={(event) => onChange({ ...content, target: Number(event.target.value) })} /></label>
-    <label>Tolérance<input type="number" value={content.tolerance} onChange={(event) => onChange({ ...content, tolerance: Number(event.target.value) })} /></label>
-    <label>Unité<input type="text" value={content.unit ?? ''} onChange={(event) => onChange({ ...content, unit: toOptionalString(event.target.value) })} /></label>
+    <label>{t('admin.minLabel')}<input type="number" value={content.min} onChange={(event) => onChange({ ...content, min: Number(event.target.value) })} /></label>
+    <label>{t('admin.maxLabel')}<input type="number" value={content.max} onChange={(event) => onChange({ ...content, max: Number(event.target.value) })} /></label>
+    <label>{t('admin.stepLabel')}<input type="number" value={content.step} onChange={(event) => onChange({ ...content, step: Number(event.target.value) })} /></label>
+    <label>{t('admin.targetLabel')}<input type="number" value={content.target} onChange={(event) => onChange({ ...content, target: Number(event.target.value) })} /></label>
+    <label>{t('admin.toleranceLabel')}<input type="number" value={content.tolerance} onChange={(event) => onChange({ ...content, tolerance: Number(event.target.value) })} /></label>
+    <label>{t('admin.unitLabel')}<input type="text" value={content.unit ?? ''} onChange={(event) => onChange({ ...content, unit: toOptionalString(event.target.value) })} /></label>
   </>
 }
 
 function OrderingContentEditor({ content, onChange }: { content: OrderingContent; onChange: (content: OrderingContent) => void }) {
+  const { t } = useTranslation()
   const updateLabel = (id: string, label: string) =>
     onChange({ ...content, items: content.items.map((item) => (item.id === id ? { ...item, label } : item)) })
   const move = (index: number, direction: -1 | 1) => {
@@ -125,15 +133,15 @@ function OrderingContentEditor({ content, onChange }: { content: OrderingContent
   const labelOf = (id: string) => content.items.find((item) => item.id === id)?.label ?? id
   return <>
     <fieldset>
-      <legend>Libellés</legend>
+      <legend>{t('admin.labelsLegend')}</legend>
       {content.items.map((item) => <div className="answer-option-row" key={item.id}>
         <input type="text" value={item.label} onChange={(event) => updateLabel(item.id, event.target.value)} />
         <button type="button" className="secondary" onClick={() => remove(item.id)} disabled={content.items.length <= 2}>🗑️</button>
       </div>)}
-      <button type="button" className="secondary" onClick={add}>➕ Ajouter un item</button>
+      <button type="button" className="secondary" onClick={add}>{t('admin.addItemButton')}</button>
     </fieldset>
     <fieldset>
-      <legend>Ordre correct</legend>
+      <legend>{t('admin.correctOrderLegend')}</legend>
       {content.correctOrder.map((id, index) => <div className="reorder-row" key={id}>
         <span>{index + 1}. {labelOf(id)}</span>
         <div className="reorder-controls">
@@ -146,6 +154,7 @@ function OrderingContentEditor({ content, onChange }: { content: OrderingContent
 }
 
 function MatchingContentEditor({ content, onChange }: { content: MatchingContent; onChange: (content: MatchingContent) => void }) {
+  const { t } = useTranslation()
   const updateLeftLabel = (id: string, label: string) => onChange({ ...content, left: content.left.map((item) => (item.id === id ? { ...item, label } : item)) })
   const updateRightLabel = (id: string, label: string) => onChange({ ...content, right: content.right.map((item) => (item.id === id ? { ...item, label } : item)) })
   const updatePair = (leftId: string, rightId: string) => onChange({ ...content, correctPairs: { ...content.correctPairs, [leftId]: rightId } })
@@ -165,23 +174,23 @@ function MatchingContentEditor({ content, onChange }: { content: MatchingContent
   }
   return <>
     <fieldset>
-      <legend>Éléments de gauche</legend>
+      <legend>{t('admin.leftItemsLegend')}</legend>
       {content.left.map((item) => <div className="answer-option-row" key={item.id}>
         <input type="text" value={item.label} onChange={(event) => updateLeftLabel(item.id, event.target.value)} />
         <button type="button" className="secondary" onClick={() => removeLeft(item.id)} disabled={content.left.length <= 1}>🗑️</button>
       </div>)}
-      <button type="button" className="secondary" onClick={addLeft}>➕ Ajouter à gauche</button>
+      <button type="button" className="secondary" onClick={addLeft}>{t('admin.addLeftButton')}</button>
     </fieldset>
     <fieldset>
-      <legend>Éléments de droite</legend>
+      <legend>{t('admin.rightItemsLegend')}</legend>
       {content.right.map((item) => <div className="answer-option-row" key={item.id}>
         <input type="text" value={item.label} onChange={(event) => updateRightLabel(item.id, event.target.value)} />
         <button type="button" className="secondary" onClick={() => removeRight(item.id)} disabled={content.right.length <= 1}>🗑️</button>
       </div>)}
-      <button type="button" className="secondary" onClick={addRight}>➕ Ajouter à droite</button>
+      <button type="button" className="secondary" onClick={addRight}>{t('admin.addRightButton')}</button>
     </fieldset>
     <fieldset>
-      <legend>Bonnes associations</legend>
+      <legend>{t('admin.correctPairsLegend')}</legend>
       {content.left.map((item) => <label key={item.id}>{item.label}
         <select value={content.correctPairs[item.id] ?? ''} onChange={(event) => updatePair(item.id, event.target.value)}>
           {content.right.map((right) => <option key={right.id} value={right.id}>{right.label}</option>)}
@@ -200,6 +209,7 @@ interface QuestionEditFormProps {
 }
 
 export function QuestionEditForm({ question, themes, error, onSave, onCancel }: QuestionEditFormProps) {
+  const { t } = useTranslation()
   const [draft, setDraft] = useState<Question>(question)
   // Texte brut séparé de `draft.tags` : si l'input était contrôlé directement par `draft.tags.join(', ')`,
   // taper une virgule la ferait aussitôt disparaître (split → filtre des entrées vides → rejoin sans la virgule
@@ -231,35 +241,35 @@ export function QuestionEditForm({ question, themes, error, onSave, onCancel }: 
   })()
 
   return <div className="question-edit-form">
-    <label>Énoncé<textarea value={draft.question} onChange={(event) => setDraft({ ...draft, question: event.target.value })} /></label>
-    <label>Explication<textarea value={draft.explanation} onChange={(event) => setDraft({ ...draft, explanation: event.target.value })} /></label>
-    <label>Thème
+    <label>{t('admin.promptLabel')}<textarea value={draft.question} onChange={(event) => setDraft({ ...draft, question: event.target.value })} /></label>
+    <label>{t('admin.explanationLabel')}<textarea value={draft.explanation} onChange={(event) => setDraft({ ...draft, explanation: event.target.value })} /></label>
+    <label>{t('admin.quizThemeLabel')}
       <select value={draft.theme} onChange={(event) => setDraft({ ...draft, theme: event.target.value })}>
         {themes.map((theme) => <option key={theme.id} value={theme.id}>{theme.label}</option>)}
       </select>
     </label>
-    <label>Difficulté
+    <label>{t('filter.difficultyLabel')}
       <select value={draft.difficulty} onChange={(event) => setDraft({ ...draft, difficulty: event.target.value as Question['difficulty'] })}>
-        <option value="easy">Facile</option>
-        <option value="medium">Intermédiaire</option>
-        <option value="hard">Difficile</option>
+        <option value="easy">{t('quiz.difficultyEasy')}</option>
+        <option value="medium">{t('quiz.difficultyMedium')}</option>
+        <option value="hard">{t('quiz.difficultyHard')}</option>
       </select>
     </label>
-    <label>Points<input type="number" value={draft.points} onChange={(event) => setDraft({ ...draft, points: Number(event.target.value) })} /></label>
-    <label>Tags (séparés par des virgules)
+    <label>{t('admin.pointsFieldLabel')}<input type="number" value={draft.points} onChange={(event) => setDraft({ ...draft, points: Number(event.target.value) })} /></label>
+    <label>{t('admin.tagsLabel')}
       <input type="text" value={tagsText} onChange={(event) => setTagsText(event.target.value)} />
     </label>
-    <label>Image (URL)<input type="text" value={draft.imageUrl ?? ''} onChange={(event) => setDraft({ ...draft, imageUrl: toOptionalString(event.target.value) })} /></label>
-    <label>Texte alternatif de l'image<input type="text" value={draft.imageAlt ?? ''} onChange={(event) => setDraft({ ...draft, imageAlt: toOptionalString(event.target.value) })} /></label>
-    <label>Diagramme (Mermaid)<textarea value={draft.diagram ?? ''} onChange={(event) => setDraft({ ...draft, diagram: toOptionalString(event.target.value) })} /></label>
-    <label>Temps limite (secondes, vide = barème par défaut)
+    <label>{t('admin.imageUrlLabel')}<input type="text" value={draft.imageUrl ?? ''} onChange={(event) => setDraft({ ...draft, imageUrl: toOptionalString(event.target.value) })} /></label>
+    <label>{t('admin.imageAltLabel')}<input type="text" value={draft.imageAlt ?? ''} onChange={(event) => setDraft({ ...draft, imageAlt: toOptionalString(event.target.value) })} /></label>
+    <label>{t('admin.diagramLabel')}<textarea value={draft.diagram ?? ''} onChange={(event) => setDraft({ ...draft, diagram: toOptionalString(event.target.value) })} /></label>
+    <label>{t('admin.timeLimitLabel')}
       <input type="number" value={draft.timeLimitSeconds ?? ''} onChange={(event) => setDraft({ ...draft, timeLimitSeconds: toOptionalNumber(event.target.value) })} />
     </label>
     {contentEditor}
     {error && <p className="alert" role="alert">{error}</p>}
     <div className="question-edit-actions">
-      <button type="button" onClick={save} disabled={saving}>Enregistrer</button>
-      <button type="button" className="secondary" onClick={onCancel} disabled={saving}>Annuler</button>
+      <button type="button" onClick={save} disabled={saving}>{t('common.save')}</button>
+      <button type="button" className="secondary" onClick={onCancel} disabled={saving}>{t('common.cancel')}</button>
     </div>
   </div>
 }

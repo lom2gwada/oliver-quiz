@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from '../i18n'
 
 interface CreateQuizFormProps {
   error: string
@@ -8,6 +9,7 @@ interface CreateQuizFormProps {
 /** Admin uniquement : créer un quiz hébergé de zéro (aucun import JSON requis). Le quiz créé démarre sans
  * questions — l'admin les ajoute ensuite via "➕ Ajouter une question" dans la liste juste en dessous. */
 export function CreateQuizForm({ error, onCreate }: CreateQuizFormProps) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
@@ -30,22 +32,22 @@ export function CreateQuizForm({ error, onCreate }: CreateQuizFormProps) {
     }
   }
 
-  if (!open) return <button type="button" onClick={() => setOpen(true)}>➕ Créer un quiz</button>
+  if (!open) return <button type="button" onClick={() => setOpen(true)}>{t('admin.createQuizButton')}</button>
 
   const themeLabels = themesText.split(',').map((label) => label.trim()).filter(Boolean)
   const canCreate = title.trim() !== '' && author.trim() !== '' && themeLabels.length > 0
 
   return <div className="question-edit-form">
-    <label>Titre<input type="text" value={title} onChange={(event) => setTitle(event.target.value)} /></label>
-    <label>Auteur<input type="text" value={author} onChange={(event) => setAuthor(event.target.value)} /></label>
-    <label>Description (optionnelle)<textarea value={description} onChange={(event) => setDescription(event.target.value)} /></label>
-    <label>Thèmes (séparés par des virgules)
-      <input type="text" value={themesText} onChange={(event) => setThemesText(event.target.value)} placeholder="Ex : Histoire, Géographie" />
+    <label>{t('admin.titleLabel')}<input type="text" value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+    <label>{t('admin.authorLabel')}<input type="text" value={author} onChange={(event) => setAuthor(event.target.value)} /></label>
+    <label>{t('admin.descriptionOptionalLabel')}<textarea value={description} onChange={(event) => setDescription(event.target.value)} /></label>
+    <label>{t('admin.themesCsvLabel')}
+      <input type="text" value={themesText} onChange={(event) => setThemesText(event.target.value)} placeholder={t('admin.themesCsvPlaceholder')} />
     </label>
     {error && <p className="alert" role="alert">{error}</p>}
     <div className="question-edit-actions">
-      <button type="button" onClick={create} disabled={creating || !canCreate}>Créer</button>
-      <button type="button" className="secondary" onClick={reset} disabled={creating}>Annuler</button>
+      <button type="button" onClick={create} disabled={creating || !canCreate}>{t('admin.createButton')}</button>
+      <button type="button" className="secondary" onClick={reset} disabled={creating}>{t('common.cancel')}</button>
     </div>
   </div>
 }

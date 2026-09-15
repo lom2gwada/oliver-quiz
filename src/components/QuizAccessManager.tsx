@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import type { HostedQuizSummary } from '../types/hostedQuiz'
+import { useTranslation } from '../i18n'
 import { fetchAccessGrants, fetchAllProfiles, grantAccess, revokeAccess, type ProfileSummary } from '../utils/hostedQuizzes'
 
 /** Admin uniquement : qui a accès à quel quiz hébergé. Optimiste (coche/décoche tout de suite) avec
  * resynchronisation depuis la base si l'appel réseau échoue, pour ne jamais laisser un état affiché
  * incohérent avec ce qui est réellement enregistré. */
 export function QuizAccessManager({ quizzes }: { quizzes: HostedQuizSummary[] }) {
+  const { t } = useTranslation()
   const [profiles, setProfiles] = useState<ProfileSummary[]>([])
   const [grants, setGrants] = useState<Record<string, string[]>>({})
 
@@ -30,7 +32,7 @@ export function QuizAccessManager({ quizzes }: { quizzes: HostedQuizSummary[] })
     }
   }
 
-  if (!quizzes.length) return <p>Aucun quiz publié pour l'instant.</p>
+  if (!quizzes.length) return <p>{t('admin.noPublishedQuiz')}</p>
 
   return <div className="quiz-access-list">
     {quizzes.map((quiz) => <div key={quiz.id} className="quiz-access-item">
