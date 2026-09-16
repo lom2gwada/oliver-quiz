@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Difficulty, Question, Quiz } from '../types/quiz'
 import { useTranslation } from '../i18n'
 import { EditQuizMetaForm } from './EditQuizMetaForm'
+import { GuestLinksManager } from './GuestLinksManager'
 import { MermaidDiagram } from './MermaidDiagram'
 import { PieChart } from './PieChart'
 import { createBlankQuestion, QuestionEditForm } from './QuestionEditForm'
@@ -113,6 +114,8 @@ export function QuizDetailPage({ quiz, hostedQuizId, onBack, onExport, isAdmin, 
       {hostedQuizId && <>
         <h3 className="stats-group-title profile-section-title">{t('admin.manageAccessTitle')}</h3>
         <QuizAccessManager quiz={{ id: hostedQuizId, title: quiz.metadata.title }} />
+        <h3 className="stats-group-title profile-section-title">{t('admin.guestLinksTitle')}</h3>
+        <GuestLinksManager quizId={hostedQuizId} />
       </>}
       <h3 className="stats-group-title profile-section-title">{t('admin.allQuestionsTitle', quiz.questions.length)}</h3>
       {canEditQuiz && <div className="question-create-bar">
