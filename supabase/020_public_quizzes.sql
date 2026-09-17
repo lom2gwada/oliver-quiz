@@ -1,0 +1,372 @@
+-- À exécuter dans le SQL Editor du dashboard Supabase.
+-- Fait entrer le quiz d'exemple ("Culture générale", jusqu'ici bundlé dans le repo via
+-- sample-quiz.json et jamais représenté en base) comme un quiz hébergé normal, avec un vrai id --
+-- prérequis pour que l'historique/le classement puissent un jour s'appuyer sur un id stable plutôt
+-- que sur le titre (cf. 021_history_quiz_id.sql). Introduit aussi un flag générique `is_public`,
+-- réutilisable pour rendre n'importe quel quiz hébergé visible par tous sans octroi d'accès
+-- explicite au cas par cas -- le quiz d'exemple est simplement le premier à l'avoir.
+
+alter table public.quizzes add column is_public boolean not null default false;
+
+drop policy "Users can view quizzes they have access to, admins see all" on public.quizzes;
+
+create policy "Users can view quizzes they have access to, public ones, admins see all"
+  on public.quizzes for select
+  using (
+    exists (select 1 from public.quiz_access qa where qa.quiz_id = quizzes.id and qa.user_id = auth.uid())
+    or public.is_admin()
+    or quizzes.is_public
+  );
+
+insert into public.quizzes (title, content, is_public)
+values (
+  'Culture générale',
+  $sample_quiz${
+  "version": "1.0",
+  "metadata": { "title": "Culture générale", "author": "Oliver Quiz", "createdAt": "2026-08-20", "description": "Quiz d'exemple pour découvrir les possibilités d'Oliver Quiz : huit thèmes de culture générale et les huit types de questions proposés par l'application, du QCM classique au glisser-déposer. Importe ton propre quiz au format JSON pour aller plus loin." },
+  "themes": [
+    { "id": "histoire", "label": "Histoire" },
+    { "id": "geographie", "label": "Géographie" },
+    { "id": "sciences", "label": "Sciences" },
+    { "id": "cinema", "label": "Cinéma & Séries" },
+    { "id": "litterature", "label": "Littérature" },
+    { "id": "sport", "label": "Sport" },
+    { "id": "musique", "label": "Musique" },
+    { "id": "gastronomie", "label": "Gastronomie" }
+  ],
+  "questions": [
+    { "id": "hist-1", "type": "qcm", "theme": "histoire", "difficulty": "easy", "question": "Qui a été le premier président de la Ve République française ?", "tags": ["france", "politique"], "explanation": "Charles de Gaulle a fondé la Ve République en 1958 et en a été le premier président.", "points": 1, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "Charles de Gaulle", "isCorrect": true },
+      { "id": "b", "label": "François Mitterrand", "isCorrect": false },
+      { "id": "c", "label": "Georges Pompidou", "isCorrect": false }
+    ] } },
+    { "id": "hist-2", "type": "qcm", "theme": "histoire", "difficulty": "easy", "question": "En quelle année a eu lieu la chute du mur de Berlin ?", "tags": ["allemagne", "guerre-froide"], "explanation": "Le mur de Berlin est tombé le 9 novembre 1989, marquant la fin de la guerre froide en Europe.", "points": 1, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "1987", "isCorrect": false },
+      { "id": "b", "label": "1989", "isCorrect": true },
+      { "id": "c", "label": "1991", "isCorrect": false }
+    ] } },
+    { "id": "hist-3", "type": "text", "theme": "histoire", "difficulty": "medium", "question": "Quel empereur français a été exilé sur l'île de Sainte-Hélène ?", "tags": ["france", "empire"], "explanation": "Napoléon Ier y a été exilé en 1815 après sa défaite à Waterloo, et y est mort en 1821.", "points": 2, "content": { "expectedAnswers": ["Napoléon", "Napoléon Bonaparte", "Napoléon Ier"], "caseSensitive": false } },
+    { "id": "hist-4", "type": "ordering", "theme": "histoire", "difficulty": "medium", "question": "Placez ces événements dans l'ordre chronologique.", "tags": ["chronologie"], "explanation": "Révolution française (1789), Première Guerre mondiale (1914), Seconde Guerre mondiale (1939), puis chute du mur de Berlin (1989).", "points": 3, "content": { "items": [
+      { "id": "ww2", "label": "Seconde Guerre mondiale" },
+      { "id": "revolution", "label": "Révolution française" },
+      { "id": "mur", "label": "Chute du mur de Berlin" },
+      { "id": "ww1", "label": "Première Guerre mondiale" }
+    ], "correctOrder": ["revolution", "ww1", "ww2", "mur"] } },
+    { "id": "hist-5", "type": "qcm", "theme": "histoire", "difficulty": "hard", "question": "Quel traité a officiellement mis fin à la Première Guerre mondiale ?", "tags": ["diplomatie"], "explanation": "Le traité de Versailles, signé en 1919, a mis fin à l'état de guerre entre l'Allemagne et les Alliés.", "points": 3, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "Le traité de Versailles", "isCorrect": true },
+      { "id": "b", "label": "Le traité de Vienne", "isCorrect": false },
+      { "id": "c", "label": "Le traité de Rome", "isCorrect": false }
+    ] } },
+    { "id": "hist-6", "type": "boolean", "theme": "histoire", "difficulty": "easy", "question": "Napoléon Bonaparte est né en Corse.", "tags": ["france"], "explanation": "Napoléon Bonaparte est né à Ajaccio, en Corse, en 1769.", "points": 1, "timeLimitSeconds": 5, "content": { "isTrue": true } },
+    { "id": "hist-7", "type": "cloze", "theme": "histoire", "difficulty": "easy", "question": "La ___ française a éclaté en 1789.", "tags": ["france"], "explanation": "La Révolution française a débuté en 1789 avec la prise de la Bastille.", "points": 1, "content": { "expectedAnswers": ["Révolution"], "caseSensitive": false } },
+    { "id": "hist-8", "type": "matching", "theme": "histoire", "difficulty": "medium", "question": "Associez chaque personnage historique à son fait marquant.", "tags": ["personnages"], "explanation": "Napoléon fut sacré empereur en 1804, César fut général et homme d'État romain, Louis XIV est surnommé le Roi Soleil, et Léonard de Vinci a peint la Joconde.", "points": 2, "timeLimitSeconds": 45, "content": {
+      "left": [
+        { "id": "napoleon", "label": "Napoléon Bonaparte" },
+        { "id": "cesar", "label": "Jules César" },
+        { "id": "louis14", "label": "Louis XIV" },
+        { "id": "vinci", "label": "Léonard de Vinci" }
+      ],
+      "right": [
+        { "id": "r-vinci", "label": "Peintre de la Joconde" },
+        { "id": "r-louis14", "label": "Roi Soleil" },
+        { "id": "r-napoleon", "label": "Empereur des Français" },
+        { "id": "r-cesar", "label": "Général romain" }
+      ],
+      "correctPairs": { "napoleon": "r-napoleon", "cesar": "r-cesar", "louis14": "r-louis14", "vinci": "r-vinci" }
+    } },
+    { "id": "hist-9", "type": "numeric", "theme": "histoire", "difficulty": "medium", "question": "En quelle année a éclaté la Révolution française ?", "tags": ["france"], "explanation": "La Révolution française a débuté en 1789 avec la prise de la Bastille.", "points": 2, "content": { "min": 1700, "max": 1900, "step": 1, "target": 1789, "tolerance": 3 } },
+
+    { "id": "geo-1", "type": "qcm", "theme": "geographie", "difficulty": "easy", "question": "Quelle est la capitale de l'Australie ?", "tags": ["capitales"], "explanation": "Canberra est la capitale de l'Australie, bien que Sydney soit la ville la plus peuplée.", "points": 1, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "Sydney", "isCorrect": false },
+      { "id": "b", "label": "Canberra", "isCorrect": true },
+      { "id": "c", "label": "Melbourne", "isCorrect": false }
+    ] } },
+    { "id": "geo-2", "type": "qcm", "theme": "geographie", "difficulty": "easy", "question": "Quel est le plus grand océan du monde ?", "tags": ["oceans"], "explanation": "L'océan Pacifique couvre environ un tiers de la surface du globe, c'est le plus vaste des océans.", "points": 1, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "L'océan Atlantique", "isCorrect": false },
+      { "id": "b", "label": "L'océan Pacifique", "isCorrect": true },
+      { "id": "c", "label": "L'océan Indien", "isCorrect": false }
+    ] } },
+    { "id": "geo-3", "type": "text", "theme": "geographie", "difficulty": "medium", "question": "Quel est le plus long fleuve du monde ?", "tags": ["fleuves"], "explanation": "Le Nil, en Afrique, est traditionnellement considéré comme le plus long fleuve du monde avec environ 6650 km.", "points": 2, "content": { "expectedAnswers": ["le Nil", "Nil"], "caseSensitive": false } },
+    { "id": "geo-4", "type": "qcm", "theme": "geographie", "difficulty": "medium", "question": "Quel pays a la plus grande superficie du monde ?", "tags": ["pays"], "explanation": "La Russie est le plus grand pays du monde par sa superficie, s'étendant sur deux continents.", "points": 2, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "Le Canada", "isCorrect": false },
+      { "id": "b", "label": "La Chine", "isCorrect": false },
+      { "id": "c", "label": "La Russie", "isCorrect": true }
+    ] } },
+    { "id": "geo-5", "type": "ordering", "theme": "geographie", "difficulty": "hard", "question": "Classez ces montagnes de la plus haute à la moins haute.", "tags": ["montagnes"], "explanation": "Everest (8849 m), K2 (8611 m), Kilimandjaro (5895 m), Mont Blanc (4809 m).", "points": 3, "content": { "items": [
+      { "id": "montblanc", "label": "Mont Blanc" },
+      { "id": "everest", "label": "Everest" },
+      { "id": "kilimandjaro", "label": "Kilimandjaro" },
+      { "id": "k2", "label": "K2" }
+    ], "correctOrder": ["everest", "k2", "kilimandjaro", "montblanc"] } },
+    { "id": "geo-6", "type": "boolean", "theme": "geographie", "difficulty": "easy", "question": "L'Everest se trouve en Amérique du Sud.", "tags": ["montagnes"], "explanation": "L'Everest culmine dans la chaîne de l'Himalaya, en Asie, à la frontière entre le Népal et la Chine.", "points": 1, "content": { "isTrue": false } },
+    { "id": "geo-7", "type": "cloze", "theme": "geographie", "difficulty": "easy", "question": "Le fleuve ___ traverse la ville de Paris.", "tags": ["fleuves"], "explanation": "La Seine traverse Paris avant de se jeter dans la Manche.", "points": 1, "content": { "expectedAnswers": ["Seine", "la Seine"], "caseSensitive": false } },
+    { "id": "geo-8", "type": "matching", "theme": "geographie", "difficulty": "easy", "question": "Associez chaque pays à son continent.", "tags": ["continents"], "explanation": "L'Égypte est en Afrique, le Brésil en Amérique du Sud, le Japon en Asie et le Canada en Amérique du Nord.", "points": 1, "content": {
+      "left": [
+        { "id": "egypte", "label": "Égypte" },
+        { "id": "bresil", "label": "Brésil" },
+        { "id": "japon", "label": "Japon" },
+        { "id": "canada", "label": "Canada" }
+      ],
+      "right": [
+        { "id": "r-asie", "label": "Asie" },
+        { "id": "r-afrique", "label": "Afrique" },
+        { "id": "r-an", "label": "Amérique du Nord" },
+        { "id": "r-as", "label": "Amérique du Sud" }
+      ],
+      "correctPairs": { "egypte": "r-afrique", "bresil": "r-as", "japon": "r-asie", "canada": "r-an" }
+    } },
+    { "id": "geo-9", "type": "numeric", "theme": "geographie", "difficulty": "medium", "question": "Quelle est l'altitude approximative du Mont Blanc ?", "tags": ["montagnes"], "explanation": "Le Mont Blanc culmine à 4 809 mètres, point culminant des Alpes.", "points": 2, "content": { "min": 0, "max": 6000, "step": 50, "target": 4809, "tolerance": 100, "unit": "m" } },
+    { "id": "geo-10", "type": "qcm", "theme": "geographie", "difficulty": "easy", "question": "Quel pays ce drapeau représente-t-il ?", "tags": ["drapeaux"], "explanation": "Le drapeau du Brésil arbore un losange doré et un globe bleu sur fond vert, avec la devise \"Ordem e Progresso\".", "points": 1, "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/05/Flag_of_Brazil.svg", "imageAlt": "Un drapeau vert avec un losange jaune et un globe bleu au centre.", "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "L'Argentine", "isCorrect": false },
+      { "id": "b", "label": "Le Brésil", "isCorrect": true },
+      { "id": "c", "label": "Le Portugal", "isCorrect": false }
+    ] } },
+    { "id": "geo-11", "type": "text", "theme": "geographie", "difficulty": "medium", "question": "Quel est ce monument antique ?", "tags": ["monuments"], "explanation": "Le Colisée, à Rome, est un amphithéâtre construit au 1er siècle qui pouvait accueillir environ 50 000 spectateurs.", "points": 2, "timeLimitSeconds": 30, "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Colosseo_2020.jpg/500px-Colosseo_2020.jpg", "imageAlt": "Le Colisée de Rome, amphithéâtre antique en pierre, vue extérieure.", "content": { "expectedAnswers": ["le Colisée", "Colisée", "le colisee", "colisee"], "caseSensitive": false } },
+
+    { "id": "sci-1", "type": "qcm", "theme": "sciences", "difficulty": "easy", "question": "Quel est le symbole chimique de l'or ?", "tags": ["chimie"], "explanation": "Au vient du latin \"aurum\", qui signifie or.", "points": 1, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "Ag", "isCorrect": false },
+      { "id": "b", "label": "Au", "isCorrect": true },
+      { "id": "c", "label": "Fe", "isCorrect": false }
+    ] } },
+    { "id": "sci-2", "type": "qcm", "theme": "sciences", "difficulty": "easy", "question": "Combien de planètes compte le système solaire ?", "tags": ["astronomie"], "explanation": "Depuis la reclassification de Pluton en planète naine en 2006, le système solaire compte 8 planètes.", "points": 1, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "7", "isCorrect": false },
+      { "id": "b", "label": "8", "isCorrect": true },
+      { "id": "c", "label": "9", "isCorrect": false }
+    ] } },
+    { "id": "sci-3", "type": "text", "theme": "sciences", "difficulty": "medium", "question": "Quelle est l'unité de mesure de la force dans le système international ?", "tags": ["physique"], "explanation": "Le newton (N) mesure une force, en hommage à Isaac Newton.", "points": 2, "content": { "expectedAnswers": ["le newton", "newton"], "caseSensitive": false } },
+    { "id": "sci-4", "type": "qcm", "theme": "sciences", "difficulty": "medium", "question": "Quel scientifique a formulé la théorie de la relativité ?", "tags": ["physique"], "explanation": "Albert Einstein a publié la relativité restreinte en 1905, puis la relativité générale en 1915.", "points": 2, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "Isaac Newton", "isCorrect": false },
+      { "id": "b", "label": "Albert Einstein", "isCorrect": true },
+      { "id": "c", "label": "Niels Bohr", "isCorrect": false }
+    ] } },
+    { "id": "sci-5", "type": "qcm", "theme": "sciences", "difficulty": "hard", "question": "Quel gaz représente environ 78% de l'atmosphère terrestre ?", "tags": ["atmosphere"], "explanation": "L'azote (N2) est le composant majoritaire de l'atmosphère, loin devant l'oxygène (environ 21%).", "points": 3, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "L'oxygène", "isCorrect": false },
+      { "id": "b", "label": "L'azote", "isCorrect": true },
+      { "id": "c", "label": "Le dioxyde de carbone", "isCorrect": false }
+    ] } },
+    { "id": "sci-6", "type": "boolean", "theme": "sciences", "difficulty": "medium", "question": "La lumière se déplace plus vite que le son.", "tags": ["physique"], "explanation": "La lumière voyage à environ 300 000 km/s dans le vide, bien plus vite que le son (environ 340 m/s dans l'air).", "points": 2, "content": { "isTrue": true } },
+    { "id": "sci-7", "type": "cloze", "theme": "sciences", "difficulty": "medium", "question": "L'eau (H2O) est composée d'hydrogène et d'___.", "tags": ["chimie"], "explanation": "La molécule d'eau est formée de deux atomes d'hydrogène et d'un atome d'oxygène.", "points": 2, "content": { "expectedAnswers": ["oxygène", "oxygene"], "caseSensitive": false } },
+    { "id": "sci-8", "type": "matching", "theme": "sciences", "difficulty": "medium", "question": "Associez chaque élément chimique à son symbole.", "tags": ["chimie"], "explanation": "Chaque élément possède un symbole issu du tableau périodique : Au (or), Fe (fer), O (oxygène), C (carbone).", "points": 2, "content": {
+      "left": [
+        { "id": "or", "label": "Or" },
+        { "id": "fer", "label": "Fer" },
+        { "id": "oxygene", "label": "Oxygène" },
+        { "id": "carbone", "label": "Carbone" }
+      ],
+      "right": [
+        { "id": "r-fe", "label": "Fe" },
+        { "id": "r-o", "label": "O" },
+        { "id": "r-au", "label": "Au" },
+        { "id": "r-c", "label": "C" }
+      ],
+      "correctPairs": { "or": "r-au", "fer": "r-fe", "oxygene": "r-o", "carbone": "r-c" }
+    } },
+    { "id": "sci-9", "type": "numeric", "theme": "sciences", "difficulty": "medium", "question": "Combien d'os compte le squelette d'un adulte ?", "tags": ["biologie"], "explanation": "Le squelette humain adulte compte 206 os.", "points": 2, "content": { "min": 100, "max": 300, "step": 1, "target": 206, "tolerance": 5, "unit": "os" } },
+
+    { "id": "cine-1", "type": "qcm", "theme": "cinema", "difficulty": "easy", "question": "Qui a réalisé le film \"Titanic\" (1997) ?", "tags": ["realisateurs"], "explanation": "James Cameron a réalisé Titanic, qui a remporté 11 Oscars.", "points": 1, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "Steven Spielberg", "isCorrect": false },
+      { "id": "b", "label": "James Cameron", "isCorrect": true },
+      { "id": "c", "label": "Christopher Nolan", "isCorrect": false }
+    ] } },
+    { "id": "cine-2", "type": "qcm", "theme": "cinema", "difficulty": "easy", "question": "Dans quelle saga trouve-t-on le personnage de Dark Vador ?", "tags": ["sagas"], "explanation": "Dark Vador est un personnage emblématique de la saga Star Wars.", "points": 1, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "Star Trek", "isCorrect": false },
+      { "id": "b", "label": "Star Wars", "isCorrect": true },
+      { "id": "c", "label": "Dune", "isCorrect": false }
+    ] } },
+    { "id": "cine-3", "type": "text", "theme": "cinema", "difficulty": "medium", "question": "Quel studio d'animation a produit \"Le Roi Lion\" (1994) ?", "tags": ["animation"], "explanation": "Le Roi Lion est un classique d'animation des studios Disney sorti en 1994.", "points": 2, "content": { "expectedAnswers": ["Disney", "Walt Disney"], "caseSensitive": false } },
+    { "id": "cine-4", "type": "qcm", "theme": "cinema", "difficulty": "medium", "question": "Quel film a remporté l'Oscar du meilleur film en 2020 ?", "tags": ["oscars"], "explanation": "Parasite, du réalisateur sud-coréen Bong Joon-ho, a été le premier film non anglophone à remporter cet Oscar.", "points": 2, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "1917", "isCorrect": false },
+      { "id": "b", "label": "Joker", "isCorrect": false },
+      { "id": "c", "label": "Parasite", "isCorrect": true }
+    ] } },
+    { "id": "cine-5", "type": "ordering", "theme": "cinema", "difficulty": "hard", "question": "Classez ces films Star Wars par ordre de sortie au cinéma.", "tags": ["sagas", "chronologie"], "explanation": "Un nouvel espoir (1977), L'Empire contre-attaque (1980), Le Retour du Jedi (1983), puis La Menace fantôme (1999).", "points": 3, "content": { "items": [
+      { "id": "menace", "label": "La Menace fantôme" },
+      { "id": "espoir", "label": "Un nouvel espoir" },
+      { "id": "jedi", "label": "Le Retour du Jedi" },
+      { "id": "empire", "label": "L'Empire contre-attaque" }
+    ], "correctOrder": ["espoir", "empire", "jedi", "menace"] } },
+    { "id": "cine-6", "type": "boolean", "theme": "cinema", "difficulty": "medium", "question": "Le film \"Avatar\" est sorti avant \"Titanic\" au cinéma.", "tags": ["realisateurs"], "explanation": "Titanic est sorti en 1997, soit douze ans avant Avatar (2009) — les deux ont été réalisés par James Cameron.", "points": 2, "content": { "isTrue": false } },
+    { "id": "cine-7", "type": "cloze", "theme": "cinema", "difficulty": "easy", "question": "Les films Star Wars originaux ont été créés par George ___.", "tags": ["realisateurs"], "explanation": "George Lucas a créé et réalisé les premiers films de la saga Star Wars.", "points": 1, "content": { "expectedAnswers": ["Lucas"], "caseSensitive": false } },
+    { "id": "cine-8", "type": "matching", "theme": "cinema", "difficulty": "medium", "question": "Associez chaque film à son réalisateur.", "tags": ["realisateurs"], "explanation": "Titanic est de James Cameron, Jurassic Park de Steven Spielberg, Le Parrain de Francis Ford Coppola, Pulp Fiction de Quentin Tarantino.", "points": 2, "content": {
+      "left": [
+        { "id": "titanic", "label": "Titanic" },
+        { "id": "jurassic", "label": "Jurassic Park" },
+        { "id": "parrain", "label": "Le Parrain" },
+        { "id": "pulp", "label": "Pulp Fiction" }
+      ],
+      "right": [
+        { "id": "r-tarantino", "label": "Quentin Tarantino" },
+        { "id": "r-cameron", "label": "James Cameron" },
+        { "id": "r-coppola", "label": "Francis Ford Coppola" },
+        { "id": "r-spielberg", "label": "Steven Spielberg" }
+      ],
+      "correctPairs": { "titanic": "r-cameron", "jurassic": "r-spielberg", "parrain": "r-coppola", "pulp": "r-tarantino" }
+    } },
+    { "id": "cine-9", "type": "numeric", "theme": "cinema", "difficulty": "medium", "question": "En quelle année est sorti le premier film \"Star Wars\" (Un nouvel espoir) ?", "tags": ["sagas"], "explanation": "Un nouvel espoir est sorti en 1977, premier film de la saga Star Wars.", "points": 2, "content": { "min": 1950, "max": 2020, "step": 1, "target": 1977, "tolerance": 2 } },
+
+    { "id": "litt-1", "type": "qcm", "theme": "litterature", "difficulty": "easy", "question": "Qui a écrit \"Les Misérables\" ?", "tags": ["romans-francais"], "explanation": "Victor Hugo a publié Les Misérables en 1862.", "points": 1, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "Victor Hugo", "isCorrect": true },
+      { "id": "b", "label": "Émile Zola", "isCorrect": false },
+      { "id": "c", "label": "Gustave Flaubert", "isCorrect": false }
+    ] } },
+    { "id": "litt-2", "type": "text", "theme": "litterature", "difficulty": "easy", "question": "Quel auteur français a écrit \"Le Petit Prince\" ?", "tags": ["classiques"], "explanation": "Antoine de Saint-Exupéry a publié Le Petit Prince en 1943.", "points": 2, "content": { "expectedAnswers": ["Antoine de Saint-Exupéry", "Saint-Exupéry"], "caseSensitive": false } },
+    { "id": "litt-3", "type": "qcm", "theme": "litterature", "difficulty": "medium", "question": "Dans quel pays se déroule l'histoire de \"Don Quichotte\" ?", "tags": ["classiques"], "explanation": "Don Quichotte, écrit par Cervantès, se déroule en Espagne.", "points": 2, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "L'Italie", "isCorrect": false },
+      { "id": "b", "label": "L'Espagne", "isCorrect": true },
+      { "id": "c", "label": "Le Portugal", "isCorrect": false }
+    ] } },
+    { "id": "litt-4", "type": "qcm", "theme": "litterature", "difficulty": "easy", "question": "Qui est l'auteur de \"Roméo et Juliette\" ?", "tags": ["theatre"], "explanation": "William Shakespeare a écrit cette tragédie à la fin du XVIe siècle.", "points": 1, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "William Shakespeare", "isCorrect": true },
+      { "id": "b", "label": "Charles Dickens", "isCorrect": false },
+      { "id": "c", "label": "Oscar Wilde", "isCorrect": false }
+    ] } },
+    { "id": "litt-5", "type": "qcm", "theme": "litterature", "difficulty": "hard", "question": "Quel écrivain français a reçu le prix Nobel de littérature en 1957 ?", "tags": ["prix-nobel"], "explanation": "Albert Camus a reçu le prix Nobel de littérature en 1957, à l'âge de 44 ans.", "points": 3, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "Jean-Paul Sartre", "isCorrect": false },
+      { "id": "b", "label": "Albert Camus", "isCorrect": true },
+      { "id": "c", "label": "André Gide", "isCorrect": false }
+    ] } },
+    { "id": "litt-6", "type": "boolean", "theme": "litterature", "difficulty": "easy", "question": "\"Harry Potter\" a été écrit par J.K. Rowling.", "tags": ["fantastique"], "explanation": "J.K. Rowling a publié le premier tome de la saga Harry Potter en 1997.", "points": 1, "content": { "isTrue": true } },
+    { "id": "litt-7", "type": "cloze", "theme": "litterature", "difficulty": "medium", "question": "Victor Hugo est l'auteur du roman \"Les ___\" (1862).", "tags": ["romans-francais"], "explanation": "Victor Hugo a publié Les Misérables en 1862.", "points": 2, "content": { "expectedAnswers": ["Misérables"], "caseSensitive": false } },
+    { "id": "litt-8", "type": "matching", "theme": "litterature", "difficulty": "medium", "question": "Associez chaque œuvre à son auteur.", "tags": ["auteurs"], "explanation": "Notre-Dame de Paris est de Victor Hugo, 1984 de George Orwell, Le Vieil Homme et la Mer d'Ernest Hemingway, Germinal d'Émile Zola.", "points": 2, "content": {
+      "left": [
+        { "id": "notredame", "label": "Notre-Dame de Paris" },
+        { "id": "n1984", "label": "1984" },
+        { "id": "vieilhomme", "label": "Le Vieil Homme et la Mer" },
+        { "id": "germinal", "label": "Germinal" }
+      ],
+      "right": [
+        { "id": "r-hemingway", "label": "Ernest Hemingway" },
+        { "id": "r-hugo", "label": "Victor Hugo" },
+        { "id": "r-orwell", "label": "George Orwell" },
+        { "id": "r-zola", "label": "Émile Zola" }
+      ],
+      "correctPairs": { "notredame": "r-hugo", "n1984": "r-orwell", "vieilhomme": "r-hemingway", "germinal": "r-zola" }
+    } },
+    { "id": "litt-9", "type": "numeric", "theme": "litterature", "difficulty": "medium", "question": "En quelle année a été publié \"1984\" de George Orwell ?", "tags": ["classiques"], "explanation": "1984 a été publié en 1949.", "points": 2, "content": { "min": 1900, "max": 2000, "step": 1, "target": 1949, "tolerance": 3 } },
+
+    { "id": "sport-1", "type": "qcm", "theme": "sport", "difficulty": "easy", "question": "Combien de joueurs compose une équipe de football sur le terrain ?", "tags": ["football"], "explanation": "Une équipe de football aligne 11 joueurs sur le terrain, dont un gardien.", "points": 1, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "10", "isCorrect": false },
+      { "id": "b", "label": "11", "isCorrect": true },
+      { "id": "c", "label": "12", "isCorrect": false }
+    ] } },
+    { "id": "sport-2", "type": "qcm", "theme": "sport", "difficulty": "easy", "question": "Tous les combien d'années ont lieu les Jeux olympiques d'été ?", "tags": ["jo"], "explanation": "Les Jeux olympiques d'été ont lieu tous les 4 ans.", "points": 1, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "Tous les 2 ans", "isCorrect": false },
+      { "id": "b", "label": "Tous les 4 ans", "isCorrect": true },
+      { "id": "c", "label": "Tous les 5 ans", "isCorrect": false }
+    ] } },
+    { "id": "sport-3", "type": "text", "theme": "sport", "difficulty": "medium", "question": "Quel pays a remporté la Coupe du monde de football 2018 ?", "tags": ["football"], "explanation": "La France a remporté sa deuxième étoile en battant la Croatie en finale, en Russie.", "points": 2, "content": { "expectedAnswers": ["France", "la France"], "caseSensitive": false } },
+    { "id": "sport-4", "type": "qcm", "theme": "sport", "difficulty": "medium", "question": "Dans quel sport utilise-t-on un volant (\"birdie\") ?", "tags": ["raquette"], "explanation": "Le badminton se joue avec un volant, contrairement au tennis ou au squash qui utilisent une balle.", "points": 2, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "Le tennis", "isCorrect": false },
+      { "id": "b", "label": "Le badminton", "isCorrect": true },
+      { "id": "c", "label": "Le squash", "isCorrect": false }
+    ] } },
+    { "id": "sport-5", "type": "ordering", "theme": "sport", "difficulty": "hard", "question": "Classez ces épreuves d'athlétisme de la plus courte à la plus longue distance.", "tags": ["athletisme"], "explanation": "100 m, 400 m, 1500 m, puis le marathon (42,195 km).", "points": 3, "content": { "items": [
+      { "id": "marathon", "label": "Marathon" },
+      { "id": "cent", "label": "100 m" },
+      { "id": "millecinqcent", "label": "1500 m" },
+      { "id": "quatrecent", "label": "400 m" }
+    ], "correctOrder": ["cent", "quatrecent", "millecinqcent", "marathon"] } },
+    { "id": "sport-6", "type": "boolean", "theme": "sport", "difficulty": "medium", "question": "Le tennis se joue avec une équipe de 5 joueurs.", "tags": ["tennis"], "explanation": "Le tennis se joue en simple (1 contre 1) ou en double (2 contre 2), jamais en équipe de 5.", "points": 2, "content": { "isTrue": false } },
+    { "id": "sport-7", "type": "cloze", "theme": "sport", "difficulty": "easy", "question": "Le ___ est le sport le plus populaire au monde en nombre de pratiquants.", "tags": ["football"], "explanation": "Le football est considéré comme le sport le plus populaire au monde, avec des milliards de pratiquants et de fans.", "points": 1, "content": { "expectedAnswers": ["football", "le football"], "caseSensitive": false } },
+    { "id": "sport-8", "type": "matching", "theme": "sport", "difficulty": "easy", "question": "Associez chaque sport à son lieu de pratique.", "tags": ["lieux-de-pratique"], "explanation": "La natation se pratique en piscine, le ski sur une piste enneigée, le tennis sur un court, la boxe sur un ring.", "points": 1, "content": {
+      "left": [
+        { "id": "natation", "label": "Natation" },
+        { "id": "ski", "label": "Ski" },
+        { "id": "tennis", "label": "Tennis" },
+        { "id": "boxe", "label": "Boxe" }
+      ],
+      "right": [
+        { "id": "r-ring", "label": "Un ring" },
+        { "id": "r-piscine", "label": "Une piscine" },
+        { "id": "r-court", "label": "Un court" },
+        { "id": "r-piste", "label": "Une piste enneigée" }
+      ],
+      "correctPairs": { "natation": "r-piscine", "ski": "r-piste", "tennis": "r-court", "boxe": "r-ring" }
+    } },
+    { "id": "sport-9", "type": "numeric", "theme": "sport", "difficulty": "easy", "question": "Quelle est la distance officielle d'un marathon ?", "tags": ["athletisme"], "explanation": "Un marathon fait 42,195 km, soit environ 42 km.", "points": 1, "content": { "min": 0, "max": 100, "step": 1, "target": 42, "tolerance": 1, "unit": "km" } },
+
+    { "id": "mus-1", "type": "qcm", "theme": "musique", "difficulty": "easy", "question": "Combien de cordes possède une guitare classique ?", "tags": ["instruments"], "explanation": "Une guitare classique possède 6 cordes.", "points": 1, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "4", "isCorrect": false },
+      { "id": "b", "label": "6", "isCorrect": true },
+      { "id": "c", "label": "8", "isCorrect": false }
+    ] } },
+    { "id": "mus-2", "type": "qcm", "theme": "musique", "difficulty": "easy", "question": "Quel groupe britannique a chanté \"Bohemian Rhapsody\" ?", "tags": ["rock"], "explanation": "Queen, avec Freddie Mercury au chant, a sorti ce titre culte en 1975.", "points": 1, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "The Beatles", "isCorrect": false },
+      { "id": "b", "label": "Queen", "isCorrect": true },
+      { "id": "c", "label": "Pink Floyd", "isCorrect": false }
+    ] } },
+    { "id": "mus-3", "type": "text", "theme": "musique", "difficulty": "medium", "question": "Quel compositeur allemand est devenu sourd avant de composer certaines de ses œuvres majeures ?", "tags": ["classique"], "explanation": "Ludwig van Beethoven a continué à composer, notamment sa 9e symphonie, après avoir perdu l'audition.", "points": 2, "content": { "expectedAnswers": ["Beethoven", "Ludwig van Beethoven"], "caseSensitive": false } },
+    { "id": "mus-4", "type": "qcm", "theme": "musique", "difficulty": "medium", "question": "Quel type d'instrument est un Stradivarius ?", "tags": ["instruments"], "explanation": "Les Stradivarius sont des violons (et parfois altos ou violoncelles) fabriqués par Antonio Stradivari.", "points": 2, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "Un violon", "isCorrect": true },
+      { "id": "b", "label": "Un piano", "isCorrect": false },
+      { "id": "c", "label": "Une flûte", "isCorrect": false }
+    ] } },
+    { "id": "mus-5", "type": "qcm", "theme": "musique", "difficulty": "hard", "question": "En quelle décennie le mouvement musical \"grunge\" est-il apparu ?", "tags": ["rock"], "explanation": "Le grunge est apparu à Seattle à la fin des années 1980 et s'est popularisé dans les années 1990, avec des groupes comme Nirvana.", "points": 3, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "Les années 1970", "isCorrect": false },
+      { "id": "b", "label": "Les années 1980", "isCorrect": false },
+      { "id": "c", "label": "Les années 1990", "isCorrect": true }
+    ] } },
+    { "id": "mus-6", "type": "boolean", "theme": "musique", "difficulty": "easy", "question": "Le piano est un instrument à cordes frappées.", "tags": ["instruments"], "explanation": "Le piano produit son son grâce à des marteaux qui frappent des cordes, il est donc classé parmi les cordes frappées.", "points": 1, "content": { "isTrue": true } },
+    { "id": "mus-7", "type": "cloze", "theme": "musique", "difficulty": "easy", "question": "Wolfgang Amadeus ___ est un compositeur autrichien du XVIIIe siècle.", "tags": ["classique"], "explanation": "Wolfgang Amadeus Mozart (1756-1791) est l'un des plus grands compositeurs classiques.", "points": 1, "content": { "expectedAnswers": ["Mozart"], "caseSensitive": false } },
+    { "id": "mus-8", "type": "matching", "theme": "musique", "difficulty": "medium", "question": "Associez chaque compositeur à sa nationalité.", "tags": ["compositeurs"], "explanation": "Mozart était autrichien, Beethoven allemand, Chopin polonais et Verdi italien.", "points": 2, "content": {
+      "left": [
+        { "id": "mozart", "label": "Mozart" },
+        { "id": "beethoven", "label": "Beethoven" },
+        { "id": "chopin", "label": "Chopin" },
+        { "id": "verdi", "label": "Verdi" }
+      ],
+      "right": [
+        { "id": "r-italien", "label": "Italien" },
+        { "id": "r-autrichien", "label": "Autrichien" },
+        { "id": "r-polonais", "label": "Polonais" },
+        { "id": "r-allemand", "label": "Allemand" }
+      ],
+      "correctPairs": { "mozart": "r-autrichien", "beethoven": "r-allemand", "chopin": "r-polonais", "verdi": "r-italien" }
+    } },
+    { "id": "mus-9", "type": "numeric", "theme": "musique", "difficulty": "medium", "question": "En quelle année est sorti l'album \"Thriller\" de Michael Jackson ?", "tags": ["pop"], "explanation": "Thriller est sorti en 1982, il reste l'album le plus vendu de tous les temps.", "points": 2, "content": { "min": 1950, "max": 2020, "step": 1, "target": 1982, "tolerance": 2 } },
+
+    { "id": "gastro-1", "type": "qcm", "theme": "gastronomie", "difficulty": "easy", "question": "De quel pays la pizza margherita est-elle originaire ?", "tags": ["origines"], "explanation": "La pizza margherita est née à Naples, en Italie, à la fin du XIXe siècle.", "points": 1, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "La France", "isCorrect": false },
+      { "id": "b", "label": "L'Italie", "isCorrect": true },
+      { "id": "c", "label": "L'Espagne", "isCorrect": false }
+    ] } },
+    { "id": "gastro-2", "type": "qcm", "theme": "gastronomie", "difficulty": "easy", "question": "Quel fruit est utilisé pour préparer le guacamole ?", "tags": ["ingredients"], "explanation": "Le guacamole est une préparation à base d'avocat écrasé, originaire du Mexique.", "points": 1, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "La tomate", "isCorrect": false },
+      { "id": "b", "label": "L'avocat", "isCorrect": true },
+      { "id": "c", "label": "La mangue", "isCorrect": false }
+    ] } },
+    { "id": "gastro-3", "type": "text", "theme": "gastronomie", "difficulty": "medium", "question": "Comment appelle-t-on la technique de cuisson à basse température dans un sac hermétique ?", "tags": ["techniques"], "explanation": "La cuisson \"sous vide\" consiste à cuire les aliments à basse température dans un sac scellé sous vide.", "points": 2, "content": { "expectedAnswers": ["sous vide", "sous-vide"], "caseSensitive": false } },
+    { "id": "gastro-4", "type": "qcm", "theme": "gastronomie", "difficulty": "medium", "question": "Quelle boisson accompagne traditionnellement la fondue savoyarde ?", "tags": ["france"], "explanation": "Le vin blanc sec de Savoie est traditionnellement servi avec la fondue, notamment pour faciliter la digestion du fromage.", "points": 2, "content": { "multiple": false, "answers": [
+      { "id": "a", "label": "Le vin blanc", "isCorrect": true },
+      { "id": "b", "label": "La bière", "isCorrect": false },
+      { "id": "c", "label": "Le cidre", "isCorrect": false }
+    ] } },
+    { "id": "gastro-5", "type": "ordering", "theme": "gastronomie", "difficulty": "hard", "question": "Classez ces étapes de préparation d'une pâte à pain dans l'ordre.", "tags": ["boulangerie"], "explanation": "On mélange les ingrédients, on pétrit la pâte, on la laisse lever, puis on la fait cuire au four.", "points": 3, "content": { "items": [
+      { "id": "cuire", "label": "Cuire au four" },
+      { "id": "melanger", "label": "Mélanger les ingrédients" },
+      { "id": "lever", "label": "Laisser lever la pâte" },
+      { "id": "petrir", "label": "Pétrir la pâte" }
+    ], "correctOrder": ["melanger", "petrir", "lever", "cuire"] } },
+    { "id": "gastro-6", "type": "boolean", "theme": "gastronomie", "difficulty": "medium", "question": "Le champagne est originaire d'Italie.", "tags": ["origines"], "explanation": "Le champagne provient de la région Champagne, en France, seule appellation autorisée à porter ce nom.", "points": 2, "content": { "isTrue": false } },
+    { "id": "gastro-7", "type": "cloze", "theme": "gastronomie", "difficulty": "medium", "question": "Le plat italien à base de riz crémeux cuit lentement s'appelle le ___.", "tags": ["techniques"], "explanation": "Le risotto est un plat italien à base de riz cuit lentement dans un bouillon.", "points": 2, "content": { "expectedAnswers": ["risotto"], "caseSensitive": false } },
+    { "id": "gastro-8", "type": "matching", "theme": "gastronomie", "difficulty": "easy", "question": "Associez chaque plat à son pays d'origine.", "tags": ["origines"], "explanation": "Le sushi vient du Japon, la paella d'Espagne, les tacos du Mexique, la fondue de Suisse.", "points": 1, "content": {
+      "left": [
+        { "id": "sushi", "label": "Sushi" },
+        { "id": "paella", "label": "Paella" },
+        { "id": "tacos", "label": "Tacos" },
+        { "id": "fondue", "label": "Fondue" }
+      ],
+      "right": [
+        { "id": "r-suisse", "label": "Suisse" },
+        { "id": "r-japon", "label": "Japon" },
+        { "id": "r-mexique", "label": "Mexique" },
+        { "id": "r-espagne", "label": "Espagne" }
+      ],
+      "correctPairs": { "sushi": "r-japon", "paella": "r-espagne", "tacos": "r-mexique", "fondue": "r-suisse" }
+    } },
+    { "id": "gastro-9", "type": "numeric", "theme": "gastronomie", "difficulty": "medium", "question": "À quelle température cuit-on traditionnellement une pizza au four ?", "tags": ["techniques"], "explanation": "Une pizza se cuit traditionnellement autour de 250°C, voire davantage dans un four à bois.", "points": 2, "content": { "min": 100, "max": 400, "step": 10, "target": 250, "tolerance": 30, "unit": "°C" } }
+  ]
+}$sample_quiz$::jsonb,
+  true
+)
+on conflict (title) do nothing;

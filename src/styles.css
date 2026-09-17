@@ -101,6 +101,7 @@ pre { padding: 1rem; overflow: auto; background: var(--code-bg); border: 1px sol
 .quiz-tile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
 .quiz-tile { padding: 1.2rem; border: 1px solid var(--border); border-radius: .8rem; background: var(--surface); color: var(--ink); font-weight: 700; text-align: left; transition: border-color .15s, transform .15s; }
 .quiz-tile:hover { border-color: var(--accent); transform: translateY(-2px); }
+.quiz-tile-badge { font-weight: 400; font-size: .8em; color: var(--text-muted); }
 .question-list-group { margin-bottom: .8rem; border: 1px solid var(--border); border-radius: .6rem; background: var(--surface); overflow: hidden; }
 .question-list-group summary { padding: .8rem 1rem; cursor: pointer; font-weight: 700; color: var(--text); }
 .question-list-group summary:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
