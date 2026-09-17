@@ -101,7 +101,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     }).catch(() => {})
   }, [])
   const [topScore, setTopScore] = useState<LeaderboardRow | null>(null)
-  useEffect(() => { if (view === 'start') fetchTopScore(quiz.metadata.title).then(setTopScore).catch(() => setTopScore(null)) }, [view, quiz.metadata.title])
+  useEffect(() => { if (view === 'start') fetchTopScore(quiz.metadata.title, selectedHostedQuizId || null).then(setTopScore).catch(() => setTopScore(null)) }, [view, quiz.metadata.title, selectedHostedQuizId])
   const [leaderboardBack, setLeaderboardBack] = useState<View>('profile')
   const [leaderboardMode, setLeaderboardMode] = useState<GameMode>('classic')
   const viewLeaderboard = (from: View, mode: GameMode = 'classic') => { setLeaderboardBack(from); setLeaderboardMode(mode); navigate('leaderboard') }
@@ -294,9 +294,10 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   }
 
   /** Admin uniquement : supprime définitivement un quiz hébergé après confirmation. `quiz_access` est nettoyé
-   * automatiquement (FK `on delete cascade`). Par défaut l'historique déjà enregistré n'est pas affecté
-   * (référencé par titre, pas par id) — `deleteHistoryToo` permet de le purger explicitement en plus.
-   * Si le quiz supprimé était le quiz actif, retombe sur le quiz d'exemple. */
+   * automatiquement (FK `on delete cascade`) ; l'historique déjà enregistré garde son `quiz_id` mis à `null`
+   * (FK `on delete set null`) et reste visible sous son titre figé au moment de chaque partie — par défaut il
+   * n'est pas affecté, `deleteHistoryToo` permet de le purger explicitement en plus. Si le quiz supprimé était
+   * le quiz actif, retombe sur le placeholder de premier affichage le temps qu'un autre quiz soit sélectionné. */
   const deleteHostedQuiz = async (id: string, title: string, deleteHistoryToo: boolean) => {
     if (!window.confirm(t('admin.confirmDeleteQuiz', title, deleteHistoryToo))) return
     setDeleteQuizError('')
@@ -354,7 +355,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const finishStreak = (result: StreakResult) => {
     setStreakResult(result)
     replace('streakResults')
-    saveStreakResult(buildStreakResultPayload(result.streakCount, result.elapsedSeconds, result.victory, result.playedQuestions, quiz.themes, quiz.metadata.title, isUnfiltered))
+    saveStreakResult(buildStreakResultPayload(result.streakCount, result.elapsedSeconds, result.victory, result.playedQuestions, quiz.themes, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered))
   }
 
   const startTimed = () => {
@@ -365,7 +366,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const finishTimed = (result: TimedResult) => {
     setTimedResult(result)
     replace('timedResults')
-    saveTimedResult(buildTimedResultPayload(result.attempts, result.elapsedSeconds, result.durationSeconds, quiz.themes, quiz.metadata.title, isUnfiltered))
+    saveTimedResult(buildTimedResultPayload(result.attempts, result.elapsedSeconds, result.durationSeconds, quiz.themes, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered))
   }
 
   const backToStart = () => {
@@ -407,8 +408,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     </section>}
     {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} timeboxed={timeboxed} onFinish={(nextAnswers, duration) => {
       setAnswers(nextAnswers); setElapsedSeconds(duration); replace('results')
-      saveQuizResult(buildQuizResultPayload(sessionQuestions, nextAnswers, quiz.themes, duration, quiz.metadata.title, isUnfiltered && !isReplay))
-      saveQuestionResults(buildQuestionResultPayloads(sessionQuestions, nextAnswers, quiz.metadata.title))
+      saveQuizResult(buildQuizResultPayload(sessionQuestions, nextAnswers, quiz.themes, duration, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered && !isReplay))
+      saveQuestionResults(buildQuestionResultPayloads(sessionQuestions, nextAnswers, quiz.metadata.title, selectedHostedQuizId || null))
     }} onCancel={backToStart} />}
     {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.themes} elapsedSeconds={elapsedSeconds} onRestart={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} />}
     {view === 'streak' && <StreakQuizPage quiz={quiz} pool={filteredQuestions} timeboxed={timeboxed} onFinish={finishStreak} onCancel={backToStart} />}
@@ -417,8 +418,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'timedResults' && timedResult && <TimedResultPage {...timedResult} onRestart={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} />}
     {view === 'quizzes' && <QuizListPage hostedQuizzes={hostedQuizzes} isAdmin={profile?.isAdmin ?? false} onBack={() => navigate('start')} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} />}
     {view === 'quizDetail' && <QuizDetailPage quiz={quiz} hostedQuizId={selectedHostedQuizId} isPublic={hostedQuizzes.find((hosted) => hosted.id === selectedHostedQuizId)?.is_public ?? false} onTogglePublic={(isPublic) => togglePublicLocally(selectedHostedQuizId, isPublic)} onBack={() => navigate('quizzes')} onExport={exportQuiz} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onAddTheme={addTheme} quizLoadError={quizLoadError} onUpdateQuizMeta={updateQuizMeta} onDeleteQuiz={deleteHostedQuiz} deleteQuizError={deleteQuizError} />}
-    {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} onReplayMissed={replayMissed} />}
-    {view === 'leaderboard' && <LeaderboardPage quiz={quiz} initialMode={leaderboardMode} onBack={() => navigate(leaderboardBack)} />}
+    {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} hostedQuizId={selectedHostedQuizId} onReplayMissed={replayMissed} />}
+    {view === 'leaderboard' && <LeaderboardPage quiz={quiz} hostedQuizId={selectedHostedQuizId} initialMode={leaderboardMode} onBack={() => navigate(leaderboardBack)} />}
     {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} onViewHistory={() => viewHistory('profile')} onViewLeaderboard={() => viewLeaderboard('profile')} onPreviewLanguage={setLanguage} />}
   </main></LanguageProvider>
 }

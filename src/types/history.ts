@@ -5,6 +5,9 @@ export interface StatBucket {
 
 export interface QuizResultPayload {
   quiz_title: string
+  /** Lien stable vers `quizzes.id` — permet de retrouver l'historique d'un quiz même après renommage. `null`
+   * pour les parties jouées avant l'introduction de ce champ ou dont le quiz source a depuis été supprimé. */
+  quiz_id: string | null
   score: number
   earned_points: number
   total_points: number
@@ -47,6 +50,7 @@ export interface RadarAxis {
 
 export interface QuestionResultPayload {
   quiz_title: string
+  quiz_id: string | null
   question_id: string
   question_text: string
   correct: boolean
@@ -66,6 +70,7 @@ export interface MissedQuestion {
 
 export interface StreakResultPayload {
   quiz_title: string
+  quiz_id: string | null
   streak_count: number
   elapsed_seconds: number
   victory: boolean
@@ -81,6 +86,7 @@ export interface StreakResultRow extends StreakResultPayload {
 
 export interface TimedResultPayload {
   quiz_title: string
+  quiz_id: string | null
   correct_count: number
   question_count: number
   /** 0 = mode "Infini" (pas de limite). */

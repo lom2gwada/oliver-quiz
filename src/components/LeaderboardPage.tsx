@@ -21,11 +21,17 @@ interface DisplayRow {
 
 interface LeaderboardPageProps {
   quiz: Quiz
+  hostedQuizId: string
   initialMode?: GameMode
   onBack: () => void
 }
 
-export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: LeaderboardPageProps) {
+/** Les vues *_leaderboard affichent déjà le titre courant du quiz (jointure live sur `quizzes`, cf.
+ * `021_history_quiz_id.sql`) — seule la clé de regroupement/filtrage doit préférer l'id, insensible à un
+ * renommage, avec repli sur le titre pour les lignes d'un quiz depuis supprimé. */
+const quizKeyOf = (row: { quiz_id: string | null; quiz_title: string }) => row.quiz_id ?? row.quiz_title
+
+export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', onBack }: LeaderboardPageProps) {
   const { t } = useTranslation()
   const [mode, setMode] = useState<LeaderboardTab>(initialMode)
   const [rows, setRows] = useState<LeaderboardRow[] | null>(null)
@@ -45,14 +51,16 @@ export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: Leade
   }, [])
 
   const activeRows = mode === 'classic' ? rows : mode === 'streak' ? streakRows : mode === 'timed' ? timedRows : overallRows
-  const quizTitles = activeRows ? Array.from(new Set(activeRows.map((row) => row.quiz_title))) : []
-  const activeQuiz = selectedQuiz && quizTitles.includes(selectedQuiz) ? selectedQuiz : (quizTitles.includes(quiz.metadata.title) ? quiz.metadata.title : quizTitles[0])
+  const quizKeys = activeRows ? Array.from(new Set(activeRows.map(quizKeyOf))) : []
+  const keyLabels = new Map((activeRows ?? []).map((row) => [quizKeyOf(row), row.quiz_title]))
+  const activeQuizKey = hostedQuizId || quiz.metadata.title
+  const activeQuiz = selectedQuiz && quizKeys.includes(selectedQuiz) ? selectedQuiz : (quizKeys.includes(activeQuizKey) ? activeQuizKey : quizKeys[0])
 
   // Chaque vue est déjà triée côté base, mais le tri global (toutes parties confondues) ne correspond pas
   // forcément au top 10 d'un quiz une fois filtré sur `activeQuiz` — d'où ce re-tri après filtrage.
   const displayRows: DisplayRow[] =
     mode === 'classic'
-      ? (rows ?? []).filter((row) => row.quiz_title === activeQuiz)
+      ? (rows ?? []).filter((row) => quizKeyOf(row) === activeQuiz)
         .sort((a, b) => b.best_score - a.best_score || b.earned_points - a.earned_points || a.elapsed_seconds - b.elapsed_seconds)
         .slice(0, MAX_ROWS)
         .map((row) => ({
@@ -61,7 +69,7 @@ export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: Leade
           score: `${row.best_score}%`,
         }))
       : mode === 'streak'
-        ? (streakRows ?? []).filter((row) => row.quiz_title === activeQuiz)
+        ? (streakRows ?? []).filter((row) => quizKeyOf(row) === activeQuiz)
           .sort((a, b) => b.best_streak - a.best_streak || Number(b.victory) - Number(a.victory) || a.elapsed_seconds - b.elapsed_seconds)
           .slice(0, MAX_ROWS)
           .map((row) => ({
@@ -70,7 +78,7 @@ export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: Leade
             score: `${row.victory ? '🏆' : '🔥'} ${row.best_streak}`,
           }))
         : mode === 'timed'
-          ? (timedRows ?? []).filter((row) => row.quiz_title === activeQuiz)
+          ? (timedRows ?? []).filter((row) => quizKeyOf(row) === activeQuiz)
             .sort((a, b) => (b.pace_per_minute ?? -1) - (a.pace_per_minute ?? -1) || b.correct_count - a.correct_count)
             .slice(0, MAX_ROWS)
             .map((row) => ({
@@ -78,7 +86,7 @@ export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: Leade
               details: t('leaderboard.detailsTimed', row.correct_count, row.question_count, row.duration_seconds === 0 ? t('common.unlimited') : t('common.minutesShort', Math.round(row.duration_seconds / 60)), formatDuration(row.elapsed_seconds)),
               score: row.pace_per_minute !== null ? `${row.pace_per_minute}/min` : '—',
             }))
-          : (overallRows ?? []).filter((row) => row.quiz_title === activeQuiz)
+          : (overallRows ?? []).filter((row) => quizKeyOf(row) === activeQuiz)
             .sort((a, b) => b.total_correct - a.total_correct || (b.success_rate ?? -1) - (a.success_rate ?? -1))
             .slice(0, MAX_ROWS)
             .map((row) => ({
@@ -101,9 +109,9 @@ export function LeaderboardPage({ quiz, initialMode = 'classic', onBack }: Leade
     {error && mode === 'classic' && <p className="alert" role="alert">{error}</p>}
     {!activeRows && <p>{t('common.loading')}</p>}
     {activeRows && !activeRows.length && <p>{t('leaderboard.emptyState', mode !== 'classic')}</p>}
-    {quizTitles.length > 0 && <label className="quiz-select">{t('start.quizLabel')}
+    {quizKeys.length > 0 && <label className="quiz-select">{t('start.quizLabel')}
       <select value={activeQuiz} onChange={(event) => setSelectedQuiz(event.target.value)}>
-        {quizTitles.map((title) => <option key={title} value={title}>{title}</option>)}
+        {quizKeys.map((key) => <option key={key} value={key}>{keyLabels.get(key)}</option>)}
       </select>
     </label>}
     {displayRows.length > 0 && <ol className="leaderboard-list">
