@@ -24,8 +24,10 @@ import { applyTheme } from './utils/theme'
 import { LanguageProvider, translate } from './i18n'
 import type { Language, TranslationKey } from './i18n'
 import { parseQuiz } from './utils/quizValidation'
+import { questionTimeLimit } from './utils/questionTimeLimits'
 import { isSoundMuted, playClick, setSoundMuted } from './utils/sound'
 import { shuffle } from './utils/shuffle'
+import { formatDuration } from './utils/time'
 
 type View = 'start' | 'quiz' | 'results' | 'streak' | 'streakResults' | 'timed' | 'timedResults' | 'quizzes' | 'quizDetail' | 'history' | 'leaderboard' | 'profile'
 
@@ -137,6 +139,14 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   // Seules les parties jouées sans filtre comptent pour le classement : sinon un thème/une difficulté
   // choisie exprès rendrait les scores/streaks/rythmes incomparables entre joueurs.
   const isUnfiltered = selectedThemes.length === 0 && difficulty === ''
+  // Les questions effectivement tirées ne sont connues qu'au lancement (tirage aléatoire) : l'estimation
+  // s'appuie donc sur la moyenne des temps limites (propres à chaque question, ou barème par défaut par
+  // type/difficulté) du pool filtré, mise à l'échelle du nombre de questions qui seront réellement jouées.
+  const timedEstimateSeconds = useMemo(() => {
+    if (!filteredQuestions.length) return 0
+    const averageLimit = filteredQuestions.reduce((sum, question) => sum + questionTimeLimit(question), 0) / filteredQuestions.length
+    return Math.round(averageLimit * Math.min(questionCount, filteredQuestions.length))
+  }, [filteredQuestions, questionCount])
 
   const toggleTheme = (themeId: string) => setSelectedThemes((previous) =>
     previous.includes(themeId) ? previous.filter((id) => id !== themeId) : [...previous, themeId])
@@ -403,6 +413,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
         <input type="checkbox" checked={timeboxed} onChange={(event) => { playClick(); setTimeboxed(event.target.checked) }} />
         {t('start.timerToggle')}
       </label>
+      {gameMode === 'classic' && timeboxed && <p className="mode-hint">{t('start.timedEstimate', formatDuration(timedEstimateSeconds))}</p>}
       <p>{t('start.availability', filteredQuestions.length, gameMode, Math.min(questionCount, filteredQuestions.length))}</p>
       <button type="button" onClick={gameMode === 'classic' ? startQuiz : gameMode === 'streak' ? startStreak : startTimed} disabled={!filteredQuestions.length}>{gameMode === 'classic' ? t('start.startClassic') : gameMode === 'streak' ? t('start.startStreak') : t('start.startTimed')}</button>
     </section>}

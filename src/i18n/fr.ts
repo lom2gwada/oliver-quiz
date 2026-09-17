@@ -30,6 +30,7 @@ export const fr = {
   'start.durationLabel': 'Durée',
   'start.durationOption': (minutes: number) => minutes === 0 ? 'Infini' : `${minutes} minutes`,
   'start.timerToggle': '⏳ Chrono par question',
+  'start.timedEstimate': (duration: string) => `Durée estimée du quiz : ~${duration}`,
   'start.availability': (count: number, mode: GameMode, drawn: number) => {
     const base = `${count} question${count > 1 ? 's' : ''} disponible${count > 1 ? 's' : ''}`
     if (mode === 'classic') return `${base} — ${drawn} seront tirées aléatoirement.`
