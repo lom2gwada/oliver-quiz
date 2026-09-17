@@ -3,7 +3,7 @@ import type { Question, QuestionAttempt, Quiz, UserAnswer } from '../types/quiz'
 import { useTranslation } from '../i18n'
 import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
-import { questionTimeLimit } from '../utils/questionTimeLimits'
+import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
@@ -58,7 +58,8 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish
     setIndex((value) => value + 1)
     setAnswer(undefined)
   }
-  const questionRemaining = useQuestionTimer(question ? `${question.id}-${index}` : '', timeboxed && question ? questionTimeLimit(question) : null, advance)
+  const questionTimeLimitSeconds = timeboxed && question ? questionTimeLimit(question) : null
+  const questionRemaining = useQuestionTimer(question ? `${question.id}-${index}` : '', questionTimeLimitSeconds, advance)
 
   const finishNow = () => {
     const finalAttempts = answer === undefined ? attempts : [...attempts, { question, answer }]
@@ -70,7 +71,7 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish
   const remaining = durationSeconds > 0 ? Math.max(0, durationSeconds - elapsed) : null
 
   return <section className="quiz-card">
-    <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span><span>✅ {attempts.length}</span>{questionRemaining !== null && <span>⏳ {questionRemaining}s</span>}<span>⏱ {remaining !== null ? formatDuration(remaining) : formatDuration(elapsed)}</span></div>
+    <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span><span>✅ {attempts.length}</span>{questionRemaining !== null && questionTimeLimitSeconds !== null && <span className={`quiz-timer-${questionTimerUrgency(questionRemaining, questionTimeLimitSeconds)}`}>⏳ {questionRemaining}s</span>}<span>⏱ {remaining !== null ? formatDuration(remaining) : formatDuration(elapsed)}</span></div>
     {durationSeconds > 0 && <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${Math.min(100, (elapsed / durationSeconds) * 100)}%` }} /></div>}
     <p className="progress">{t('quiz.questionNumber', attempts.length + 1)}</p>
     <div className="question-body" key={`${question.id}-${index}`}>

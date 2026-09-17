@@ -3,7 +3,7 @@ import type { AnswersByQuestion, Question, Quiz, UserAnswer } from '../types/qui
 import { useTranslation } from '../i18n'
 import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
-import { questionTimeLimit } from '../utils/questionTimeLimits'
+import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { isCorrect } from './ResultPage'
 import { MermaidDiagram } from './MermaidDiagram'
@@ -57,13 +57,14 @@ export function StreakQuizPage({ quiz, pool, timeboxed, onFinish, onCancel }: St
     setIndex((value) => value + 1)
     setAnswer(undefined)
   }
-  const remaining = useQuestionTimer(question?.id ?? '', timeboxed && question ? questionTimeLimit(question) : null, advance)
+  const timeLimit = timeboxed && question ? questionTimeLimit(question) : null
+  const remaining = useQuestionTimer(question?.id ?? '', timeLimit, advance)
 
   if (!question) return <section className="empty"><h2>{t('quiz.emptyTitle')}</h2><p>{t('quiz.emptyHintRun')}</p><button type="button" className="secondary" onClick={onCancel}>{t('common.back')}</button></section>
   const theme = quiz.themes.find((item) => item.id === question.theme)?.label ?? question.theme
 
   return <section className="quiz-card">
-    <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span><span>🔥 {streakCount}</span>{remaining !== null && <span>⏳ {remaining}s</span>}<span>⏱ {formatDuration(elapsed)}</span></div>
+    <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span><span>🔥 {streakCount}</span>{remaining !== null && timeLimit !== null && <span className={`quiz-timer-${questionTimerUrgency(remaining, timeLimit)}`}>⏳ {remaining}s</span>}<span>⏱ {formatDuration(elapsed)}</span></div>
     <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${((index + 1) / order.length) * 100}%` }} /></div>
     <p className="progress">{t('quiz.questionProgress', index + 1, order.length)}</p>
     <div className="question-body" key={question.id}>
