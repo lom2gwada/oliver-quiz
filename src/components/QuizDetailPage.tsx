@@ -79,21 +79,23 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
     </div>
     {quizLoadError && <p className="alert" role="alert">{quizLoadError}</p>}
     {quiz.metadata.description && <p className="quiz-description">{quiz.metadata.description}</p>}
-    {canEditQuiz && <EditQuizMetaForm
-      title={quiz.metadata.title}
-      author={quiz.metadata.author}
-      description={quiz.metadata.description ?? ''}
-      error={editError}
-      onSave={onUpdateQuizMeta}
-    />}
-    {isAdmin && <button type="button" className="secondary" onClick={onExport}>{t('admin.exportButton')}</button>}
-    {canEditQuiz && <>
+    <div className="quiz-detail-actions">
+      {canEditQuiz && <EditQuizMetaForm
+        title={quiz.metadata.title}
+        author={quiz.metadata.author}
+        description={quiz.metadata.description ?? ''}
+        error={editError}
+        onSave={onUpdateQuizMeta}
+      />}
+      {isAdmin && <button type="button" className="secondary" onClick={onExport}>{t('admin.exportButton')}</button>}
+    </div>
+    {canEditQuiz && <div className="quiz-detail-actions">
       <label className="theme-checkbox">
         <input type="checkbox" checked={deleteHistoryToo} onChange={(event) => setDeleteHistoryToo(event.target.checked)} />
         {t('admin.deleteHistoryTooLabel')}
       </label>
       <button type="button" className="danger" onClick={() => onDeleteQuiz(hostedQuizId, quiz.metadata.title, deleteHistoryToo)}>{t('admin.deleteQuizButton')}</button>
-    </>}
+    </div>}
     {deleteQuizError && <p className="alert" role="alert">{deleteQuizError}</p>}
     <h3 className="stats-group-title">{t('admin.questionBreakdownTitle')}</h3>
     <div className="stats-grid">
