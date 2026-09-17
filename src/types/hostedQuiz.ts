@@ -1,6 +1,7 @@
 export interface HostedQuizSummary {
   id: string
   title: string
+  is_public: boolean
 }
 
 export interface HostedQuizRow extends HostedQuizSummary {

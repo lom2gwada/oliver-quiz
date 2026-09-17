@@ -3,7 +3,7 @@ import { supabase } from './supabase'
 
 /** Les quiz hébergés auxquels l'utilisateur courant a accès (RLS filtre déjà — un admin les voit tous). */
 export async function fetchAccessibleQuizzes(): Promise<HostedQuizSummary[]> {
-  const { data, error } = await supabase.from('quizzes').select('id, title').order('title')
+  const { data, error } = await supabase.from('quizzes').select('id, title, is_public').order('title')
   if (error) throw error
   return data ?? []
 }
@@ -36,10 +36,16 @@ export async function updateQuiz(id: string, title: string, content: unknown): P
 }
 
 /** Admin uniquement (RLS) : supprime définitivement un quiz hébergé. `quiz_access` est nettoyé automatiquement
- * (FK `on delete cascade`) ; l'historique déjà enregistré (parties, classement) n'est pas affecté puisqu'il
- * référence le quiz par `quiz_title` (texte), pas par id. */
+ * (FK `on delete cascade`) ; l'historique déjà enregistré (parties, classement) n'est pas affecté par défaut. */
 export async function deleteQuiz(id: string): Promise<void> {
   const { error } = await supabase.from('quizzes').delete().eq('id', id)
+  if (error) throw error
+}
+
+/** Admin uniquement (RLS) : rend un quiz hébergé visible par tous les utilisateurs connectés sans octroi
+ * d'accès individuel (ou retire cette visibilité par défaut) — cf. policy SELECT de `020_public_quizzes.sql`. */
+export async function setQuizPublic(id: string, isPublic: boolean): Promise<void> {
+  const { error } = await supabase.from('quizzes').update({ is_public: isPublic }).eq('id', id)
   if (error) throw error
 }
 

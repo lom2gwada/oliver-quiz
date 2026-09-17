@@ -29,6 +29,9 @@ import { shuffle } from './utils/shuffle'
 
 type View = 'start' | 'quiz' | 'results' | 'streak' | 'streakResults' | 'timed' | 'timedResults' | 'quizzes' | 'quizDetail' | 'history' | 'leaderboard' | 'profile'
 
+/** Premier affichage seulement, le temps de charger la liste des quiz hébergés — le quiz "Culture générale"
+ * vit désormais en base (`020_public_quizzes.sql`, `is_public`) et devient le quiz actif réel dès que ce
+ * fetch répond, avec un vrai id (éditable comme n'importe quel quiz hébergé). */
 const initialQuiz = parseQuiz(sampleQuiz)
 const questionCounts = [5, 10, 20, 30, 50]
 /** En minutes ; 0 = mode "Infini" (pas de limite). */
@@ -85,7 +88,18 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const t = (key: TranslationKey, ...args: unknown[]) => translate(language, key, ...args)
   const [hostedQuizzes, setHostedQuizzes] = useState<HostedQuizSummary[]>([])
   const [selectedHostedQuizId, setSelectedHostedQuizId] = useState('')
-  useEffect(() => { fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {}) }, [])
+  // Le quiz d'exemple bundlé (`initialQuiz`) ne sert plus que de premier affichage le temps de ce fetch : dès
+  // qu'un quiz `is_public` existe en base, il devient le quiz actif réel (avec un vrai id, éditable comme
+  // n'importe quel quiz hébergé) — sauf si l'utilisateur a déjà sélectionné autre chose entre-temps.
+  useEffect(() => {
+    fetchAccessibleQuizzes().then((quizzes) => {
+      setHostedQuizzes(quizzes)
+      if (!selectedHostedQuizId) {
+        const defaultQuiz = quizzes.find((hosted) => hosted.is_public)
+        if (defaultQuiz) selectHostedQuiz(defaultQuiz.id)
+      }
+    }).catch(() => {})
+  }, [])
   const [topScore, setTopScore] = useState<LeaderboardRow | null>(null)
   useEffect(() => { if (view === 'start') fetchTopScore(quiz.metadata.title).then(setTopScore).catch(() => setTopScore(null)) }, [view, quiz.metadata.title])
   const [leaderboardBack, setLeaderboardBack] = useState<View>('profile')
@@ -299,6 +313,12 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     }
   }
 
+  /** Reflète en local le résultat de `setQuizPublic` (déjà appelé par `QuizAccessManager`) — évite un aller-retour
+   * réseau pour rafraîchir juste ce flag dans la liste des quiz hébergés. */
+  const togglePublicLocally = (id: string, isPublic: boolean) => {
+    setHostedQuizzes((current) => current.map((existing) => existing.id === id ? { ...existing, is_public: isPublic } : existing))
+  }
+
   /** Télécharge le quiz actuellement chargé (utile pour éditer hors-ligne un quiz déjà publié). */
   const exportQuiz = () => {
     const blob = new Blob([JSON.stringify(quiz, null, 2)], { type: 'application/json' })
@@ -365,7 +385,6 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'start' && <section className="start-page">
       {hostedQuizzes.length > 0 && <label className="quiz-select">{t('start.quizLabel')}
         <select value={selectedHostedQuizId} onChange={(event) => { playClick(); selectHostedQuiz(event.target.value) }}>
-          <option value="">Culture générale (exemple)</option>
           {hostedQuizzes.map((hosted) => <option key={hosted.id} value={hosted.id}>{hosted.title}</option>)}
         </select>
       </label>}
@@ -397,7 +416,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
     {view === 'timedResults' && timedResult && <TimedResultPage {...timedResult} onRestart={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} />}
     {view === 'quizzes' && <QuizListPage hostedQuizzes={hostedQuizzes} isAdmin={profile?.isAdmin ?? false} onBack={() => navigate('start')} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} />}
-    {view === 'quizDetail' && <QuizDetailPage quiz={quiz} hostedQuizId={selectedHostedQuizId} onBack={() => navigate('quizzes')} onExport={exportQuiz} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onAddTheme={addTheme} quizLoadError={quizLoadError} onUpdateQuizMeta={updateQuizMeta} onDeleteQuiz={deleteHostedQuiz} deleteQuizError={deleteQuizError} />}
+    {view === 'quizDetail' && <QuizDetailPage quiz={quiz} hostedQuizId={selectedHostedQuizId} isPublic={hostedQuizzes.find((hosted) => hosted.id === selectedHostedQuizId)?.is_public ?? false} onTogglePublic={(isPublic) => togglePublicLocally(selectedHostedQuizId, isPublic)} onBack={() => navigate('quizzes')} onExport={exportQuiz} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onAddTheme={addTheme} quizLoadError={quizLoadError} onUpdateQuizMeta={updateQuizMeta} onDeleteQuiz={deleteHostedQuiz} deleteQuizError={deleteQuizError} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} onReplayMissed={replayMissed} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} initialMode={leaderboardMode} onBack={() => navigate(leaderboardBack)} />}
     {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} onViewHistory={() => viewHistory('profile')} onViewLeaderboard={() => viewLeaderboard('profile')} onPreviewLanguage={setLanguage} />}

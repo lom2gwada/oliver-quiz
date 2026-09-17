@@ -28,7 +28,7 @@ export function QuizListPage({ hostedQuizzes, isAdmin, onBack, onSelectQuiz, onC
       ? <p>{t('admin.noPublishedQuiz')}</p>
       : <div className="quiz-tile-grid">
         {hostedQuizzes.map((hosted) => <button type="button" key={hosted.id} className="quiz-tile" onClick={() => onSelectQuiz(hosted.id)}>
-          {hosted.title}
+          {hosted.title}{hosted.is_public && <span className="quiz-tile-badge"> {t('admin.publicQuizBadge')}</span>}
         </button>)}
       </div>}
     {isAdmin && <>
