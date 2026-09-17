@@ -21,3 +21,13 @@ const DEFAULT_TIME_LIMITS: Record<QuestionType, Record<Difficulty, number>> = {
 export function questionTimeLimit(question: Question): number {
   return question.timeLimitSeconds ?? DEFAULT_TIME_LIMITS[question.type][question.difficulty]
 }
+
+export type TimerUrgency = 'normal' | 'warning' | 'danger'
+
+/** Urgence visuelle du chrono par question, en proportion du temps limite plutôt qu'en secondes absolues —
+ * un seuil en secondes fixes serait injuste entre une question de 8s et une de 45s. */
+export function questionTimerUrgency(remaining: number, limit: number): TimerUrgency {
+  if (remaining <= limit * 0.2) return 'danger'
+  if (remaining <= limit * 0.5) return 'warning'
+  return 'normal'
+}

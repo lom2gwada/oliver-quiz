@@ -4,7 +4,7 @@ import type { TranslationKey } from '../i18n'
 import { useTranslation } from '../i18n'
 import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
-import { questionTimeLimit } from '../utils/questionTimeLimits'
+import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
@@ -62,12 +62,13 @@ export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel }: Qui
     if (current === shuffledQuestions.length - 1) onFinish(answers, elapsed)
     else setCurrent((value) => value + 1)
   }
-  const remaining = useQuestionTimer(question?.id ?? '', timeboxed && question ? questionTimeLimit(question) : null, goNext)
+  const timeLimit = timeboxed && question ? questionTimeLimit(question) : null
+  const remaining = useQuestionTimer(question?.id ?? '', timeLimit, goNext)
 
   if (!question) return <section className="empty"><h2>{t('quiz.emptyTitle')}</h2><p>{t('quiz.emptyHintQuiz')}</p><button type="button" className="secondary" onClick={onCancel}>{t('common.back')}</button></section>
   const theme = quiz.themes.find((item) => item.id === question.theme)?.label ?? question.theme
   return <section className="quiz-card">
-    <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span>{remaining !== null && <span>⏳ {remaining}s</span>}<span>⏱ {formatDuration(elapsed)}</span></div>
+    <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span>{remaining !== null && timeLimit !== null && <span className={`quiz-timer-${questionTimerUrgency(remaining, timeLimit)}`}>⏳ {remaining}s</span>}{!timeboxed && <span>⏱ {formatDuration(elapsed)}</span>}</div>
     <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${((current + 1) / shuffledQuestions.length) * 100}%` }} /></div>
     <p className="progress">{t('quiz.questionProgress', current + 1, shuffledQuestions.length)}</p>
     <div className="question-body" key={question.id}>
@@ -79,7 +80,8 @@ export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel }: Qui
     <div className="quiz-actions">
       <button type="button" className="secondary" onClick={cancelQuiz}>{t('common.cancel')}</button>
       <div className="quiz-nav">
-        <button type="button" className="secondary" onClick={() => setCurrent((value) => value - 1)} disabled={current === 0}>{t('quiz.previous')}</button>
+        {/* Revenir en arrière permettrait de relire une question déjà expirée sans pression de temps : pas de sens en mode chrono. */}
+        {!timeboxed && <button type="button" className="secondary" onClick={() => setCurrent((value) => value - 1)} disabled={current === 0}>{t('quiz.previous')}</button>}
         <button type="button" onClick={goNext}>{current === shuffledQuestions.length - 1 ? t('quiz.viewCorrection') : t('quiz.next')}</button>
       </div>
     </div>
