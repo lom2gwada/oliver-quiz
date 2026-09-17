@@ -9,9 +9,12 @@ export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
   return data ?? []
 }
 
-/** Le meilleur score tous joueurs confondus pour un quiz donné, pour l'affichage sur la page d'accueil. */
-export async function fetchTopScore(quizTitle: string): Promise<LeaderboardRow | null> {
-  const { data, error } = await supabase.from('leaderboard').select('*').eq('quiz_title', quizTitle)
+/** Le meilleur score tous joueurs confondus pour un quiz donné, pour l'affichage sur la page d'accueil.
+ * Filtre par `quiz_id` quand disponible (lien stable, insensible à un renommage) — repli sur le titre
+ * seulement le temps du tout premier affichage, avant que le quiz actif n'ait un id connu. */
+export async function fetchTopScore(quizTitle: string, quizId: string | null): Promise<LeaderboardRow | null> {
+  const query = quizId ? supabase.from('leaderboard').select('*').eq('quiz_id', quizId) : supabase.from('leaderboard').select('*').eq('quiz_title', quizTitle)
+  const { data, error } = await query
     .order('best_score', { ascending: false }).order('earned_points', { ascending: false }).order('elapsed_seconds', { ascending: true })
     .limit(1).maybeSingle()
   if (error) throw error

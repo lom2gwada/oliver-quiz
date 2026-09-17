@@ -1,5 +1,6 @@
 export interface LeaderboardRow {
   quiz_title: string
+  quiz_id: string | null
   user_id: string
   pseudo: string
   avatar: string
@@ -12,6 +13,7 @@ export interface LeaderboardRow {
 
 export interface StreakLeaderboardRow {
   quiz_title: string
+  quiz_id: string | null
   user_id: string
   pseudo: string
   avatar: string
@@ -23,6 +25,7 @@ export interface StreakLeaderboardRow {
 
 export interface TimedLeaderboardRow {
   quiz_title: string
+  quiz_id: string | null
   user_id: string
   pseudo: string
   avatar: string
@@ -38,6 +41,7 @@ export interface TimedLeaderboardRow {
  * classements qui ne gardent que la meilleure partie de chacun. */
 export interface OverallLeaderboardRow {
   quiz_title: string
+  quiz_id: string | null
   user_id: string
   pseudo: string
   avatar: string

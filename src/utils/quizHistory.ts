@@ -15,8 +15,15 @@ function aggregate(questions: Question[], answers: AnswersByQuestion, keyOf: (qu
   return buckets
 }
 
+/** Une ligne d'historique/classement représente le même quiz que `quizId`/`quizTitle` si son id correspond
+ * (lien stable), ou si elle n'a pas d'id (partie d'avant cette colonne, ou quiz source depuis supprimé) et que
+ * son titre figé correspond encore — permet de continuer à regrouper les anciennes lignes sans id. */
+export function matchesQuiz(row: { quiz_id: string | null; quiz_title: string }, quizId: string | null, quizTitle: string): boolean {
+  return row.quiz_id ? row.quiz_id === quizId : row.quiz_title === quizTitle
+}
+
 /** Construit le résumé d'une partie terminée, prêt à être enregistré. Les thèmes sont figés en libellés (pas des ids) pour rester lisibles même si le quiz importé change ensuite. */
-export function buildQuizResultPayload(questions: Question[], answers: AnswersByQuestion, themes: Theme[], elapsedSeconds: number, quizTitle: string, unfiltered: boolean): QuizResultPayload {
+export function buildQuizResultPayload(questions: Question[], answers: AnswersByQuestion, themes: Theme[], elapsedSeconds: number, quizTitle: string, quizId: string | null, unfiltered: boolean): QuizResultPayload {
   const correctQuestions = questions.filter((question) => isCorrect(question, answers[question.id]))
   const earnedPoints = correctQuestions.reduce((sum, question) => sum + question.points, 0)
   const totalPoints = questions.reduce((sum, question) => sum + question.points, 0)
@@ -24,6 +31,7 @@ export function buildQuizResultPayload(questions: Question[], answers: AnswersBy
 
   return {
     quiz_title: quizTitle,
+    quiz_id: quizId,
     score: totalPoints ? Math.round((earnedPoints / totalPoints) * 100) : 0,
     earned_points: earnedPoints,
     total_points: totalPoints,
@@ -51,9 +59,10 @@ export async function fetchQuizHistory(): Promise<QuizResultRow[]> {
 }
 
 /** Une ligne par question de la partie, pour pouvoir repérer plus tard les questions ratées de façon récurrente. */
-export function buildQuestionResultPayloads(questions: Question[], answers: AnswersByQuestion, quizTitle: string): QuestionResultPayload[] {
+export function buildQuestionResultPayloads(questions: Question[], answers: AnswersByQuestion, quizTitle: string, quizId: string | null): QuestionResultPayload[] {
   return questions.map((question) => ({
     quiz_title: quizTitle,
+    quiz_id: quizId,
     question_id: question.id,
     question_text: question.question,
     correct: isCorrect(question, answers[question.id]),
@@ -74,9 +83,9 @@ export async function fetchQuestionResults(): Promise<QuestionResultRow[]> {
 }
 
 /** Regroupe les résultats par question pour un quiz donné, ne garde que celles ratées au moins une fois, triées de la plus problématique à la moins. */
-export function computeMissedQuestions(rows: QuestionResultRow[], quizTitle: string): MissedQuestion[] {
+export function computeMissedQuestions(rows: QuestionResultRow[], quizTitle: string, quizId: string | null): MissedQuestion[] {
   const byQuestion = new Map<string, MissedQuestion>()
-  rows.filter((row) => row.quiz_title === quizTitle).forEach((row) => {
+  rows.filter((row) => matchesQuiz(row, quizId, quizTitle)).forEach((row) => {
     const entry = byQuestion.get(row.question_id) ?? { questionId: row.question_id, questionText: row.question_text, attempts: 0, wrongCount: 0 }
     entry.attempts += 1
     if (!row.correct) entry.wrongCount += 1
@@ -112,10 +121,11 @@ export function sumBuckets(rows: QuizResultRow[], pick: (row: QuizResultRow) => 
 }
 
 /** Construit le résumé d'une partie "sans-faute" terminée, à partir des questions réellement jouées. */
-export function buildStreakResultPayload(streakCount: number, elapsedSeconds: number, victory: boolean, playedQuestions: Question[], themes: Theme[], quizTitle: string, unfiltered: boolean): StreakResultPayload {
+export function buildStreakResultPayload(streakCount: number, elapsedSeconds: number, victory: boolean, playedQuestions: Question[], themes: Theme[], quizTitle: string, quizId: string | null, unfiltered: boolean): StreakResultPayload {
   const themeLabel = (id: string) => themes.find((theme) => theme.id === id)?.label ?? id
   return {
     quiz_title: quizTitle,
+    quiz_id: quizId,
     streak_count: streakCount,
     elapsed_seconds: elapsedSeconds,
     victory,
@@ -139,10 +149,11 @@ export async function fetchStreakHistory(): Promise<StreakResultRow[]> {
 
 /** Construit le résumé d'une partie "contre-la-montre" terminée, à partir des tentatives réellement jouées
  * (un tableau plutôt qu'un Record par question, car une même question peut revenir plusieurs fois). */
-export function buildTimedResultPayload(attempts: QuestionAttempt[], elapsedSeconds: number, durationSeconds: number, themes: Theme[], quizTitle: string, unfiltered: boolean): TimedResultPayload {
+export function buildTimedResultPayload(attempts: QuestionAttempt[], elapsedSeconds: number, durationSeconds: number, themes: Theme[], quizTitle: string, quizId: string | null, unfiltered: boolean): TimedResultPayload {
   const themeLabel = (id: string) => themes.find((theme) => theme.id === id)?.label ?? id
   return {
     quiz_title: quizTitle,
+    quiz_id: quizId,
     correct_count: attempts.filter((attempt) => isCorrect(attempt.question, attempt.answer)).length,
     question_count: attempts.length,
     duration_seconds: durationSeconds,
