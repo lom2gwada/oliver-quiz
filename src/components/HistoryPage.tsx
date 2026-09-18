@@ -3,12 +3,13 @@ import type { Difficulty, Question, Quiz } from '../types/quiz'
 import type { QuestionResultRow, QuizResultRow, StreakResultRow, TimedResultRow } from '../types/history'
 import type { Language } from '../i18n/types'
 import { useTranslation } from '../i18n'
-import { bucketsToChartGroups, bucketsToRadarAxes, computeMissedQuestions, computeRecords, fetchQuestionResults, fetchQuizHistory, fetchStreakHistory, fetchTimedHistory, sumBuckets } from '../utils/quizHistory'
+import { bucketsToChartGroups, bucketsToRadarAxes, computeMissedQuestions, computeRecords, computeThemeWeekHeatmap, fetchQuestionResults, fetchQuizHistory, fetchStreakHistory, fetchTimedHistory, sumBuckets } from '../utils/quizHistory'
 import { formatDuration } from '../utils/time'
 import { PieChart } from './PieChart'
 import { RadarChart } from './RadarChart'
 import { difficultyLabel, typeLabel } from './QuizPage'
 import { ScoreChart } from './ScoreChart'
+import { ThemeHeatmap } from './ThemeHeatmap'
 
 const shortDate = (iso: string, language: Language) => new Date(iso).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'short' })
 const longDate = (iso: string, language: Language) => new Date(iso).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -78,6 +79,7 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReplayMissed }: Hist
   const byDifficulty = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_difficulty), (key) => difficultyLabel(t, key as Difficulty), t('result.succeeded'), t('result.missed')) : []
   const radarAxes = bucketsToRadarAxes(themeBuckets, (key) => key)
   const radarTruncated = Object.keys(themeBuckets).length > radarAxes.length
+  const heatmap = computeThemeWeekHeatmap(quizRows ?? [])
 
   const missedQuestions = activeQuiz ? computeMissedQuestions(questionRows, activeQuizTitle, activeQuizId) : []
   const canReplay = activeQuiz === activeQuizKey
@@ -110,6 +112,11 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReplayMissed }: Hist
         title={t('history.radarTitle')}
         axes={radarAxes}
         note={radarTruncated ? t('history.radarNote', radarAxes.length) : undefined}
+      />}
+      {heatmap.themes.length > 0 && <ThemeHeatmap
+        heatmap={heatmap}
+        title={t('history.heatmapTitle')}
+        note={heatmap.truncated ? t('history.heatmapNote', heatmap.themes.length) : undefined}
       />}
       <div className="stats-groups">
         <div className="stats-group">
