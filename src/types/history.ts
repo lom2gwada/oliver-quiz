@@ -5,6 +5,9 @@ export interface StatBucket {
 
 export interface QuizResultPayload {
   quiz_title: string
+  /** Lien stable vers `quizzes.id` — permet de retrouver l'historique d'un quiz même après renommage. `null`
+   * pour les parties jouées avant l'introduction de ce champ ou dont le quiz source a depuis été supprimé. */
+  quiz_id: string | null
   score: number
   earned_points: number
   total_points: number
@@ -45,8 +48,17 @@ export interface RadarAxis {
   value: number
 }
 
+export interface ThemeWeekHeatmap {
+  /** Débuts de semaine (lundi, `YYYY-MM-DD`), du plus ancien au plus récent. */
+  weeks: string[]
+  /** Une ligne par thème ; `cells[i]` correspond à `weeks[i]`, `null` si le thème n'a pas été joué cette semaine-là. */
+  themes: { label: string; cells: (StatBucket | null)[] }[]
+  truncated: boolean
+}
+
 export interface QuestionResultPayload {
   quiz_title: string
+  quiz_id: string | null
   question_id: string
   question_text: string
   correct: boolean
@@ -66,6 +78,7 @@ export interface MissedQuestion {
 
 export interface StreakResultPayload {
   quiz_title: string
+  quiz_id: string | null
   streak_count: number
   elapsed_seconds: number
   victory: boolean
@@ -81,6 +94,7 @@ export interface StreakResultRow extends StreakResultPayload {
 
 export interface TimedResultPayload {
   quiz_title: string
+  quiz_id: string | null
   correct_count: number
   question_count: number
   /** 0 = mode "Infini" (pas de limite). */

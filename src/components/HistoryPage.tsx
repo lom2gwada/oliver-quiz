@@ -3,17 +3,30 @@ import type { Difficulty, Question, Quiz } from '../types/quiz'
 import type { QuestionResultRow, QuizResultRow, StreakResultRow, TimedResultRow } from '../types/history'
 import type { Language } from '../i18n/types'
 import { useTranslation } from '../i18n'
-import { bucketsToChartGroups, bucketsToRadarAxes, computeMissedQuestions, computeRecords, fetchQuestionResults, fetchQuizHistory, fetchStreakHistory, fetchTimedHistory, sumBuckets } from '../utils/quizHistory'
+import { bucketsToChartGroups, bucketsToRadarAxes, computeMissedQuestions, computeRecords, computeThemeWeekHeatmap, fetchQuestionResults, fetchQuizHistory, fetchStreakHistory, fetchTimedHistory, sumBuckets } from '../utils/quizHistory'
 import { formatDuration } from '../utils/time'
 import { PieChart } from './PieChart'
 import { RadarChart } from './RadarChart'
 import { difficultyLabel, typeLabel } from './QuizPage'
 import { ScoreChart } from './ScoreChart'
+import { ThemeHeatmap } from './ThemeHeatmap'
 
 const shortDate = (iso: string, language: Language) => new Date(iso).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'short' })
 const longDate = (iso: string, language: Language) => new Date(iso).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 
-export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => void; quiz: Quiz; onReplayMissed: (questions: Question[]) => void }) {
+interface HistoryPageProps {
+  onBack: () => void
+  quiz: Quiz
+  hostedQuizId: string
+  onReplayMissed: (questions: Question[]) => void
+}
+
+/** Une ligne d'historique "appartient" à `quiz_id` si connu, ou à son titre figé sinon (parties d'avant cette
+ * colonne, ou quiz source supprimé depuis) — même repli que `matchesQuiz`, réutilisé ici pour regrouper deux
+ * titres successifs d'un même quiz renommé plutôt que de les traiter comme deux quiz différents. */
+const quizKeyOf = (row: { quiz_id: string | null; quiz_title: string }) => row.quiz_id ?? row.quiz_title
+
+export function HistoryPage({ onBack, quiz, hostedQuizId, onReplayMissed }: HistoryPageProps) {
   const { t, language } = useTranslation()
   const [rows, setRows] = useState<QuizResultRow[] | null>(null)
   const [questionRows, setQuestionRows] = useState<QuestionResultRow[]>([])
@@ -29,12 +42,32 @@ export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => vo
     fetchTimedHistory().then(setTimedRows).catch(() => {})
   }, [])
 
-  const quizTitles = rows ? Array.from(new Set(rows.map((row) => row.quiz_title))) : []
-  const activeQuiz = selectedQuiz && quizTitles.includes(selectedQuiz) ? selectedQuiz : (quizTitles.includes(quiz.metadata.title) ? quiz.metadata.title : quizTitles[0] ?? quiz.metadata.title)
-  const quizRows = rows ? rows.filter((row) => row.quiz_title === activeQuiz) : null
-  const quizStreakRows = streakRows.filter((row) => row.quiz_title === activeQuiz)
+  const activeQuizKey = hostedQuizId || quiz.metadata.title
+
+  // Un même quiz renommé produit deux titres figés différents dans les vieilles lignes — on affiche le titre
+  // le plus récent rencontré pour chaque clé (les lignes de `quiz_results` arrivent triées par date décroissante),
+  // et on force le titre courant pour le quiz actuellement chargé si son historique apparaît dans la liste
+  // (seul quiz dont on connaît le titre à jour sans dépendre de ce qui a été figé au moment de chaque partie).
+  const keyLabels = new Map<string, string>()
+  const keyQuizIds = new Map<string, string | null>()
+  const rememberKey = (row: { quiz_id: string | null; quiz_title: string }) => {
+    const key = quizKeyOf(row)
+    if (!keyLabels.has(key)) keyLabels.set(key, row.quiz_title)
+    if (!keyQuizIds.has(key)) keyQuizIds.set(key, row.quiz_id)
+  }
+  ;(rows ?? []).forEach(rememberKey)
+  streakRows.forEach(rememberKey)
+  timedRows.forEach(rememberKey)
+  if (keyLabels.has(activeQuizKey)) keyLabels.set(activeQuizKey, quiz.metadata.title)
+  const quizKeys = Array.from(keyLabels.keys())
+
+  const activeQuiz = selectedQuiz && quizKeys.includes(selectedQuiz) ? selectedQuiz : (quizKeys.includes(activeQuizKey) ? activeQuizKey : quizKeys[0] ?? activeQuizKey)
+  const activeQuizTitle = keyLabels.get(activeQuiz) ?? quiz.metadata.title
+  const activeQuizId = keyQuizIds.get(activeQuiz) ?? null
+  const quizRows = rows ? rows.filter((row) => quizKeyOf(row) === activeQuiz) : null
+  const quizStreakRows = streakRows.filter((row) => quizKeyOf(row) === activeQuiz)
   const bestStreak = quizStreakRows.length ? Math.max(...quizStreakRows.map((row) => row.streak_count)) : 0
-  const quizTimedRows = timedRows.filter((row) => row.quiz_title === activeQuiz)
+  const quizTimedRows = timedRows.filter((row) => quizKeyOf(row) === activeQuiz)
   const bestTimedCount = quizTimedRows.length ? Math.max(...quizTimedRows.map((row) => row.correct_count)) : 0
   const timedDurationLabel = (row: TimedResultRow) => row.duration_seconds === 0 ? t('common.unlimited') : t('common.minutesShort', Math.round(row.duration_seconds / 60))
 
@@ -46,9 +79,10 @@ export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => vo
   const byDifficulty = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_difficulty), (key) => difficultyLabel(t, key as Difficulty), t('result.succeeded'), t('result.missed')) : []
   const radarAxes = bucketsToRadarAxes(themeBuckets, (key) => key)
   const radarTruncated = Object.keys(themeBuckets).length > radarAxes.length
+  const heatmap = computeThemeWeekHeatmap(quizRows ?? [])
 
-  const missedQuestions = activeQuiz ? computeMissedQuestions(questionRows, activeQuiz) : []
-  const canReplay = activeQuiz === quiz.metadata.title
+  const missedQuestions = activeQuiz ? computeMissedQuestions(questionRows, activeQuizTitle, activeQuizId) : []
+  const canReplay = activeQuiz === activeQuizKey
   const replayQuestions = canReplay
     ? missedQuestions.map((missed) => quiz.questions.find((question) => question.id === missed.questionId)).filter((question): question is Question => Boolean(question))
     : []
@@ -61,9 +95,9 @@ export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => vo
     {error && <p className="alert" role="alert">{error}</p>}
     {!error && !rows && <p>{t('common.loading')}</p>}
     {rows && !rows.length && <p>{t('history.emptyState')}</p>}
-    {quizTitles.length > 0 && <label className="quiz-select">{t('start.quizLabel')}
+    {quizKeys.length > 0 && <label className="quiz-select">{t('start.quizLabel')}
       <select value={activeQuiz} onChange={(event) => setSelectedQuiz(event.target.value)}>
-        {quizTitles.map((title) => <option key={title} value={title}>{title}</option>)}
+        {quizKeys.map((key) => <option key={key} value={key}>{keyLabels.get(key)}</option>)}
       </select>
     </label>}
     {records && records.gamesPlayed > 0 && <>
@@ -78,6 +112,11 @@ export function HistoryPage({ onBack, quiz, onReplayMissed }: { onBack: () => vo
         title={t('history.radarTitle')}
         axes={radarAxes}
         note={radarTruncated ? t('history.radarNote', radarAxes.length) : undefined}
+      />}
+      {heatmap.themes.length > 0 && <ThemeHeatmap
+        heatmap={heatmap}
+        title={t('history.heatmapTitle')}
+        note={heatmap.truncated ? t('history.heatmapNote', heatmap.themes.length) : undefined}
       />}
       <div className="stats-groups">
         <div className="stats-group">

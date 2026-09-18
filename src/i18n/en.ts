@@ -32,6 +32,7 @@ export const en = {
   'start.durationLabel': 'Duration',
   'start.durationOption': (minutes: number) => minutes === 0 ? 'Unlimited' : `${minutes} minutes`,
   'start.timerToggle': '⏳ Timer per question',
+  'start.timedEstimate': (duration: string) => `Estimated quiz duration: ~${duration}`,
   'start.availability': (count: number, mode: GameMode, drawn: number) => {
     const base = `${count} question${count !== 1 ? 's' : ''} available`
     if (mode === 'classic') return `${base} — ${drawn} will be drawn at random.`
@@ -62,8 +63,8 @@ export const en = {
   'admin.errorDeleteQuiz': 'Could not delete this quiz.',
   'admin.errorDeleteQuizHistory': 'The quiz was deleted, but its history could not be cleared.',
 
-  'admin.sampleQuizOption': 'General knowledge (sample)',
   'admin.hostedQuizzesTitle': 'Your hosted quizzes',
+  'admin.publicQuizBadge': '🌐 Public',
   'admin.questionBreakdownTitle': 'Question breakdown',
   'admin.byThemesChartTitle': (count: number) => `Themes — ${count} question${count !== 1 ? 's' : ''}`,
   'admin.byTypesChartTitle': (count: number) => `Types — ${count} question${count !== 1 ? 's' : ''}`,
@@ -91,6 +92,9 @@ export const en = {
   'admin.guestLinkCopiedFeedback': 'Copied ✓',
   'admin.deleteGuestLinkButton': '🗑️ Delete this link',
   'admin.confirmDeleteGuestLink': 'Permanently delete this guest link? All its responses will be lost. This action cannot be undone.',
+  'admin.publicQuizLabel': 'Visible to everyone by default',
+  'admin.publicQuizHint': "This quiz is visible to every logged-in user, without granting individual access. The access management below then has no effect.",
+  'admin.errorTogglePublic': 'Could not change this quiz\'s visibility.',
   'admin.allQuestionsTitle': (count: number) => `All questions (${count})`,
   'admin.newThemePlaceholder': 'New theme name',
   'admin.addThemeButton': '➕ Add a theme',
@@ -255,6 +259,11 @@ export const en = {
   'history.totalPlaytime': 'Total playtime',
   'history.radarTitle': 'Success rate by theme',
   'history.radarNote': (count: number) => `Showing the ${count} most played themes.`,
+  'history.heatmapTitle': 'Success by theme and week',
+  'history.heatmapThemeColumn': 'Theme',
+  'history.heatmapNoData': 'Not played that week',
+  'history.heatmapCellTitle': (correct: number, total: number) => `${correct} correct answer${correct !== 1 ? 's' : ''} out of ${total}`,
+  'history.heatmapNote': (count: number) => `Showing the ${count} most played themes.`,
   'history.byType': 'By question type',
   'history.streakSectionTitle': 'Streak mode',
   'history.bestStreak': 'Best streak',

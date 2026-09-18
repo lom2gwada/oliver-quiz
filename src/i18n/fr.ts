@@ -30,6 +30,7 @@ export const fr = {
   'start.durationLabel': 'Durée',
   'start.durationOption': (minutes: number) => minutes === 0 ? 'Infini' : `${minutes} minutes`,
   'start.timerToggle': '⏳ Chrono par question',
+  'start.timedEstimate': (duration: string) => `Durée estimée du quiz : ~${duration}`,
   'start.availability': (count: number, mode: GameMode, drawn: number) => {
     const base = `${count} question${count > 1 ? 's' : ''} disponible${count > 1 ? 's' : ''}`
     if (mode === 'classic') return `${base} — ${drawn} seront tirées aléatoirement.`
@@ -60,8 +61,8 @@ export const fr = {
   'admin.errorDeleteQuiz': 'Impossible de supprimer ce quiz.',
   'admin.errorDeleteQuizHistory': "Le quiz a été supprimé, mais son historique n'a pas pu être purgé.",
 
-  'admin.sampleQuizOption': 'Culture générale (exemple)',
   'admin.hostedQuizzesTitle': 'Vos quiz hébergés',
+  'admin.publicQuizBadge': '🌐 Public',
   'admin.questionBreakdownTitle': 'Répartition des questions',
   'admin.byThemesChartTitle': (count: number) => `Thèmes — ${count} questions`,
   'admin.byTypesChartTitle': (count: number) => `Types — ${count} questions`,
@@ -89,6 +90,9 @@ export const fr = {
   'admin.guestLinkCopiedFeedback': 'Copié ✓',
   'admin.deleteGuestLinkButton': '🗑️ Supprimer ce lien',
   'admin.confirmDeleteGuestLink': 'Supprimer définitivement ce lien invité ? Toutes ses réponses seront perdues. Cette action est irréversible.',
+  'admin.publicQuizLabel': 'Visible par tous par défaut',
+  'admin.publicQuizHint': "Ce quiz est visible par tous les utilisateurs connectés, sans octroi d'accès individuel. La gestion des accès ci-dessous n'a alors aucun effet.",
+  'admin.errorTogglePublic': "Impossible de changer la visibilité de ce quiz.",
   'admin.allQuestionsTitle': (count: number) => `Toutes les questions (${count})`,
   'admin.newThemePlaceholder': 'Nom du nouveau thème',
   'admin.addThemeButton': '➕ Ajouter un thème',
@@ -253,6 +257,11 @@ export const fr = {
   'history.totalPlaytime': 'Temps de jeu cumulé',
   'history.radarTitle': 'Taux de réussite par thème',
   'history.radarNote': (count: number) => `Les ${count} thèmes les plus joués sont affichés.`,
+  'history.heatmapTitle': 'Réussite par thème et par semaine',
+  'history.heatmapThemeColumn': 'Thème',
+  'history.heatmapNoData': 'Pas joué cette semaine-là',
+  'history.heatmapCellTitle': (correct: number, total: number) => `${correct} bonne${correct > 1 ? 's' : ''} réponse${correct > 1 ? 's' : ''} sur ${total}`,
+  'history.heatmapNote': (count: number) => `Les ${count} thèmes les plus joués sont affichés.`,
   'history.byType': 'Par type de question',
   'history.streakSectionTitle': 'Mode sans-faute',
   'history.bestStreak': 'Meilleure série',

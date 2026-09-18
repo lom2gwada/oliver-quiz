@@ -19,10 +19,13 @@ const DIFFICULTY_COLORS: Record<Difficulty, string> = { easy: '#34d399', medium:
 interface QuizDetailPageProps {
   quiz: Quiz
   hostedQuizId: string
+  isPublic: boolean
+  onTogglePublic: (isPublic: boolean) => void
   onBack: () => void
   onExport: () => void
   isAdmin: boolean
-  /** Édition en direct proposée seulement pour un quiz hébergé actif — jamais pour le quiz d'exemple. */
+  /** Édition en direct proposée seulement une fois un vrai quiz hébergé chargé (jamais pendant le tout
+   * premier affichage, avant que le quiz par défaut n'ait fini de charger — cf. `initialQuiz` dans App.tsx). */
   canEditQuiz: boolean
   onSaveQuestion: (updated: Question) => Promise<void>
   onAddQuestion: (created: Question) => Promise<void>
@@ -35,9 +38,9 @@ interface QuizDetailPageProps {
   deleteQuizError: string
 }
 
-/** Page d'un seul quiz hébergé (ou du quiz d'exemple, en lecture seule) : méta, graphiques de répartition,
- * export, gestion des accès et des questions — tout scopé à ce quiz, plus de sélecteur ni de création ici. */
-export function QuizDetailPage({ quiz, hostedQuizId, onBack, onExport, isAdmin, canEditQuiz, onSaveQuestion, onAddQuestion, onDeleteQuestion, editError, onAddTheme, quizLoadError, onUpdateQuizMeta, onDeleteQuiz, deleteQuizError }: QuizDetailPageProps) {
+/** Page d'un seul quiz hébergé : méta, graphiques de répartition, export, visibilité publique, gestion des
+ * accès et des questions — tout scopé à ce quiz, plus de sélecteur ni de création ici. */
+export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, onBack, onExport, isAdmin, canEditQuiz, onSaveQuestion, onAddQuestion, onDeleteQuestion, editError, onAddTheme, quizLoadError, onUpdateQuizMeta, onDeleteQuiz, deleteQuizError }: QuizDetailPageProps) {
   const { t } = useTranslation()
   const [deleteHistoryToo, setDeleteHistoryToo] = useState(false)
   const [editingQuestionId, setEditingQuestionId] = useState('')
@@ -77,21 +80,23 @@ export function QuizDetailPage({ quiz, hostedQuizId, onBack, onExport, isAdmin, 
     </div>
     {quizLoadError && <p className="alert" role="alert">{quizLoadError}</p>}
     {quiz.metadata.description && <p className="quiz-description">{quiz.metadata.description}</p>}
-    {canEditQuiz && <EditQuizMetaForm
-      title={quiz.metadata.title}
-      author={quiz.metadata.author}
-      description={quiz.metadata.description ?? ''}
-      error={editError}
-      onSave={onUpdateQuizMeta}
-    />}
-    {isAdmin && <button type="button" className="secondary" onClick={onExport}>{t('admin.exportButton')}</button>}
-    {canEditQuiz && <>
+    <div className="quiz-detail-actions">
+      {canEditQuiz && <EditQuizMetaForm
+        title={quiz.metadata.title}
+        author={quiz.metadata.author}
+        description={quiz.metadata.description ?? ''}
+        error={editError}
+        onSave={onUpdateQuizMeta}
+      />}
+      {isAdmin && <button type="button" className="secondary" onClick={onExport}>{t('admin.exportButton')}</button>}
+    </div>
+    {canEditQuiz && <div className="quiz-detail-actions">
       <label className="theme-checkbox">
         <input type="checkbox" checked={deleteHistoryToo} onChange={(event) => setDeleteHistoryToo(event.target.checked)} />
         {t('admin.deleteHistoryTooLabel')}
       </label>
       <button type="button" className="danger" onClick={() => onDeleteQuiz(hostedQuizId, quiz.metadata.title, deleteHistoryToo)}>{t('admin.deleteQuizButton')}</button>
-    </>}
+    </div>}
     {deleteQuizError && <p className="alert" role="alert">{deleteQuizError}</p>}
     <h3 className="stats-group-title">{t('admin.questionBreakdownTitle')}</h3>
     <div className="stats-grid">
@@ -113,7 +118,7 @@ export function QuizDetailPage({ quiz, hostedQuizId, onBack, onExport, isAdmin, 
     {isAdmin && <>
       {hostedQuizId && <>
         <h3 className="stats-group-title profile-section-title">{t('admin.manageAccessTitle')}</h3>
-        <QuizAccessManager quiz={{ id: hostedQuizId, title: quiz.metadata.title }} />
+        <QuizAccessManager quiz={{ id: hostedQuizId, title: quiz.metadata.title, is_public: isPublic }} onTogglePublic={onTogglePublic} />
         <h3 className="stats-group-title profile-section-title">{t('admin.guestLinksTitle')}</h3>
         <GuestLinksManager quizId={hostedQuizId} />
       </>}
