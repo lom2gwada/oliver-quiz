@@ -48,6 +48,14 @@ export interface RadarAxis {
   value: number
 }
 
+export interface ThemeWeekHeatmap {
+  /** Débuts de semaine (lundi, `YYYY-MM-DD`), du plus ancien au plus récent. */
+  weeks: string[]
+  /** Une ligne par thème ; `cells[i]` correspond à `weeks[i]`, `null` si le thème n'a pas été joué cette semaine-là. */
+  themes: { label: string; cells: (StatBucket | null)[] }[]
+  truncated: boolean
+}
+
 export interface QuestionResultPayload {
   quiz_title: string
   quiz_id: string | null

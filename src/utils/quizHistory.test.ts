@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BooleanQuestion, QCMQuestion, Theme } from '../types/quiz'
 import type { QuestionResultRow, QuizResultRow } from '../types/history'
-import { bucketsToChartGroups, bucketsToRadarAxes, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, computeMissedQuestions, computeRecords, sumBuckets } from './quizHistory'
+import { bucketsToChartGroups, bucketsToRadarAxes, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, computeMissedQuestions, computeRecords, computeThemeWeekHeatmap, sumBuckets, weekStartKey } from './quizHistory'
 
 const themes: Theme[] = [{ id: 'histoire', label: 'Histoire' }, { id: 'geo', label: 'Géographie' }]
 
@@ -182,6 +182,50 @@ describe('sumBuckets', () => {
 
   it('returns an empty object for an empty history', () => {
     expect(sumBuckets([], (r) => r.by_theme)).toEqual({})
+  })
+})
+
+describe('weekStartKey', () => {
+  it('returns the Monday of the week, including for a Sunday', () => {
+    expect(weekStartKey(new Date(2026, 8, 16))).toBe('2026-09-14') // mercredi
+    expect(weekStartKey(new Date(2026, 8, 14))).toBe('2026-09-14') // lundi
+    expect(weekStartKey(new Date(2026, 8, 20))).toBe('2026-09-14') // dimanche
+  })
+
+  it('crosses month and year boundaries', () => {
+    expect(weekStartKey(new Date(2026, 0, 1))).toBe('2025-12-29')
+  })
+})
+
+describe('computeThemeWeekHeatmap', () => {
+  const at = (iso: string, by_theme: QuizResultRow['by_theme']) => row({ created_at: iso, by_theme })
+
+  it('returns an empty grid for no history', () => {
+    expect(computeThemeWeekHeatmap([])).toEqual({ weeks: [], themes: [], truncated: false })
+  })
+
+  it('sums games of the same week and leaves unplayed cells null', () => {
+    const heatmap = computeThemeWeekHeatmap([
+      at('2026-09-15T10:00:00', { Histoire: { correct: 1, total: 2 }, Sport: { correct: 1, total: 1 } }),
+      at('2026-09-16T10:00:00', { Histoire: { correct: 2, total: 2 } }),
+      at('2026-09-23T10:00:00', { Sport: { correct: 0, total: 1 } }),
+    ])
+    expect(heatmap.weeks).toEqual(['2026-09-14', '2026-09-21'])
+    expect(heatmap.themes).toEqual([
+      { label: 'Histoire', cells: [{ correct: 3, total: 4 }, null] },
+      { label: 'Sport', cells: [{ correct: 1, total: 1 }, { correct: 0, total: 1 }] },
+    ])
+  })
+
+  it('keeps only the most recent weeks', () => {
+    const rows = ['2026-09-01', '2026-09-08', '2026-09-15'].map((day) => at(`${day}T10:00:00`, { A: { correct: 1, total: 1 } }))
+    expect(computeThemeWeekHeatmap(rows, 2).weeks).toEqual(['2026-09-07', '2026-09-14'])
+  })
+
+  it('caps the number of themes to the most played and flags truncation', () => {
+    const heatmap = computeThemeWeekHeatmap([at('2026-09-15T10:00:00', { A: { correct: 1, total: 1 }, B: { correct: 1, total: 5 }, C: { correct: 1, total: 3 } })], 12, 2)
+    expect(heatmap.themes.map((theme) => theme.label)).toEqual(['B', 'C'])
+    expect(heatmap.truncated).toBe(true)
   })
 })
 

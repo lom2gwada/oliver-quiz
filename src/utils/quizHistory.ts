@@ -1,5 +1,5 @@
 import type { AnswersByQuestion, Question, QuestionAttempt, Theme } from '../types/quiz'
-import type { ChartGroup, MissedQuestion, QuestionResultPayload, QuestionResultRow, QuizRecords, QuizResultPayload, QuizResultRow, RadarAxis, StatBucket, StreakResultPayload, StreakResultRow, TimedResultPayload, TimedResultRow } from '../types/history'
+import type { ChartGroup, MissedQuestion, QuestionResultPayload, QuestionResultRow, QuizRecords, QuizResultPayload, QuizResultRow, RadarAxis, StatBucket, StreakResultPayload, StreakResultRow, ThemeWeekHeatmap, TimedResultPayload, TimedResultRow } from '../types/history'
 import { isCorrect } from '../components/ResultPage'
 import { supabase } from './supabase'
 
@@ -195,6 +195,41 @@ export function bucketsToRadarAxes(buckets: Record<string, StatBucket>, labelOf:
     .sort(([, a], [, b]) => b.total - a.total)
     .slice(0, maxAxes)
     .map(([key, bucket]) => ({ key, label: labelOf(key), value: bucket.total ? Math.round((bucket.correct / bucket.total) * 100) : 0 }))
+}
+
+/** Lundi (heure locale) de la semaine contenant `date`, au format `YYYY-MM-DD` — clé de regroupement hebdomadaire. */
+export function weekStartKey(date: Date): string {
+  const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7))
+  return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
+}
+
+/** Croise thèmes (lignes) et semaines (colonnes) : pour chaque case, le cumul correct/total des parties de cette
+ * semaine, `null` si le thème n'a pas été joué. Seules les `maxWeeks` dernières semaines comportant au moins une
+ * partie sont gardées (pas de colonnes vides), et les `maxThemes` thèmes les plus joués — au-delà, la grille
+ * devient illisible sur les quiz à beaucoup de thèmes. */
+export function computeThemeWeekHeatmap(rows: QuizResultRow[], maxWeeks = 12, maxThemes = 15): ThemeWeekHeatmap {
+  const weekKeys = Array.from(new Set(rows.map((row) => weekStartKey(new Date(row.created_at))))).sort().slice(-maxWeeks)
+  const byTheme = new Map<string, Map<string, StatBucket>>()
+  rows.forEach((row) => {
+    const week = weekStartKey(new Date(row.created_at))
+    if (!weekKeys.includes(week)) return
+    Object.entries(row.by_theme).forEach(([theme, bucket]) => {
+      const weeks = byTheme.get(theme) ?? new Map<string, StatBucket>()
+      const cell = weeks.get(week) ?? { correct: 0, total: 0 }
+      cell.correct += bucket.correct
+      cell.total += bucket.total
+      weeks.set(week, cell)
+      byTheme.set(theme, weeks)
+    })
+  })
+  const totalOf = (weeks: Map<string, StatBucket>) => Array.from(weeks.values()).reduce((sum, cell) => sum + cell.total, 0)
+  const allThemes = Array.from(byTheme.entries()).sort(([, a], [, b]) => totalOf(b) - totalOf(a))
+  return {
+    weeks: weekKeys,
+    themes: allThemes.slice(0, maxThemes).map(([label, weeks]) => ({ label, cells: weekKeys.map((week) => weeks.get(week) ?? null) })),
+    truncated: allThemes.length > maxThemes,
+  }
 }
 
 /** Convertit des buckets cumulés en groupes prêts pour `PieChart`. */
