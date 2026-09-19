@@ -27,7 +27,7 @@ export function difficultyLabel(t: (key: TranslationKey, ...args: unknown[]) => 
 }
 
 /** Mélange les options de réponse une fois par question, pour que la bonne réponse ne soit pas toujours au même endroit. */
-function withShuffledAnswers(question: Question): Question {
+export function withShuffledAnswers(question: Question): Question {
   if (question.type === 'qcm') return { ...question, content: { ...question.content, answers: shuffle(question.content.answers) } }
   if (question.type === 'code') return { ...question, content: { ...question.content, answers: shuffle(question.content.answers) } }
   return question
