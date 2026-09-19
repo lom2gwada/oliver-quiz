@@ -1,4 +1,4 @@
-import type { GuestLink, GuestLinkMode } from '../types/guestLink'
+import type { GuestLink, GuestLinkMode, GuestResultRow } from '../types/guestLink'
 import { supabase } from './supabase'
 
 /** Admin uniquement (RLS) : les liens invités existants pour un quiz. */
@@ -22,4 +22,12 @@ export async function createGuestLink(quizId: string, mode: GuestLinkMode, label
 export async function deleteGuestLink(token: string): Promise<void> {
   const { error } = await supabase.from('guest_links').delete().eq('token', token)
   if (error) throw error
+}
+
+/** Admin uniquement (RLS : policy select sur `guest_results`) : les réponses reçues via un lien, plus récentes d'abord. */
+export async function fetchGuestResults(token: string): Promise<GuestResultRow[]> {
+  const { data, error } = await supabase.from('guest_results')
+    .select('id, respondent_name, created_at, answers, score, elapsed_seconds').eq('token', token).order('created_at', { ascending: false })
+  if (error) throw error
+  return data ?? []
 }

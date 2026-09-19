@@ -92,6 +92,14 @@ pre { padding: 1rem; overflow: auto; background: var(--code-bg); border: 1px sol
 .confetti-piece { position: absolute; top: -12px; width: 8px; height: 14px; border-radius: 2px; opacity: .9; animation-name: confetti-fall; animation-timing-function: ease-in; animation-fill-mode: forwards; }
 @keyframes confetti-fall { to { transform: translateY(440px) rotate(340deg); opacity: 0; } }
 .stats-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; } .stats-header h2 { margin: 0; }
+.guest-results { margin-top: 1rem; }
+.guest-results h4 { margin: 1.2rem 0 .6rem; }
+.guest-results-questions { display: grid; gap: 1rem; margin-top: .8rem; }
+.guest-results-question .question-list-prompt { margin: 0 0 .4rem; }
+.guest-results-question .mode-hint { margin: .3rem 0 0; }
+.guest-results-tally { display: grid; grid-template-columns: minmax(6rem, 40%) 1fr 2rem; align-items: center; gap: .6rem; margin-bottom: .3rem; font-size: .85rem; color: var(--text-soft); }
+.guest-results-tally .quiz-progress { margin: 0; }
+.guest-results-tally-count { text-align: right; font-weight: 700; }
 .quiz-detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; margin-bottom: 1.2rem; }
 .quiz-import { margin-bottom: 2rem; }.quiz-import .alert { margin-top: .8rem; }
 .quiz-description-preview { max-width: 60ch; margin: .4rem 0 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
