@@ -8,6 +8,7 @@ import { Confetti } from './Confetti'
 import { MermaidDiagram } from './MermaidDiagram'
 import { PieChart } from './PieChart'
 import { QuestionImage } from './QuestionImage'
+import { ResultActions } from './ResultActions'
 import { difficultyLabel } from './QuizPage'
 
 type TFunction = (key: TranslationKey, ...args: unknown[]) => string
@@ -117,10 +118,7 @@ export function ResultPage({ questions, answers, themes, elapsedSeconds, onResta
       <p className="mention">{emoji} {label}</p>
       <p className="duration">{t('result.duration', formatDuration(elapsedSeconds))}</p>
     </div>
-    <div className="result-actions">
-      {onRestartSame && <button type="button" onClick={onRestartSame}>{t('result.restartSame')}</button>}
-      <button type="button" className={onRestartSame ? 'secondary' : undefined} onClick={onBackToSettings}>{t('result.backToSettings')}</button>
-    </div>
+    <ResultActions onRestartSame={onRestartSame} onBackToSettings={onBackToSettings} />
     <div className="nav-links">
       <button type="button" className="secondary" onClick={onViewHistory}>{t('common.viewHistory')}</button>
       <button type="button" className="secondary" onClick={onViewLeaderboard}>{t('common.viewLeaderboard')}</button>

@@ -244,7 +244,6 @@ export const en = {
   'result.yourScore': 'Your score',
   'result.pointsEarned': (earned: number, total: number) => `${earned} / ${total} points`,
   'result.duration': (formatted: string) => `⏱ Time: ${formatted}`,
-  'result.restart': 'Play again',
   'result.restartSame': '🔁 Play again with the same settings',
   'result.backToSettings': '⚙️ Back to settings',
   'result.byTheme': 'By theme',
