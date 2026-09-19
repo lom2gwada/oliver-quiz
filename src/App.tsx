@@ -26,6 +26,7 @@ import type { Language, TranslationKey } from './i18n'
 import { parseQuiz } from './utils/quizValidation'
 import { questionTimeLimit } from './utils/questionTimeLimits'
 import { isSoundMuted, playClick, setSoundMuted } from './utils/sound'
+import { pickFreshQuestions } from './utils/pickFreshQuestions'
 import { shuffle } from './utils/shuffle'
 import { formatDuration } from './utils/time'
 
@@ -349,6 +350,16 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     navigate('quiz')
   }
 
+  /** Depuis l'écran de correction : relance avec les mêmes paramètres (thèmes, difficulté, nombre, chrono) mais un
+   * nouveau tirage qui évite les questions qu'on vient de jouer. `replace` plutôt que `navigate` : l'écran de
+   * correction est remplacé dans l'historique, comme en fin de partie. */
+  const restartQuiz = () => {
+    playClick()
+    setAnswers({})
+    setSessionQuestions((previous) => pickFreshQuestions(filteredQuestions, previous, questionCount))
+    replace('quiz')
+  }
+
   const replayMissed = (questions: Question[]) => {
     playClick()
     setAnswers({})
@@ -362,6 +373,12 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     navigate('streak')
   }
 
+  /** Relance une série avec les mêmes filtres/chrono : la page se remonte donc le pool est re-mélangé. */
+  const restartStreak = () => {
+    playClick()
+    replace('streak')
+  }
+
   const finishStreak = (result: StreakResult) => {
     setStreakResult(result)
     replace('streakResults')
@@ -371,6 +388,12 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const startTimed = () => {
     playClick()
     navigate('timed')
+  }
+
+  /** Relance un contre-la-montre avec la même durée et les mêmes filtres, sur un nouvel ordre. */
+  const restartTimed = () => {
+    playClick()
+    replace('timed')
   }
 
   const finishTimed = (result: TimedResult) => {
@@ -422,11 +445,11 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       saveQuizResult(buildQuizResultPayload(sessionQuestions, nextAnswers, quiz.themes, duration, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered && !isReplay))
       saveQuestionResults(buildQuestionResultPayloads(sessionQuestions, nextAnswers, quiz.metadata.title, selectedHostedQuizId || null))
     }} onCancel={backToStart} />}
-    {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.themes} elapsedSeconds={elapsedSeconds} onRestart={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} />}
+    {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.themes} elapsedSeconds={elapsedSeconds} onRestartSame={isReplay ? undefined : restartQuiz} onBackToSettings={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} />}
     {view === 'streak' && <StreakQuizPage quiz={quiz} pool={filteredQuestions} timeboxed={timeboxed} onFinish={finishStreak} onCancel={backToStart} />}
-    {view === 'streakResults' && streakResult && <StreakResultPage {...streakResult} onRestart={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} />}
+    {view === 'streakResults' && streakResult && <StreakResultPage {...streakResult} onRestartSame={restartStreak} onBackToSettings={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} />}
     {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
-    {view === 'timedResults' && timedResult && <TimedResultPage {...timedResult} onRestart={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} />}
+    {view === 'timedResults' && timedResult && <TimedResultPage {...timedResult} onRestartSame={restartTimed} onBackToSettings={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} />}
     {view === 'quizzes' && <QuizListPage hostedQuizzes={hostedQuizzes} isAdmin={profile?.isAdmin ?? false} onBack={() => navigate('start')} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} />}
     {view === 'quizDetail' && <QuizDetailPage quiz={quiz} hostedQuizId={selectedHostedQuizId} isPublic={hostedQuizzes.find((hosted) => hosted.id === selectedHostedQuizId)?.is_public ?? false} onTogglePublic={(isPublic) => togglePublicLocally(selectedHostedQuizId, isPublic)} onBack={() => navigate('quizzes')} onExport={exportQuiz} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onAddTheme={addTheme} quizLoadError={quizLoadError} onUpdateQuizMeta={updateQuizMeta} onDeleteQuiz={deleteHostedQuiz} deleteQuizError={deleteQuizError} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} hostedQuizId={selectedHostedQuizId} onReplayMissed={replayMissed} />}

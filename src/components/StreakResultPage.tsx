@@ -6,6 +6,7 @@ import { playFinish, playVictory } from '../utils/sound'
 import { Confetti } from './Confetti'
 import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
+import { ResultActions } from './ResultActions'
 import { correctAnswer, isCorrect, userAnswer } from './ResultPage'
 
 interface StreakResultPageProps {
@@ -14,12 +15,13 @@ interface StreakResultPageProps {
   victory: boolean
   playedQuestions: Question[]
   answers: AnswersByQuestion
-  onRestart: () => void
+  onRestartSame: () => void
+  onBackToSettings: () => void
   onViewHistory: () => void
   onViewLeaderboard: () => void
 }
 
-export function StreakResultPage({ streakCount, elapsedSeconds, victory, playedQuestions, answers, onRestart, onViewHistory, onViewLeaderboard }: StreakResultPageProps) {
+export function StreakResultPage({ streakCount, elapsedSeconds, victory, playedQuestions, answers, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard }: StreakResultPageProps) {
   const { t } = useTranslation()
   useEffect(() => { victory ? playVictory() : playFinish() }, [])
   return <section className="results">
@@ -31,7 +33,7 @@ export function StreakResultPage({ streakCount, elapsedSeconds, victory, playedQ
       <p className="mention">{victory ? t('streak.mentionVictory') : t('streak.mentionRun')}</p>
       <p className="duration">{t('result.duration', formatDuration(elapsedSeconds))}</p>
     </div>
-    <button type="button" onClick={onRestart}>{t('result.restart')}</button>
+    <ResultActions onRestartSame={onRestartSame} onBackToSettings={onBackToSettings} />
     <div className="nav-links">
       <button type="button" className="secondary" onClick={onViewHistory}>{t('common.viewHistory')}</button>
       <button type="button" className="secondary" onClick={onViewLeaderboard}>{t('common.viewLeaderboard')}</button>

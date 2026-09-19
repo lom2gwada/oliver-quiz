@@ -6,18 +6,20 @@ import { playFinish, playVictory } from '../utils/sound'
 import { Confetti } from './Confetti'
 import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
+import { ResultActions } from './ResultActions'
 import { correctAnswer, isCorrect, userAnswer } from './ResultPage'
 
 interface TimedResultPageProps {
   attempts: QuestionAttempt[]
   elapsedSeconds: number
   durationSeconds: number
-  onRestart: () => void
+  onRestartSame: () => void
+  onBackToSettings: () => void
   onViewHistory: () => void
   onViewLeaderboard: () => void
 }
 
-export function TimedResultPage({ attempts, elapsedSeconds, onRestart, onViewHistory, onViewLeaderboard }: TimedResultPageProps) {
+export function TimedResultPage({ attempts, elapsedSeconds, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard }: TimedResultPageProps) {
   const { t } = useTranslation()
   const correctCount = attempts.filter((attempt) => isCorrect(attempt.question, attempt.answer)).length
   const perfect = attempts.length > 0 && correctCount === attempts.length
@@ -30,7 +32,7 @@ export function TimedResultPage({ attempts, elapsedSeconds, onRestart, onViewHis
       <span>{t('timed.correctAnswers', correctCount)}</span>
       <p className="duration">{t('result.duration', formatDuration(elapsedSeconds))}</p>
     </div>
-    <button type="button" onClick={onRestart}>{t('result.restart')}</button>
+    <ResultActions onRestartSame={onRestartSame} onBackToSettings={onBackToSettings} />
     <div className="nav-links">
       <button type="button" className="secondary" onClick={onViewHistory}>{t('common.viewHistory')}</button>
       <button type="button" className="secondary" onClick={onViewLeaderboard}>{t('common.viewLeaderboard')}</button>
