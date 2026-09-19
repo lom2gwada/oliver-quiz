@@ -4,10 +4,19 @@ import { supabase } from '../utils/supabase'
 import { translate } from '../i18n'
 import { hasAuthLinkError, needsPasswordSetup } from '../utils/authLink'
 import App from '../App'
+import { GuestQuizPage } from './GuestQuizPage'
 import { Login } from './Login'
 import { SetPassword } from './SetPassword'
 
+/** Un lien invité (`?g=<token>`) court-circuite toute l'authentification : ni écran de connexion, ni session
+ * créée — le répondant n'a pas de compte. Le composant de session est séparé pour que ses effets (lecture de
+ * session, abonnement auth) ne tournent jamais pour un invité. */
 export function AuthGate() {
+  const guestToken = new URLSearchParams(window.location.search).get('g')
+  return guestToken ? <GuestQuizPage token={guestToken} /> : <SessionGate />
+}
+
+function SessionGate() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [settingPassword, setSettingPassword] = useState(() => needsPasswordSetup(window.location.hash))
