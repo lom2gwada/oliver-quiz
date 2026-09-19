@@ -91,12 +91,14 @@ interface ResultPageProps {
   answers: AnswersByQuestion
   themes: Theme[]
   elapsedSeconds: number
-  onRestart: () => void
+  /** Absent après une partie « reprendre mes erreurs » : relancer avec les mêmes paramètres n'a alors pas de sens. */
+  onRestartSame?: () => void
+  onBackToSettings: () => void
   onViewHistory: () => void
   onViewLeaderboard: () => void
 }
 
-export function ResultPage({ questions, answers, themes, elapsedSeconds, onRestart, onViewHistory, onViewLeaderboard }: ResultPageProps) {
+export function ResultPage({ questions, answers, themes, elapsedSeconds, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard }: ResultPageProps) {
   const { t } = useTranslation()
   const earned = questions.filter((question) => isCorrect(question, answers[question.id])).reduce((total, question) => total + question.points, 0)
   const total = questions.reduce((sum, question) => sum + question.points, 0)
@@ -115,7 +117,10 @@ export function ResultPage({ questions, answers, themes, elapsedSeconds, onResta
       <p className="mention">{emoji} {label}</p>
       <p className="duration">{t('result.duration', formatDuration(elapsedSeconds))}</p>
     </div>
-    <button type="button" onClick={onRestart}>{t('result.restart')}</button>
+    <div className="result-actions">
+      {onRestartSame && <button type="button" onClick={onRestartSame}>{t('result.restartSame')}</button>}
+      <button type="button" className={onRestartSame ? 'secondary' : undefined} onClick={onBackToSettings}>{t('result.backToSettings')}</button>
+    </div>
     <div className="nav-links">
       <button type="button" className="secondary" onClick={onViewHistory}>{t('common.viewHistory')}</button>
       <button type="button" className="secondary" onClick={onViewLeaderboard}>{t('common.viewLeaderboard')}</button>
