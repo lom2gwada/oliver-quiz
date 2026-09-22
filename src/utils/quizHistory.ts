@@ -83,16 +83,36 @@ export async function fetchQuestionResults(): Promise<QuestionResultRow[]> {
 }
 
 /** Regroupe les résultats par question pour un quiz donné, ne garde que celles ratées au moins une fois, triées de la plus problématique à la moins. */
+/** Une question reste "à retravailler" tant qu'elle n'est pas majoritairement réussie sur ses `RECENT_WINDOW`
+ * tentatives les plus récentes — pas sur toute sa durée de vie, sinon une question ratée il y a longtemps mais
+ * maîtrisée depuis resterait affichée indéfiniment (il faudrait autant de bonnes réponses que de mauvaises
+ * accumulées pour repasser sous la barre). `wrongCount`/`attempts` restent cumulés sur toute la durée de vie
+ * pour l'affichage ("ratée x fois sur y") — seul le critère d'inclusion dans la liste change. */
+const RECENT_WINDOW = 5
+
 export function computeMissedQuestions(rows: QuestionResultRow[], quizTitle: string, quizId: string | null): MissedQuestion[] {
-  const byQuestion = new Map<string, MissedQuestion>()
+  const byQuestion = new Map<string, QuestionResultRow[]>()
   rows.filter((row) => matchesQuiz(row, quizId, quizTitle)).forEach((row) => {
-    const entry = byQuestion.get(row.question_id) ?? { questionId: row.question_id, questionText: row.question_text, attempts: 0, wrongCount: 0 }
-    entry.attempts += 1
-    if (!row.correct) entry.wrongCount += 1
-    entry.questionText = row.question_text
-    byQuestion.set(row.question_id, entry)
+    const attempts = byQuestion.get(row.question_id) ?? []
+    attempts.push(row)
+    byQuestion.set(row.question_id, attempts)
   })
-  return Array.from(byQuestion.values()).filter((entry) => entry.wrongCount > 0).sort((a, b) => b.wrongCount - a.wrongCount)
+  return Array.from(byQuestion.values())
+    .map((attempts) => {
+      const chronological = [...attempts].sort((a, b) => a.created_at.localeCompare(b.created_at))
+      const recent = chronological.slice(-RECENT_WINDOW)
+      const recentCorrect = recent.filter((row) => row.correct).length
+      const missed: MissedQuestion = {
+        questionId: chronological[0].question_id,
+        questionText: chronological[chronological.length - 1].question_text,
+        attempts: chronological.length,
+        wrongCount: chronological.filter((row) => !row.correct).length,
+      }
+      return { missed, recentlyMastered: recentCorrect * 2 > recent.length }
+    })
+    .filter(({ missed, recentlyMastered }) => missed.wrongCount > 0 && !recentlyMastered)
+    .map(({ missed }) => missed)
+    .sort((a, b) => b.wrongCount - a.wrongCount)
 }
 
 /** `rows` peut être dans n'importe quel ordre — seuls les agrégats comptent ici. */
