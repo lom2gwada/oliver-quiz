@@ -337,4 +337,28 @@ describe('computeMissedQuestions', () => {
   it('returns an empty array for no history', () => {
     expect(computeMissedQuestions([], 'Culture générale', null)).toEqual([])
   })
+
+  const at = (iso: string, correct: boolean) => questionRow({ created_at: iso, correct })
+
+  it('drops a question once its 5 most recent attempts are majority correct, even with a heavy wrong history', () => {
+    const rows = [
+      at('2026-01-01T00:00:00Z', false), at('2026-01-02T00:00:00Z', false), at('2026-01-03T00:00:00Z', false),
+      at('2026-01-04T00:00:00Z', false), at('2026-01-05T00:00:00Z', false), at('2026-01-06T00:00:00Z', false),
+      at('2026-02-01T00:00:00Z', true), at('2026-02-02T00:00:00Z', true), at('2026-02-03T00:00:00Z', true),
+    ]
+    expect(computeMissedQuestions(rows, 'Culture générale', null)).toEqual([])
+  })
+
+  it('keeps a question when its recent attempts are exactly half correct (not a strict majority)', () => {
+    const rows = [at('2026-01-01T00:00:00Z', false), at('2026-01-02T00:00:00Z', true)]
+    expect(computeMissedQuestions(rows, 'Culture générale', null)).toHaveLength(1)
+  })
+
+  it('ignores attempts older than the 5 most recent when judging mastery', () => {
+    const rows = [
+      at('2026-01-01T00:00:00Z', true), at('2026-01-02T00:00:00Z', true), at('2026-01-03T00:00:00Z', true), // ignored, outside the window
+      at('2026-01-04T00:00:00Z', false), at('2026-01-05T00:00:00Z', false), at('2026-01-06T00:00:00Z', false), at('2026-01-07T00:00:00Z', false), at('2026-01-08T00:00:00Z', false),
+    ]
+    expect(computeMissedQuestions(rows, 'Culture générale', null)).toHaveLength(1)
+  })
 })
