@@ -290,7 +290,7 @@ export const fr = {
   'history.streakSectionTitle': 'Mode sans-faute',
   'history.bestStreak': 'Meilleure série',
   'history.timedSectionTitle': 'Mode contre-la-montre',
-  'history.missedTitle': 'Questions à retravailler',
+  'history.missedTitle': (count: number) => `Questions à retravailler (${count})`,
   'history.replayMissed': 'Reprendre mes erreurs',
   'history.missedRatio': (wrong: number, attempts: number) => `Ratée ${wrong} fois sur ${attempts}`,
 

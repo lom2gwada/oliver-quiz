@@ -292,7 +292,7 @@ export const en = {
   'history.streakSectionTitle': 'Streak mode',
   'history.bestStreak': 'Best streak',
   'history.timedSectionTitle': 'Time attack mode',
-  'history.missedTitle': 'Questions to revisit',
+  'history.missedTitle': (count: number) => `Questions to revisit (${count})`,
   'history.replayMissed': 'Retry my mistakes',
   'history.missedRatio': (wrong: number, attempts: number) => `Missed ${wrong} out of ${attempts} times`,
 
