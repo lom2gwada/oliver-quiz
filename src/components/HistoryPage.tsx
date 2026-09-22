@@ -164,7 +164,7 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReplayMissed }: Hist
     </div>}
     {missedQuestions.length > 0 && <div className="missed-questions">
       <div className="stats-group-header">
-        <h3 className="stats-group-title">{t('history.missedTitle')}</h3>
+        <h3 className="stats-group-title">{t('history.missedTitle', missedQuestions.length)}</h3>
         {replayQuestions.length > 0 && <button type="button" onClick={() => onReplayMissed(replayQuestions)}>{t('history.replayMissed')}</button>}
       </div>
       <ul className="missed-list">
