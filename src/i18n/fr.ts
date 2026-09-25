@@ -298,8 +298,8 @@ export const fr = {
   'leaderboard.modeOverall': '🏅 Général',
   'leaderboard.errorLoad': 'Impossible de charger le classement.',
   'leaderboard.emptyState': "Aucune partie enregistrée pour ce quiz dans ce mode.",
-  'leaderboard.detailsClassic': (earned: number, total: number, count: number, duration: string) =>
-    `${earned}/${total} pts · ${count} question${count > 1 ? 's' : ''} · ⏱ ${duration}`,
+  'leaderboard.detailsClassic': (correct: number, total: number, rate: number, duration: string) =>
+    `${correct}/${total} (${rate}%) · ⏱ ${duration}`,
   'leaderboard.detailsStreak': (themes: string, duration: string) => `${themes} · ⏱ ${duration}`,
   'leaderboard.detailsTimed': (correct: number, total: number, durationLabel: string, elapsed: string) =>
     `${correct}/${total} · ${durationLabel} · ⏱ ${elapsed}`,

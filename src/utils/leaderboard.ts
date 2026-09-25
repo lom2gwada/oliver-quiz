@@ -2,20 +2,22 @@ import type { LeaderboardRow, OverallLeaderboardRow, StreakLeaderboardRow, Timed
 import { supabase } from './supabase'
 
 export async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
-  // À score égal, on départage par points gagnés (récompense les parties plus longues/difficiles) puis par rapidité.
+  // Le nombre de bonnes réponses domine (récompense le volume plutôt que le seul taux de réussite d'une
+  // partie courte parfaite) ; à égalité, le pourcentage puis les points puis la rapidité départagent.
   const { data, error } = await supabase.from('leaderboard').select('*')
-    .order('best_score', { ascending: false }).order('earned_points', { ascending: false }).order('elapsed_seconds', { ascending: true })
+    .order('correct_count', { ascending: false }).order('best_score', { ascending: false }).order('earned_points', { ascending: false }).order('elapsed_seconds', { ascending: true })
   if (error) throw error
   return data ?? []
 }
 
-/** Le meilleur score tous joueurs confondus pour un quiz donné, pour l'affichage sur la page d'accueil.
- * Filtre par `quiz_id` quand disponible (lien stable, insensible à un renommage) — repli sur le titre
- * seulement le temps du tout premier affichage, avant que le quiz actif n'ait un id connu. */
+/** Le meilleur score tous joueurs confondus pour un quiz donné, pour l'affichage sur la page d'accueil —
+ * même critère de tri que le classement (nombre de bonnes réponses en premier). Filtre par `quiz_id` quand
+ * disponible (lien stable, insensible à un renommage) — repli sur le titre seulement le temps du tout premier
+ * affichage, avant que le quiz actif n'ait un id connu. */
 export async function fetchTopScore(quizTitle: string, quizId: string | null): Promise<LeaderboardRow | null> {
   const query = quizId ? supabase.from('leaderboard').select('*').eq('quiz_id', quizId) : supabase.from('leaderboard').select('*').eq('quiz_title', quizTitle)
   const { data, error } = await query
-    .order('best_score', { ascending: false }).order('earned_points', { ascending: false }).order('elapsed_seconds', { ascending: true })
+    .order('correct_count', { ascending: false }).order('best_score', { ascending: false }).order('earned_points', { ascending: false }).order('elapsed_seconds', { ascending: true })
     .limit(1).maybeSingle()
   if (error) throw error
   return data
