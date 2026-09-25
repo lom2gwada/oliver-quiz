@@ -10,6 +10,7 @@ export interface LeaderboardRow {
   elapsed_seconds: number
   question_count: number
   correct_count: number
+  pace_per_minute: number | null
 }
 
 export interface StreakLeaderboardRow {
@@ -22,6 +23,10 @@ export interface StreakLeaderboardRow {
   victory: boolean
   elapsed_seconds: number
   themes: string[]
+  pace_per_minute: number | null
+  /** `null` pour les parties jouées avant l'introduction de ces champs. */
+  earned_points: number | null
+  total_points: number | null
 }
 
 export interface TimedLeaderboardRow {
@@ -36,6 +41,9 @@ export interface TimedLeaderboardRow {
   elapsed_seconds: number
   pace_per_minute: number | null
   themes: string[]
+  /** `null` pour les parties jouées avant l'introduction de ces champs. */
+  earned_points: number | null
+  total_points: number | null
 }
 
 /** Cumulé sur toutes les parties (non filtrées) tous modes confondus, contrairement aux 3 autres
@@ -50,4 +58,5 @@ export interface OverallLeaderboardRow {
   total_attempted: number
   success_rate: number | null
   games_played: number
+  total_earned_points: number
 }

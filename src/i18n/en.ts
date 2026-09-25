@@ -300,11 +300,12 @@ export const en = {
   'leaderboard.modeOverall': '🏅 Overall',
   'leaderboard.errorLoad': 'Could not load the leaderboard.',
   'leaderboard.emptyState': 'No games recorded for this quiz in this mode.',
-  'leaderboard.detailsClassic': (correct: number, total: number, rate: number, duration: string) =>
-    `${correct}/${total} (${rate}%) · ⏱ ${duration}`,
-  'leaderboard.detailsStreak': (themes: string, duration: string) => `${themes} · ⏱ ${duration}`,
-  'leaderboard.detailsTimed': (correct: number, total: number, durationLabel: string, elapsed: string) =>
-    `${correct}/${total} · ${durationLabel} · ⏱ ${elapsed}`,
-  'leaderboard.detailsOverall': (attempted: number, games: number, rate: number) =>
-    `${attempted} attempted · ${games} game${games !== 1 ? 's' : ''} · ${rate}% success rate`,
+  'leaderboard.detailsClassic': (correct: number, total: number, rate: number, pace: string, points: string, duration: string) =>
+    `${correct}/${total} (${rate}%) · ${pace} · ${points} · ⏱ ${duration}`,
+  'leaderboard.detailsStreak': (themes: string, pace: string, rate: string, points: string, duration: string) =>
+    `${themes} · ${pace} · ${rate} · ${points} · ⏱ ${duration}`,
+  'leaderboard.detailsTimed': (correct: number, total: number, rate: string, points: string, durationLabel: string, elapsed: string) =>
+    `${correct}/${total} · ${rate} · ${points} · ${durationLabel} · ⏱ ${elapsed}`,
+  'leaderboard.detailsOverall': (attempted: number, games: number, rate: number, points: string) =>
+    `${attempted} attempted · ${games} game${games !== 1 ? 's' : ''} · ${rate}% success rate · ${points}`,
 } satisfies Record<TranslationKey, string | ((...args: never[]) => string)>
