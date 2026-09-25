@@ -86,7 +86,7 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
           }))
         : mode === 'timed'
           ? (timedRows ?? []).filter((row) => quizKeyOf(row) === activeQuiz)
-            .sort((a, b) => (b.pace_per_minute ?? -1) - (a.pace_per_minute ?? -1) || b.correct_count - a.correct_count)
+            .sort((a, b) => b.correct_count - a.correct_count || (b.pace_per_minute ?? -1) - (a.pace_per_minute ?? -1))
             .slice(0, MAX_ROWS)
             .map((row) => ({
               userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
