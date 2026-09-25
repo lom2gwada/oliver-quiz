@@ -14,6 +14,10 @@ import { ThemeHeatmap } from './ThemeHeatmap'
 const shortDate = (iso: string, language: Language) => new Date(iso).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'short' })
 const longDate = (iso: string, language: Language) => new Date(iso).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 
+/** Tailles de lot proposées pour "Reprendre mes erreurs" — au-delà de quelques dizaines de questions
+ * accumulées, tout reprendre d'un coup n'est plus une session de pratique digeste. */
+const REPLAY_COUNTS = [10, 20, 30, 50]
+
 interface HistoryPageProps {
   onBack: () => void
   quiz: Quiz
@@ -34,6 +38,7 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReplayMissed }: Hist
   const [timedRows, setTimedRows] = useState<TimedResultRow[]>([])
   const [error, setError] = useState('')
   const [selectedQuiz, setSelectedQuiz] = useState<string | null>(null)
+  const [replayLimit, setReplayLimit] = useState(20)
 
   useEffect(() => {
     fetchQuizHistory().then(setRows).catch(() => setError(t('history.errorLoad')))
@@ -83,9 +88,12 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReplayMissed }: Hist
 
   const missedQuestions = activeQuiz ? computeMissedQuestions(questionRows, activeQuizTitle, activeQuizId) : []
   const canReplay = activeQuiz === activeQuizKey
+  // `missedQuestions` est déjà trié des plus ratées aux moins ratées (cf. `computeMissedQuestions`) : tronquer
+  // ce tableau garde donc les questions les plus problématiques en priorité.
   const replayQuestions = canReplay
     ? missedQuestions.map((missed) => quiz.questions.find((question) => question.id === missed.questionId)).filter((question): question is Question => Boolean(question))
     : []
+  const replayCap = Math.min(replayLimit, replayQuestions.length)
 
   return <section className="stats-page">
     <div className="stats-header">
@@ -165,7 +173,13 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReplayMissed }: Hist
     {missedQuestions.length > 0 && <div className="missed-questions">
       <div className="stats-group-header">
         <h3 className="stats-group-title">{t('history.missedTitle', missedQuestions.length)}</h3>
-        {replayQuestions.length > 0 && <button type="button" onClick={() => onReplayMissed(replayQuestions)}>{t('history.replayMissed')}</button>}
+        {replayQuestions.length > 0 && <label className="question-count">{t('start.questionCountLabel')}
+          <select value={replayCap} onChange={(event) => setReplayLimit(Number(event.target.value))}>
+            {REPLAY_COUNTS.filter((count) => count < replayQuestions.length).map((count) => <option key={count} value={count}>{t('start.questionCountOption', count, false)}</option>)}
+            <option value={replayQuestions.length}>{t('start.allQuestionsOption', replayQuestions.length)}</option>
+          </select>
+        </label>}
+        {replayQuestions.length > 0 && <button type="button" onClick={() => onReplayMissed(replayQuestions.slice(0, replayCap))}>{t('history.replayMissed')}</button>}
       </div>
       <ul className="missed-list">
         {missedQuestions.map((missed) => <li className="missed-item" key={missed.questionId}>
