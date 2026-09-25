@@ -297,7 +297,7 @@ export const fr = {
   'leaderboard.title': 'Classement',
   'leaderboard.modeOverall': '🏅 Général',
   'leaderboard.errorLoad': 'Impossible de charger le classement.',
-  'leaderboard.emptyState': (inMode: boolean) => `Aucun score enregistré pour l'instant${inMode ? ' dans ce mode' : ''}.`,
+  'leaderboard.emptyState': "Aucune partie enregistrée pour ce quiz dans ce mode.",
   'leaderboard.detailsClassic': (earned: number, total: number, count: number, duration: string) =>
     `${earned}/${total} pts · ${count} question${count > 1 ? 's' : ''} · ⏱ ${duration}`,
   'leaderboard.detailsStreak': (themes: string, duration: string) => `${themes} · ⏱ ${duration}`,

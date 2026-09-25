@@ -299,7 +299,7 @@ export const en = {
   'leaderboard.title': 'Leaderboard',
   'leaderboard.modeOverall': '🏅 Overall',
   'leaderboard.errorLoad': 'Could not load the leaderboard.',
-  'leaderboard.emptyState': (inMode: boolean) => `No score recorded yet${inMode ? ' in this mode' : ''}.`,
+  'leaderboard.emptyState': 'No games recorded for this quiz in this mode.',
   'leaderboard.detailsClassic': (earned: number, total: number, count: number, duration: string) =>
     `${earned}/${total} pts · ${count} question${count !== 1 ? 's' : ''} · ⏱ ${duration}`,
   'leaderboard.detailsStreak': (themes: string, duration: string) => `${themes} · ⏱ ${duration}`,
