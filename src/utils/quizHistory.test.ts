@@ -77,7 +77,7 @@ describe('buildStreakResultPayload', () => {
     const payload = buildStreakResultPayload(7, 120, false, [qcm, bool, qcm], themes, 'Culture générale', null, true)
     expect(payload).toEqual({
       quiz_title: 'Culture générale', quiz_id: null, streak_count: 7, elapsed_seconds: 120, victory: false,
-      themes: ['Histoire', 'Géographie'], unfiltered: true,
+      themes: ['Histoire', 'Géographie'], earned_points: 3, total_points: 4, unfiltered: true,
     })
   })
 
@@ -89,6 +89,17 @@ describe('buildStreakResultPayload', () => {
 
   it('marks a full clear as a victory', () => {
     expect(buildStreakResultPayload(74, 300, true, [], themes, 'Culture générale', null, true).victory).toBe(true)
+  })
+
+  it('counts every played question towards points, but only credits the ones before a mistake ended the streak', () => {
+    const payload = buildStreakResultPayload(2, 60, false, [qcm, bool, qcm], themes, 'Culture générale', null, true)
+    expect(payload.total_points).toBe(4)
+    expect(payload.earned_points).toBe(3)
+  })
+
+  it('credits every point on a full-clear victory', () => {
+    const payload = buildStreakResultPayload(2, 60, true, [qcm, bool], themes, 'Culture générale', null, true)
+    expect(payload.earned_points).toBe(payload.total_points)
   })
 
   it('records whether the run was played without any theme/difficulty filter', () => {
@@ -104,7 +115,8 @@ describe('buildTimedResultPayload', () => {
     )
     expect(payload).toEqual({
       quiz_title: 'Culture générale', quiz_id: null, correct_count: 2, question_count: 3,
-      duration_seconds: 300, elapsed_seconds: 300, themes: ['Histoire', 'Géographie'], unfiltered: true,
+      duration_seconds: 300, elapsed_seconds: 300, themes: ['Histoire', 'Géographie'],
+      earned_points: 2, total_points: 4, unfiltered: true,
     })
   })
 
@@ -112,6 +124,8 @@ describe('buildTimedResultPayload', () => {
     const payload = buildTimedResultPayload([{ question: qcm, answer: ['a'] }, { question: qcm, answer: ['b'] }], 60, 300, themes, 'Culture générale', null, true)
     expect(payload.question_count).toBe(2)
     expect(payload.correct_count).toBe(1)
+    expect(payload.earned_points).toBe(1)
+    expect(payload.total_points).toBe(2)
   })
 
   it('marks an unlimited-duration run with duration_seconds 0', () => {

@@ -140,9 +140,13 @@ export function sumBuckets(rows: QuizResultRow[], pick: (row: QuizResultRow) => 
   return totals
 }
 
-/** Construit le résumé d'une partie "sans-faute" terminée, à partir des questions réellement jouées. */
+/** Construit le résumé d'une partie "sans-faute" terminée, à partir des questions réellement jouées. Seule la
+ * dernière question de `playedQuestions` peut être une erreur (celle qui a stoppé la série, sauf victoire) —
+ * inutile de connaître le détail des réponses pour calculer les points gagnés. */
 export function buildStreakResultPayload(streakCount: number, elapsedSeconds: number, victory: boolean, playedQuestions: Question[], themes: Theme[], quizTitle: string, quizId: string | null, unfiltered: boolean): StreakResultPayload {
   const themeLabel = (id: string) => themes.find((theme) => theme.id === id)?.label ?? id
+  const totalPoints = playedQuestions.reduce((sum, question) => sum + question.points, 0)
+  const missedPoints = victory || !playedQuestions.length ? 0 : playedQuestions[playedQuestions.length - 1].points
   return {
     quiz_title: quizTitle,
     quiz_id: quizId,
@@ -150,6 +154,8 @@ export function buildStreakResultPayload(streakCount: number, elapsedSeconds: nu
     elapsed_seconds: elapsedSeconds,
     victory,
     themes: Array.from(new Set(playedQuestions.map((question) => themeLabel(question.theme)))),
+    earned_points: totalPoints - missedPoints,
+    total_points: totalPoints,
     unfiltered,
   }
 }
@@ -171,14 +177,17 @@ export async function fetchStreakHistory(): Promise<StreakResultRow[]> {
  * (un tableau plutôt qu'un Record par question, car une même question peut revenir plusieurs fois). */
 export function buildTimedResultPayload(attempts: QuestionAttempt[], elapsedSeconds: number, durationSeconds: number, themes: Theme[], quizTitle: string, quizId: string | null, unfiltered: boolean): TimedResultPayload {
   const themeLabel = (id: string) => themes.find((theme) => theme.id === id)?.label ?? id
+  const correctAttempts = attempts.filter((attempt) => isCorrect(attempt.question, attempt.answer))
   return {
     quiz_title: quizTitle,
     quiz_id: quizId,
-    correct_count: attempts.filter((attempt) => isCorrect(attempt.question, attempt.answer)).length,
+    correct_count: correctAttempts.length,
     question_count: attempts.length,
     duration_seconds: durationSeconds,
     elapsed_seconds: elapsedSeconds,
     themes: Array.from(new Set(attempts.map((attempt) => themeLabel(attempt.question.theme)))),
+    earned_points: correctAttempts.reduce((sum, attempt) => sum + attempt.question.points, 0),
+    total_points: attempts.reduce((sum, attempt) => sum + attempt.question.points, 0),
     unfiltered,
   }
 }

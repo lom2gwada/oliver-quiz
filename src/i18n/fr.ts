@@ -298,11 +298,12 @@ export const fr = {
   'leaderboard.modeOverall': '🏅 Général',
   'leaderboard.errorLoad': 'Impossible de charger le classement.',
   'leaderboard.emptyState': "Aucune partie enregistrée pour ce quiz dans ce mode.",
-  'leaderboard.detailsClassic': (correct: number, total: number, rate: number, duration: string) =>
-    `${correct}/${total} (${rate}%) · ⏱ ${duration}`,
-  'leaderboard.detailsStreak': (themes: string, duration: string) => `${themes} · ⏱ ${duration}`,
-  'leaderboard.detailsTimed': (correct: number, total: number, durationLabel: string, elapsed: string) =>
-    `${correct}/${total} · ${durationLabel} · ⏱ ${elapsed}`,
-  'leaderboard.detailsOverall': (attempted: number, games: number, rate: number) =>
-    `${attempted} tentées · ${games} partie${games > 1 ? 's' : ''} · ${rate}% de réussite`,
+  'leaderboard.detailsClassic': (correct: number, total: number, rate: number, pace: string, points: string, duration: string) =>
+    `${correct}/${total} (${rate}%) · ${pace} · ${points} · ⏱ ${duration}`,
+  'leaderboard.detailsStreak': (themes: string, pace: string, rate: string, points: string, duration: string) =>
+    `${themes} · ${pace} · ${rate} · ${points} · ⏱ ${duration}`,
+  'leaderboard.detailsTimed': (correct: number, total: number, rate: string, points: string, durationLabel: string, elapsed: string) =>
+    `${correct}/${total} · ${rate} · ${points} · ${durationLabel} · ⏱ ${elapsed}`,
+  'leaderboard.detailsOverall': (attempted: number, games: number, rate: number, points: string) =>
+    `${attempted} tentées · ${games} partie${games > 1 ? 's' : ''} · ${rate}% de réussite · ${points}`,
 }

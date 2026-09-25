@@ -31,6 +31,13 @@ interface LeaderboardPageProps {
  * renommage, avec repli sur le titre pour les lignes d'un quiz depuis supprimé. */
 const quizKeyOf = (row: { quiz_id: string | null; quiz_title: string }) => row.quiz_id ?? row.quiz_title
 
+/** Rythme et points ne sont pas connus pour les parties jouées avant l'introduction de ces colonnes
+ * (`025_points_and_pace_everywhere.sql`) — un tiret plutôt qu'un 0 trompeur. Pas de traduction : "/min" et
+ * "pts" restent tels quels dans les deux langues, comme `{points} pts` déjà affiché pendant une partie. */
+const paceLabel = (pace: number | null) => (pace !== null ? `${pace}/min` : '—')
+const pointsLabel = (points: number | null) => (points !== null ? `${points} pts` : '—')
+const percentLabel = (earned: number | null, total: number | null) => (total ? `${Math.round(((earned ?? 0) / total) * 100)}%` : '—')
+
 export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', onBack }: LeaderboardPageProps) {
   const { t } = useTranslation()
   const [mode, setMode] = useState<LeaderboardTab>(initialMode)
@@ -72,7 +79,7 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
         .slice(0, MAX_ROWS)
         .map((row) => ({
           userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
-          details: t('leaderboard.detailsClassic', row.correct_count, row.question_count, row.best_score, formatDuration(row.elapsed_seconds)),
+          details: t('leaderboard.detailsClassic', row.correct_count, row.question_count, row.best_score, paceLabel(row.pace_per_minute), pointsLabel(row.earned_points), formatDuration(row.elapsed_seconds)),
           score: `✓ ${row.correct_count}`,
         }))
       : mode === 'streak'
@@ -81,7 +88,7 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
           .slice(0, MAX_ROWS)
           .map((row) => ({
             userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
-            details: t('leaderboard.detailsStreak', row.themes.join(', ') || t('common.allThemes'), formatDuration(row.elapsed_seconds)),
+            details: t('leaderboard.detailsStreak', row.themes.join(', ') || t('common.allThemes'), paceLabel(row.pace_per_minute), percentLabel(row.earned_points, row.total_points), pointsLabel(row.earned_points), formatDuration(row.elapsed_seconds)),
             score: `${row.victory ? '🏆' : '🔥'} ${row.best_streak}`,
           }))
         : mode === 'timed'
@@ -90,7 +97,7 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
             .slice(0, MAX_ROWS)
             .map((row) => ({
               userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
-              details: t('leaderboard.detailsTimed', row.correct_count, row.question_count, row.duration_seconds === 0 ? t('common.unlimited') : t('common.minutesShort', Math.round(row.duration_seconds / 60)), formatDuration(row.elapsed_seconds)),
+              details: t('leaderboard.detailsTimed', row.correct_count, row.question_count, percentLabel(row.earned_points, row.total_points), pointsLabel(row.earned_points), row.duration_seconds === 0 ? t('common.unlimited') : t('common.minutesShort', Math.round(row.duration_seconds / 60)), formatDuration(row.elapsed_seconds)),
               score: row.pace_per_minute !== null ? `${row.pace_per_minute}/min` : '—',
             }))
           : (overallRows ?? []).filter((row) => quizKeyOf(row) === activeQuiz)
@@ -98,7 +105,7 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
             .slice(0, MAX_ROWS)
             .map((row) => ({
               userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
-              details: t('leaderboard.detailsOverall', row.total_attempted, row.games_played, row.success_rate ?? 0),
+              details: t('leaderboard.detailsOverall', row.total_attempted, row.games_played, row.success_rate ?? 0, pointsLabel(row.total_earned_points)),
               score: `✓ ${row.total_correct}`,
             }))
 

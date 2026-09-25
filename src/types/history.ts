@@ -83,6 +83,9 @@ export interface StreakResultPayload {
   elapsed_seconds: number
   victory: boolean
   themes: string[]
+  /** `null` pour les parties jouées avant l'introduction de ces champs — pas de valeur historique à reconstruire. */
+  earned_points: number | null
+  total_points: number | null
   /** Aucun filtre thème/difficulté appliqué — seules ces parties comptent pour le classement. */
   unfiltered: boolean
 }
@@ -101,6 +104,9 @@ export interface TimedResultPayload {
   duration_seconds: number
   elapsed_seconds: number
   themes: string[]
+  /** `null` pour les parties jouées avant l'introduction de ces champs — pas de valeur historique à reconstruire. */
+  earned_points: number | null
+  total_points: number | null
   /** Aucun filtre thème/difficulté appliqué — seules ces parties comptent pour le classement. */
   unfiltered: boolean
 }
