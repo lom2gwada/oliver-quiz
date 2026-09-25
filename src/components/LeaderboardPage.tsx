@@ -61,12 +61,12 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
   const displayRows: DisplayRow[] =
     mode === 'classic'
       ? (rows ?? []).filter((row) => quizKeyOf(row) === activeQuiz)
-        .sort((a, b) => b.best_score - a.best_score || b.earned_points - a.earned_points || a.elapsed_seconds - b.elapsed_seconds)
+        .sort((a, b) => b.correct_count - a.correct_count || b.best_score - a.best_score || b.earned_points - a.earned_points || a.elapsed_seconds - b.elapsed_seconds)
         .slice(0, MAX_ROWS)
         .map((row) => ({
           userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
-          details: t('leaderboard.detailsClassic', row.earned_points, row.total_points, row.question_count, formatDuration(row.elapsed_seconds)),
-          score: `${row.best_score}%`,
+          details: t('leaderboard.detailsClassic', row.correct_count, row.question_count, row.best_score, formatDuration(row.elapsed_seconds)),
+          score: `✓ ${row.correct_count}`,
         }))
       : mode === 'streak'
         ? (streakRows ?? []).filter((row) => quizKeyOf(row) === activeQuiz)

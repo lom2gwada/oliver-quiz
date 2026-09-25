@@ -300,8 +300,8 @@ export const en = {
   'leaderboard.modeOverall': '🏅 Overall',
   'leaderboard.errorLoad': 'Could not load the leaderboard.',
   'leaderboard.emptyState': (inMode: boolean) => `No score recorded yet${inMode ? ' in this mode' : ''}.`,
-  'leaderboard.detailsClassic': (earned: number, total: number, count: number, duration: string) =>
-    `${earned}/${total} pts · ${count} question${count !== 1 ? 's' : ''} · ⏱ ${duration}`,
+  'leaderboard.detailsClassic': (correct: number, total: number, rate: number, duration: string) =>
+    `${correct}/${total} (${rate}%) · ⏱ ${duration}`,
   'leaderboard.detailsStreak': (themes: string, duration: string) => `${themes} · ⏱ ${duration}`,
   'leaderboard.detailsTimed': (correct: number, total: number, durationLabel: string, elapsed: string) =>
     `${correct}/${total} · ${durationLabel} · ⏱ ${elapsed}`,

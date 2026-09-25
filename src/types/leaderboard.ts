@@ -9,6 +9,7 @@ export interface LeaderboardRow {
   total_points: number
   elapsed_seconds: number
   question_count: number
+  correct_count: number
 }
 
 export interface StreakLeaderboardRow {
