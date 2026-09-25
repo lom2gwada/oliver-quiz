@@ -237,7 +237,7 @@ export const en = {
   'filter.ariaLabel': 'Quiz filters',
   'filter.themesLegend': 'Themes',
   'filter.themesSelected': (count: number) =>
-    count ? `${count} theme${count !== 1 ? 's' : ''} selected` : 'All themes',
+    count ? `${count} theme${count !== 1 ? 's' : ''} selected` : 'No theme checked = all themes',
   'filter.difficultyLabel': 'Difficulty',
   'filter.allDifficulties': 'All difficulties',
 

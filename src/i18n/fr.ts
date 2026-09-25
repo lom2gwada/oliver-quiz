@@ -235,7 +235,7 @@ export const fr = {
   'filter.ariaLabel': 'Filtres du quiz',
   'filter.themesLegend': 'Thèmes',
   'filter.themesSelected': (count: number) =>
-    count ? `${count} thème${count > 1 ? 's' : ''} sélectionné${count > 1 ? 's' : ''}` : 'Tous les thèmes',
+    count ? `${count} thème${count > 1 ? 's' : ''} sélectionné${count > 1 ? 's' : ''}` : "Aucun thème coché = tous les thèmes",
   'filter.difficultyLabel': 'Difficulté',
   'filter.allDifficulties': 'Toutes les difficultés',
 
