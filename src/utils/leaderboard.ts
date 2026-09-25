@@ -31,9 +31,11 @@ export async function fetchStreakLeaderboard(): Promise<StreakLeaderboardRow[]> 
 }
 
 export async function fetchTimedLeaderboard(): Promise<TimedLeaderboardRow[]> {
-  // NULLS LAST : une partie de 0 seconde (pace non calculable) ne doit pas se retrouver en tête faute de valeur.
+  // Le volume de bonnes réponses prime (même raisonnement que le classement classique) : sinon une partie de
+  // quelques secondes à haut rythme battrait une vraie partie bien plus remplie. NULLS LAST sur le rythme :
+  // une partie de 0 seconde (pace non calculable) ne doit pas se retrouver en tête faute de valeur.
   const { data, error } = await supabase.from('timed_leaderboard').select('*')
-    .order('pace_per_minute', { ascending: false, nullsFirst: false }).order('correct_count', { ascending: false })
+    .order('correct_count', { ascending: false }).order('pace_per_minute', { ascending: false, nullsFirst: false })
   if (error) throw error
   return data ?? []
 }
