@@ -9,7 +9,7 @@ import { isCorrect } from './ResultPage'
 import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
 import { QuestionRenderer } from './QuestionRenderer'
-import { TYPE_ICONS, difficultyLabel, typeLabel } from './QuizPage'
+import { TYPE_ICONS, difficultyLabel, typeLabel, withShuffledAnswers } from './QuizPage'
 
 export interface StreakResult {
   streakCount: number
@@ -30,7 +30,7 @@ interface StreakQuizPageProps {
 
 export function StreakQuizPage({ quiz, pool, timeboxed, onFinish, onCancel }: StreakQuizPageProps) {
   const { t } = useTranslation()
-  const order = useMemo(() => shuffle(pool), [pool])
+  const order = useMemo(() => shuffle(pool).map(withShuffledAnswers), [pool])
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState<UserAnswer | undefined>(undefined)
   const [answers, setAnswers] = useState<AnswersByQuestion>({})

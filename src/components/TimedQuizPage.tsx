@@ -8,7 +8,7 @@ import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
 import { QuestionRenderer } from './QuestionRenderer'
-import { TYPE_ICONS, difficultyLabel, typeLabel } from './QuizPage'
+import { TYPE_ICONS, difficultyLabel, typeLabel, withShuffledAnswers } from './QuizPage'
 
 export interface TimedResult {
   attempts: QuestionAttempt[]
@@ -29,7 +29,7 @@ interface TimedQuizPageProps {
 
 export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish, onCancel }: TimedQuizPageProps) {
   const { t } = useTranslation()
-  const [order, setOrder] = useState<Question[]>(() => shuffle(pool))
+  const [order, setOrder] = useState<Question[]>(() => shuffle(pool).map(withShuffledAnswers))
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState<UserAnswer | undefined>(undefined)
   const [attempts, setAttempts] = useState<QuestionAttempt[]>([])
@@ -54,7 +54,7 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish
   const advance = () => {
     if (!question) return
     setAttempts((previous) => [...previous, { question, answer }])
-    if (index + 1 >= order.length) setOrder((previous) => [...previous, ...shuffle(pool)])
+    if (index + 1 >= order.length) setOrder((previous) => [...previous, ...shuffle(pool).map(withShuffledAnswers)])
     setIndex((value) => value + 1)
     setAnswer(undefined)
   }
