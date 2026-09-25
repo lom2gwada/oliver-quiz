@@ -51,8 +51,15 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
   }, [])
 
   const activeRows = mode === 'classic' ? rows : mode === 'streak' ? streakRows : mode === 'timed' ? timedRows : overallRows
-  const quizKeys = activeRows ? Array.from(new Set(activeRows.map(quizKeyOf))) : []
-  const keyLabels = new Map((activeRows ?? []).map((row) => [quizKeyOf(row), row.quiz_title]))
+
+  // Le sélecteur de quiz liste tous les quiz ayant une partie dans N'IMPORTE QUEL mode (pas seulement le mode
+  // actif) : sinon changer d'onglet pouvait faire disparaître le quiz choisi de la liste et en faisait
+  // resélectionner un autre silencieusement, sans que l'utilisateur comprenne pourquoi. Le quiz choisi reste
+  // donc le même en changeant d'onglet ; s'il n'a pas de partie dans ce mode, `displayRows` sera simplement vide.
+  const allSources = [rows, streakRows, timedRows, overallRows]
+  const quizKeys = Array.from(new Set(allSources.flatMap((source) => (source ?? []).map(quizKeyOf))))
+  const keyLabels = new Map<string, string>()
+  allSources.forEach((source) => (source ?? []).forEach((row) => { if (!keyLabels.has(quizKeyOf(row))) keyLabels.set(quizKeyOf(row), row.quiz_title) }))
   const activeQuizKey = hostedQuizId || quiz.metadata.title
   const activeQuiz = selectedQuiz && quizKeys.includes(selectedQuiz) ? selectedQuiz : (quizKeys.includes(activeQuizKey) ? activeQuizKey : quizKeys[0])
 
@@ -108,7 +115,7 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
     </div>
     {error && mode === 'classic' && <p className="alert" role="alert">{error}</p>}
     {!activeRows && <p>{t('common.loading')}</p>}
-    {activeRows && !activeRows.length && <p>{t('leaderboard.emptyState', mode !== 'classic')}</p>}
+    {activeRows && !displayRows.length && <p>{t('leaderboard.emptyState')}</p>}
     {quizKeys.length > 0 && <label className="quiz-select">{t('start.quizLabel')}
       <select value={activeQuiz} onChange={(event) => setSelectedQuiz(event.target.value)}>
         {quizKeys.map((key) => <option key={key} value={key}>{keyLabels.get(key)}</option>)}
