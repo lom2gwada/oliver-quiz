@@ -30,6 +30,16 @@ export async function fetchStreakLeaderboard(): Promise<StreakLeaderboardRow[]> 
   return data ?? []
 }
 
+/** Même critère de tri que `fetchStreakLeaderboard`, pour l'affichage sur la page d'accueil — voir `fetchTopScore`. */
+export async function fetchStreakTopScore(quizTitle: string, quizId: string | null): Promise<StreakLeaderboardRow | null> {
+  const query = quizId ? supabase.from('streak_leaderboard').select('*').eq('quiz_id', quizId) : supabase.from('streak_leaderboard').select('*').eq('quiz_title', quizTitle)
+  const { data, error } = await query
+    .order('best_streak', { ascending: false }).order('victory', { ascending: false }).order('elapsed_seconds', { ascending: true })
+    .limit(1).maybeSingle()
+  if (error) throw error
+  return data
+}
+
 export async function fetchTimedLeaderboard(): Promise<TimedLeaderboardRow[]> {
   // Le volume de bonnes réponses prime (même raisonnement que le classement classique) : sinon une partie de
   // quelques secondes à haut rythme battrait une vraie partie bien plus remplie. NULLS LAST sur le rythme :
@@ -38,6 +48,16 @@ export async function fetchTimedLeaderboard(): Promise<TimedLeaderboardRow[]> {
     .order('correct_count', { ascending: false }).order('pace_per_minute', { ascending: false, nullsFirst: false })
   if (error) throw error
   return data ?? []
+}
+
+/** Même critère de tri que `fetchTimedLeaderboard`, pour l'affichage sur la page d'accueil — voir `fetchTopScore`. */
+export async function fetchTimedTopScore(quizTitle: string, quizId: string | null): Promise<TimedLeaderboardRow | null> {
+  const query = quizId ? supabase.from('timed_leaderboard').select('*').eq('quiz_id', quizId) : supabase.from('timed_leaderboard').select('*').eq('quiz_title', quizTitle)
+  const { data, error } = await query
+    .order('correct_count', { ascending: false }).order('pace_per_minute', { ascending: false, nullsFirst: false })
+    .limit(1).maybeSingle()
+  if (error) throw error
+  return data
 }
 
 /** Cumulé sur toutes les parties non filtrées, tous modes confondus — trié sur le volume de bonnes
