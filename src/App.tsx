@@ -14,11 +14,10 @@ import { TimedQuizPage, type TimedResult } from './components/TimedQuizPage'
 import { TimedResultPage } from './components/TimedResultPage'
 import type { AnswersByQuestion, Difficulty, GameMode, Question, Quiz } from './types/quiz'
 import type { Profile } from './types/profile'
-import type { LeaderboardRow } from './types/leaderboard'
 import type { HostedQuizSummary } from './types/hostedQuiz'
 import { buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, deleteQuizHistory, saveQuestionResults, saveQuizResult, saveStreakResult, saveTimedResult } from './utils/quizHistory'
 import { fetchProfile, saveProfile } from './utils/profile'
-import { fetchTopScore } from './utils/leaderboard'
+import { fetchStreakTopScore, fetchTimedTopScore, fetchTopScore } from './utils/leaderboard'
 import { deleteQuiz, fetchAccessibleQuizzes, fetchQuizContent, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
 import { applyTheme } from './utils/theme'
 import { LanguageProvider, translate } from './i18n'
@@ -103,8 +102,24 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       }
     }).catch(() => {})
   }, [])
-  const [topScore, setTopScore] = useState<LeaderboardRow | null>(null)
-  useEffect(() => { if (view === 'start') fetchTopScore(quiz.metadata.title, selectedHostedQuizId || null).then(setTopScore).catch(() => setTopScore(null)) }, [view, quiz.metadata.title, selectedHostedQuizId])
+  // Reflète le mode sélectionné sur la page d'accueil (le sélecteur de mode juste en dessous) plutôt que
+  // toujours le classique — sinon le record affiché n'a aucun rapport avec le mode que l'utilisateur s'apprête
+  // à lancer. Un seul badge affiché à la fois : `avatar`/`pseudo`/`scoreText` déjà mis en forme pour rester
+  // agnostique du mode d'origine (classement classique, sans-faute ou contre-la-montre).
+  const [topScore, setTopScore] = useState<{ avatar: string; pseudo: string; scoreText: string } | null>(null)
+  useEffect(() => {
+    if (view !== 'start') return
+    setTopScore(null)
+    const title = quiz.metadata.title
+    const quizId = selectedHostedQuizId || null
+    if (gameMode === 'classic') {
+      fetchTopScore(title, quizId).then((row) => setTopScore(row && { avatar: row.avatar, pseudo: row.pseudo, scoreText: `✓ ${row.correct_count}` })).catch(() => setTopScore(null))
+    } else if (gameMode === 'streak') {
+      fetchStreakTopScore(title, quizId).then((row) => setTopScore(row && { avatar: row.avatar, pseudo: row.pseudo, scoreText: `${row.victory ? '🏆' : '🔥'} ${row.best_streak}` })).catch(() => setTopScore(null))
+    } else {
+      fetchTimedTopScore(title, quizId).then((row) => setTopScore(row && { avatar: row.avatar, pseudo: row.pseudo, scoreText: row.pace_per_minute !== null ? `${row.pace_per_minute}/min` : '—' })).catch(() => setTopScore(null))
+    }
+  }, [view, gameMode, quiz.metadata.title, selectedHostedQuizId])
   const [leaderboardBack, setLeaderboardBack] = useState<View>('profile')
   const [leaderboardMode, setLeaderboardMode] = useState<GameMode>('classic')
   const viewLeaderboard = (from: View, mode: GameMode = 'classic') => { setLeaderboardBack(from); setLeaderboardMode(mode); navigate('leaderboard') }
@@ -415,7 +430,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   }
 
   return <LanguageProvider language={language}><main className="app-shell">
-    <header><div><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>{t('nav.by', quiz.metadata.author)}</p>{view === 'start' && quiz.metadata.description && <p className="quiz-description-preview">{quiz.metadata.description}</p>}{view === 'start' && topScore && <button type="button" className="top-score" onClick={() => viewLeaderboard('start')}>🏆 {topScore.avatar} {topScore.pseudo} — ✓ {topScore.correct_count}</button>}</div><div className="header-actions"><button type="button" className="secondary" onClick={toggleSound} aria-label={muted ? t('nav.unmuteSound') : t('nav.muteSound')}>{muted ? '🔇' : '🔊'}</button>{view === 'start' && <button type="button" className="secondary" onClick={() => navigate('profile')}>{profile ? `${profile.avatar} ${profile.pseudo}` : t('nav.profile')}</button>}{view === 'start' && <button type="button" className="secondary" onClick={() => navigate('quizzes')}>{t('nav.quiz')}</button>}<button type="button" className="secondary" onClick={onLogout}>{t('common.logout')}</button></div></header>
+    <header><div><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>{t('nav.by', quiz.metadata.author)}</p>{view === 'start' && quiz.metadata.description && <p className="quiz-description-preview">{quiz.metadata.description}</p>}{view === 'start' && topScore && <button type="button" className="top-score" onClick={() => viewLeaderboard('start', gameMode)}>🏆 {topScore.avatar} {topScore.pseudo} — {topScore.scoreText}</button>}</div><div className="header-actions"><button type="button" className="secondary" onClick={toggleSound} aria-label={muted ? t('nav.unmuteSound') : t('nav.muteSound')}>{muted ? '🔇' : '🔊'}</button>{view === 'start' && <button type="button" className="secondary" onClick={() => navigate('profile')}>{profile ? `${profile.avatar} ${profile.pseudo}` : t('nav.profile')}</button>}{view === 'start' && <button type="button" className="secondary" onClick={() => navigate('quizzes')}>{t('nav.quiz')}</button>}<button type="button" className="secondary" onClick={onLogout}>{t('common.logout')}</button></div></header>
     {view === 'start' && <section className="start-page">
       {hostedQuizzes.length > 0 && <label className="quiz-select">{t('start.quizLabel')}
         <select value={selectedHostedQuizId} onChange={(event) => { playClick(); selectHostedQuiz(event.target.value) }}>
