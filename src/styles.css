@@ -141,6 +141,12 @@ pre { padding: 1rem; overflow: auto; background: var(--code-bg); border: 1px sol
 .question-edit-form fieldset > button { margin-top: .3rem; }
 .reorder-row { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }
 .reorder-controls { display: flex; gap: .3rem; }
+.question-edit-form fieldset label.checkbox-field { display: flex; align-items: center; gap: .5rem; color: var(--text-soft); }
+.table-field-row { display: flex; align-items: center; gap: .6rem; }
+.table-field-row input[type=text] { flex: 1; min-width: 0; }
+.table-field-row button, .table-field-spacer { padding: .4rem .6rem; flex: none; }
+.table-field-spacer { visibility: hidden; }
+.table-field-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .3rem; }
 .reorder-controls button { padding: .3rem .5rem; }
 .question-edit-actions { display: flex; gap: .8rem; }
 .question-list-prompt { font-weight: 700; color: var(--ink); }

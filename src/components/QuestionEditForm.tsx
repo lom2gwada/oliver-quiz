@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type {
   AnswerOption, BooleanContent, CodeContent, MatchingContent, NumericContent, OrderingContent,
-  QCMContent, Question, QuestionType, TextContent, Theme,
+  QCMContent, Question, QuestionTable as QuestionTableData, QuestionType, TextContent, Theme,
 } from '../types/quiz'
 import { useTranslation } from '../i18n'
 
@@ -200,6 +200,44 @@ function MatchingContentEditor({ content, onChange }: { content: MatchingContent
   </>
 }
 
+/** Nombre de colonnes toujours identique pour l'en-tête (si présent) et chaque ligne — même contrainte que
+ * `parseQuiz` — d'où des opérations d'ajout/retrait de colonne qui touchent tout d'un coup. */
+function TableFieldEditor({ table, onChange }: { table: QuestionTableData | undefined; onChange: (table: QuestionTableData | undefined) => void }) {
+  const { t } = useTranslation()
+  if (!table) return <button type="button" className="secondary" onClick={() => onChange({ rows: [['', '']] })}>{t('admin.addTableButton')}</button>
+
+  const headers = table.headers
+  const columnCount = table.rows[0]?.length ?? 1
+  const setCell = (rowIndex: number, colIndex: number, value: string) =>
+    onChange({ ...table, rows: table.rows.map((row, r) => (r === rowIndex ? row.map((cell, c) => (c === colIndex ? value : cell)) : row)) })
+  const setHeader = (colIndex: number, value: string) =>
+    onChange({ ...table, headers: (headers ?? []).map((header, c) => (c === colIndex ? value : header)) })
+  const toggleHeaders = (checked: boolean) => onChange({ ...table, headers: checked ? Array<string>(columnCount).fill('') : undefined })
+  const addRow = () => onChange({ ...table, rows: [...table.rows, Array<string>(columnCount).fill('')] })
+  const removeRow = (rowIndex: number) => onChange({ ...table, rows: table.rows.filter((_, r) => r !== rowIndex) })
+  const addColumn = () => onChange({ headers: headers && [...headers, ''], rows: table.rows.map((row) => [...row, '']) })
+  const removeLastColumn = () => onChange({ headers: headers?.slice(0, -1), rows: table.rows.map((row) => row.slice(0, -1)) })
+
+  return <fieldset>
+    <legend>{t('admin.tableLegend')}</legend>
+    <label className="checkbox-field"><input type="checkbox" checked={headers !== undefined} onChange={(event) => toggleHeaders(event.target.checked)} /> {t('admin.tableHeaderRowLabel')}</label>
+    {headers && <div className="table-field-row">
+      {headers.map((header, colIndex) => <input key={colIndex} type="text" value={header} placeholder={t('admin.tableHeaderPlaceholder')} onChange={(event) => setHeader(colIndex, event.target.value)} />)}
+      <span className="table-field-spacer" aria-hidden="true">🗑️</span>
+    </div>}
+    {table.rows.map((row, rowIndex) => <div className="table-field-row" key={rowIndex}>
+      {row.map((cell, colIndex) => <input key={colIndex} type="text" value={cell} onChange={(event) => setCell(rowIndex, colIndex, event.target.value)} />)}
+      <button type="button" className="secondary" onClick={() => removeRow(rowIndex)} disabled={table.rows.length <= 1}>🗑️</button>
+    </div>)}
+    <div className="table-field-actions">
+      <button type="button" className="secondary" onClick={addRow}>{t('admin.addTableRowButton')}</button>
+      <button type="button" className="secondary" onClick={addColumn}>{t('admin.addTableColumnButton')}</button>
+      <button type="button" className="secondary" onClick={removeLastColumn} disabled={columnCount <= 1}>{t('admin.removeTableColumnButton')}</button>
+      <button type="button" className="secondary" onClick={() => onChange(undefined)}>{t('admin.removeTableButton')}</button>
+    </div>
+  </fieldset>
+}
+
 interface QuestionEditFormProps {
   question: Question
   themes: Theme[]
@@ -262,6 +300,7 @@ export function QuestionEditForm({ question, themes, error, onSave, onCancel }: 
     <label>{t('admin.imageUrlLabel')}<input type="text" value={draft.imageUrl ?? ''} onChange={(event) => setDraft({ ...draft, imageUrl: toOptionalString(event.target.value) })} /></label>
     <label>{t('admin.imageAltLabel')}<input type="text" value={draft.imageAlt ?? ''} onChange={(event) => setDraft({ ...draft, imageAlt: toOptionalString(event.target.value) })} /></label>
     <label>{t('admin.diagramLabel')}<textarea value={draft.diagram ?? ''} onChange={(event) => setDraft({ ...draft, diagram: toOptionalString(event.target.value) })} /></label>
+    <TableFieldEditor table={draft.table} onChange={(table) => setDraft({ ...draft, table })} />
     <label>{t('admin.timeLimitLabel')}
       <input type="number" value={draft.timeLimitSeconds ?? ''} onChange={(event) => setDraft({ ...draft, timeLimitSeconds: toOptionalNumber(event.target.value) })} />
     </label>
