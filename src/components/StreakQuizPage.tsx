@@ -8,6 +8,7 @@ import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { isCorrect } from './ResultPage'
 import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
+import { QuestionTable } from './QuestionTable'
 import { QuestionRenderer } from './QuestionRenderer'
 import { TYPE_ICONS, difficultyLabel, typeLabel, withShuffledAnswers } from './QuizPage'
 
@@ -70,6 +71,7 @@ export function StreakQuizPage({ quiz, pool, timeboxed, onFinish, onCancel }: St
     <div className="question-body" key={question.id}>
       {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
       {question.diagram && <MermaidDiagram chart={question.diagram} />}
+      {question.table && <QuestionTable table={question.table} />}
       {question.type !== 'cloze' && <h2>{question.question}</h2>}
       <QuestionRenderer question={question} answer={answer} onChange={setAnswer} />
     </div>

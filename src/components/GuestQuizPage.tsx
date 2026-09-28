@@ -6,6 +6,7 @@ import { fetchGuestQuiz, submitGuestResult } from '../utils/guestQuiz'
 import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
 import { QuestionRenderer } from './QuestionRenderer'
+import { QuestionTable } from './QuestionTable'
 import { TYPE_ICONS, typeLabel, withShuffledAnswers } from './QuizPage'
 import { correctAnswer, isCorrect, userAnswer } from './ResultPage'
 
@@ -100,6 +101,7 @@ function GuestSession({ token, mode, quiz }: { token: string; mode: GuestLinkMod
             <h3>{correct ? t('result.correct') : t('result.incorrect')} — {item.question}</h3>
             {item.imageUrl && <QuestionImage src={item.imageUrl} alt={item.imageAlt} />}
             {item.diagram && <MermaidDiagram chart={item.diagram} />}
+            {item.table && <QuestionTable table={item.table} />}
             {!correct && <p><strong>{t('result.yourAnswer')}</strong> {userAnswer(item, answers[item.id], t)}</p>}
             {!correct && <p><strong>{t('result.correctAnswerLabel')}</strong> {correctAnswer(item, t)}</p>}
             <p>{item.explanation}</p>
@@ -123,6 +125,7 @@ function GuestSession({ token, mode, quiz }: { token: string; mode: GuestLinkMod
       <div className="question-body" key={question.id}>
         {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
         {question.diagram && <MermaidDiagram chart={question.diagram} />}
+        {question.table && <QuestionTable table={question.table} />}
         {question.type !== 'cloze' && <h2>{question.question}</h2>}
         <QuestionRenderer question={question} answer={answers[question.id]} onChange={(answer) => setAnswers((previous) => ({ ...previous, [question.id]: answer }))} />
       </div>

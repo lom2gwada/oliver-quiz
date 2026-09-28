@@ -7,6 +7,7 @@ import { MermaidDiagram } from './MermaidDiagram'
 import { PieChart } from './PieChart'
 import { createBlankQuestion, QuestionEditForm } from './QuestionEditForm'
 import { QuestionImage } from './QuestionImage'
+import { QuestionTable } from './QuestionTable'
 import { QuizAccessManager } from './QuizAccessManager'
 import { difficultyLabel, TYPE_ICONS, typeLabel } from './QuizPage'
 import { correctAnswer } from './ResultPage'
@@ -161,6 +162,7 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
                 <p className="question-list-prompt">{question.question}</p>
                 {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
                 {question.diagram && <MermaidDiagram chart={question.diagram} />}
+                {question.table && <QuestionTable table={question.table} />}
                 <p><strong>{t('admin.answerLabel')}</strong> {correctAnswer(question, t)}</p>
                 <p className="question-list-explanation">{question.explanation}</p>
                 {canEditQuiz && <div className="edit-toggle">
