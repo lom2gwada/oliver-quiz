@@ -5,6 +5,7 @@ import { formatDuration } from '../utils/time'
 import { playFinish, playVictory } from '../utils/sound'
 import { Confetti } from './Confetti'
 import { MermaidDiagram } from './MermaidDiagram'
+import { QuestionTable } from './QuestionTable'
 import { QuestionImage } from './QuestionImage'
 import { ResultActions } from './ResultActions'
 import { correctAnswer, isCorrect, userAnswer } from './ResultPage'
@@ -43,6 +44,7 @@ export function TimedResultPage({ attempts, elapsedSeconds, onRestartSame, onBac
         <h3>{correct ? t('result.correct') : t('result.incorrect')} — {question.question}</h3>
         {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
         {question.diagram && <MermaidDiagram chart={question.diagram} />}
+        {question.table && <QuestionTable table={question.table} />}
         {!correct && <p><strong>{t('result.yourAnswer')}</strong> {userAnswer(question, answer, t)}</p>}
         {!correct && <p><strong>{t('result.correctAnswerLabel')}</strong> {correctAnswer(question, t)}</p>}
         <p>{question.explanation}</p>

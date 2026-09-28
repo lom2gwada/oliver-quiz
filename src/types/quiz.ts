@@ -76,6 +76,11 @@ export interface NumericContent {
   unit?: string
 }
 
+export interface QuestionTable {
+  headers?: string[]
+  rows: string[][]
+}
+
 export interface BaseQuestion {
   id: string
   theme: string
@@ -89,6 +94,8 @@ export interface BaseQuestion {
   imageAlt?: string
   /** Syntaxe Mermaid (diagramme de classes, séquence, état, ER...), rendue en SVG côté client. Même logique que imageUrl/imageAlt. */
   diagram?: string
+  /** Tableau illustratif (données structurées, pas du HTML) : `headers` optionnel, `rows` toutes de même longueur. */
+  table?: QuestionTable
   /** Temps limite en secondes pour répondre, à la charge de l'auteur du quiz d'estimer. Absent : le barème par
    * défaut (type + difficulté, voir `utils/questionTimeLimits.ts`) s'applique — il n'y a pas de mode "sans limite". */
   timeLimitSeconds?: number

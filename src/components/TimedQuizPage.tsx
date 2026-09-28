@@ -7,6 +7,7 @@ import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLi
 import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
+import { QuestionTable } from './QuestionTable'
 import { QuestionRenderer } from './QuestionRenderer'
 import { TYPE_ICONS, difficultyLabel, typeLabel, withShuffledAnswers } from './QuizPage'
 
@@ -77,6 +78,7 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish
     <div className="question-body" key={`${question.id}-${index}`}>
       {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
       {question.diagram && <MermaidDiagram chart={question.diagram} />}
+      {question.table && <QuestionTable table={question.table} />}
       {question.type !== 'cloze' && <h2>{question.question}</h2>}
       <QuestionRenderer question={question} answer={answer} onChange={setAnswer} />
     </div>

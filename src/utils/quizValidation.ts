@@ -6,6 +6,15 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const hasStrings = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((item) => typeof item === 'string')
 
+/** Toutes les lignes (et l'en-tête, si présent) doivent avoir le même nombre de colonnes. */
+const validTable = (value: unknown): value is { headers?: string[]; rows: string[][] } => {
+  if (!isRecord(value) || !Array.isArray(value.rows) || !value.rows.length) return false
+  if (value.headers !== undefined && !hasStrings(value.headers)) return false
+  if (!value.rows.every(hasStrings)) return false
+  const columnCount = value.headers?.length ?? value.rows[0].length
+  return value.rows.every((row) => row.length === columnCount) && (value.headers === undefined || value.headers.length === columnCount)
+}
+
 /** Valide le contrat JSON avant de l'utiliser dans l'application. */
 export function parseQuiz(value: unknown): Quiz {
   if (!isRecord(value) || typeof value.version !== 'string' || !isRecord(value.metadata)) {
@@ -34,7 +43,7 @@ export function parseQuiz(value: unknown): Quiz {
 
 function parseQuestion(value: unknown): Question {
   if (!isRecord(value) || !isRecord(value.content)) throw new Error('Question ou contenu invalide.')
-  const { id, type, theme, difficulty, question, tags, explanation, points, content, imageUrl, imageAlt, timeLimitSeconds, diagram } = value
+  const { id, type, theme, difficulty, question, tags, explanation, points, content, imageUrl, imageAlt, timeLimitSeconds, diagram, table } = value
   if (
     typeof id !== 'string' || typeof theme !== 'string' || typeof question !== 'string' ||
     typeof explanation !== 'string' || typeof points !== 'number' || points < 0 || !hasStrings(tags) ||
@@ -42,7 +51,8 @@ function parseQuestion(value: unknown): Question {
     (imageUrl !== undefined && (typeof imageUrl !== 'string' || !imageUrl)) ||
     (imageAlt !== undefined && typeof imageAlt !== 'string') ||
     (timeLimitSeconds !== undefined && (typeof timeLimitSeconds !== 'number' || timeLimitSeconds <= 0)) ||
-    (diagram !== undefined && (typeof diagram !== 'string' || !diagram))
+    (diagram !== undefined && (typeof diagram !== 'string' || !diagram)) ||
+    (table !== undefined && !validTable(table))
   ) throw new Error(`Question « ${String(id ?? '?')} » invalide.`)
 
   const base = {
@@ -50,6 +60,7 @@ function parseQuestion(value: unknown): Question {
     imageUrl: imageUrl as string | undefined, imageAlt: imageAlt as string | undefined,
     timeLimitSeconds: timeLimitSeconds as number | undefined,
     diagram: diagram as string | undefined,
+    table: table as Question['table'],
   }
   if (type === 'qcm' && typeof content.multiple === 'boolean' && validAnswers(content.answers)) {
     return { ...base, type, content: { multiple: content.multiple, answers: content.answers } }

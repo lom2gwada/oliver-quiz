@@ -109,6 +109,38 @@ describe('parseQuiz — shared question fields', () => {
     const bad = quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, diagram: 42 }])
     expect(() => parseQuiz(bad)).toThrow()
   })
+
+  it('parses a question with an optional table', () => {
+    const table = { headers: ['Pays', 'Capitale'], rows: [['France', 'Paris'], ['Japon', 'Tokyo']] }
+    const result = parseQuiz(quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, table }]))
+    expect(result.questions[0]).toMatchObject({ table })
+  })
+
+  it('parses a table without headers', () => {
+    const table = { rows: [['France', 'Paris']] }
+    const result = parseQuiz(quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, table }]))
+    expect(result.questions[0]).toMatchObject({ table })
+  })
+
+  it('rejects a table with no rows', () => {
+    const bad = quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, table: { rows: [] } }])
+    expect(() => parseQuiz(bad)).toThrow()
+  })
+
+  it('rejects a table with rows of inconsistent length', () => {
+    const bad = quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, table: { rows: [['a', 'b'], ['c']] } }])
+    expect(() => parseQuiz(bad)).toThrow()
+  })
+
+  it('rejects a table whose header length does not match its rows', () => {
+    const bad = quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, table: { headers: ['A'], rows: [['a', 'b']] } }])
+    expect(() => parseQuiz(bad)).toThrow()
+  })
+
+  it('rejects a table with non-string cells', () => {
+    const bad = quiz([{ ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true }, table: { rows: [[1, 2]] } }])
+    expect(() => parseQuiz(bad)).toThrow()
+  })
 })
 
 describe('parseQuiz — qcm', () => {

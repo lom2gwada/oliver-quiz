@@ -70,6 +70,12 @@ select, .text-answer { width: 100%; background: var(--surface-solid); color: var
 .question-diagram { max-width: 100%; margin: 0 0 1.2rem; padding: 1rem; background: var(--surface-solid); border: 1px solid var(--border); border-radius: .6rem; overflow-x: auto; }
 .question-diagram svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
 .correction .question-diagram { margin: .8rem 0; }
+.question-table-wrap { max-width: 100%; margin: 0 0 1.2rem; border: 1px solid var(--border); border-radius: .6rem; overflow: auto; }
+.question-table { width: 100%; border-collapse: collapse; background: var(--surface-solid); font-size: .9rem; }
+.question-table th, .question-table td { padding: .5rem .8rem; text-align: left; border-bottom: 1px solid var(--border); }
+.question-table thead th { background: var(--surface-alt); color: var(--text-muted); font-weight: 700; }
+.question-table tr:last-child td { border-bottom: none; }
+.correction .question-table-wrap { margin: .8rem 0; }
 @keyframes question-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .answers { display: grid; gap: .7rem; margin: 1.5rem 0; }.answer { display: flex; gap: .7rem; align-items: center; padding: .8rem; border: 1px solid var(--border); border-radius: .6rem; color: var(--text); cursor: pointer; transition: transform .15s ease, border-color .15s ease, background-color .15s ease; }.answer:active { transform: scale(.98); }.answer:has(input:checked) { border-color: var(--accent); background: var(--surface-selected); transform: scale(1.01); }.answer:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
 pre { padding: 1rem; overflow: auto; background: var(--code-bg); border: 1px solid var(--border); border-radius: .6rem; color: var(--info-text); }.text-answer { margin: 1.5rem 0; font-size: 1rem; }
