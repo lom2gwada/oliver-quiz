@@ -77,7 +77,7 @@ export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel }: Qui
       {question.diagram && <MermaidDiagram chart={question.diagram} />}
       {question.table && <QuestionTable table={question.table} />}
       {question.type !== 'cloze' && <h2>{question.question}</h2>}
-      <QuestionRenderer question={question} answer={answers[question.id]} onChange={updateAnswer} />
+      <QuestionRenderer question={question} answer={answers[question.id]} onChange={updateAnswer} onEnter={goNext} />
     </div>
     <div className="quiz-actions">
       <button type="button" className="secondary" onClick={cancelQuiz}>{t('common.cancel')}</button>

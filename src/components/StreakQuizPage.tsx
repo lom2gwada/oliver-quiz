@@ -73,7 +73,7 @@ export function StreakQuizPage({ quiz, pool, timeboxed, onFinish, onCancel }: St
       {question.diagram && <MermaidDiagram chart={question.diagram} />}
       {question.table && <QuestionTable table={question.table} />}
       {question.type !== 'cloze' && <h2>{question.question}</h2>}
-      <QuestionRenderer question={question} answer={answer} onChange={setAnswer} />
+      <QuestionRenderer question={question} answer={answer} onChange={setAnswer} onEnter={advance} />
     </div>
     <div className="quiz-actions">
       <button type="button" className="secondary" onClick={cancelQuiz}>{t('quiz.abandon')}</button>
