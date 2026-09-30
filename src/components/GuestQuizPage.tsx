@@ -127,7 +127,7 @@ function GuestSession({ token, mode, quiz }: { token: string; mode: GuestLinkMod
         {question.diagram && <MermaidDiagram chart={question.diagram} />}
         {question.table && <QuestionTable table={question.table} />}
         {question.type !== 'cloze' && <h2>{question.question}</h2>}
-        <QuestionRenderer question={question} answer={answers[question.id]} onChange={(answer) => setAnswers((previous) => ({ ...previous, [question.id]: answer }))} />
+        <QuestionRenderer question={question} answer={answers[question.id]} onChange={(answer) => setAnswers((previous) => ({ ...previous, [question.id]: answer }))} onEnter={() => { if (isLast) { if (!submitting) finish() } else setCurrent((value) => value + 1) }} />
       </div>
       {submitError && <p className="alert" role="alert">{t('guest.errorSubmit')}</p>}
       <div className="quiz-actions">

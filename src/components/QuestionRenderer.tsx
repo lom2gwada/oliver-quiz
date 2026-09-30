@@ -8,14 +8,17 @@ import { OrderingQuestion } from './OrderingQuestion'
 import { QCMQuestion } from './QCMQuestion'
 import { TextQuestion } from './TextQuestion'
 
-export function QuestionRenderer({ question, answer, onChange }: { question: Question; answer?: UserAnswer; onChange: (answer: UserAnswer) => void }) {
+/** `onEnter` (Entrée dans le champ pour passer à la question suivante) ne s'applique qu'aux types à saisie
+ * libre sur un seul champ (texte, texte à trous) — les autres types se répondent en cliquant, Entrée n'y a
+ * pas de sens évident. */
+export function QuestionRenderer({ question, answer, onChange, onEnter }: { question: Question; answer?: UserAnswer; onChange: (answer: UserAnswer) => void; onEnter?: () => void }) {
   switch (question.type) {
     case 'qcm': return <QCMQuestion question={question} answer={answer} onChange={onChange} />
-    case 'text': return <TextQuestion question={question} answer={answer} onChange={onChange} />
+    case 'text': return <TextQuestion question={question} answer={answer} onChange={onChange} onEnter={onEnter} />
     case 'code': return <CodeQuestion question={question} answer={answer} onChange={onChange} />
     case 'ordering': return <OrderingQuestion question={question} answer={answer} onChange={onChange} />
     case 'boolean': return <BooleanQuestion question={question} answer={answer} onChange={onChange} />
-    case 'cloze': return <ClozeQuestion question={question} answer={answer} onChange={onChange} />
+    case 'cloze': return <ClozeQuestion question={question} answer={answer} onChange={onChange} onEnter={onEnter} />
     case 'matching': return <MatchingQuestion question={question} answer={answer} onChange={onChange} />
     case 'numeric': return <NumericQuestion question={question} answer={answer} onChange={onChange} />
   }
