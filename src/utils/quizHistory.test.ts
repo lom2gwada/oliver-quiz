@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BooleanQuestion, QCMQuestion, Theme } from '../types/quiz'
-import type { QuestionResultRow, QuizResultRow } from '../types/history'
-import { bucketsToChartGroups, bucketsToRadarAxes, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, computeMissedQuestions, computeRecords, computeThemeWeekHeatmap, sumBuckets, weekStartKey } from './quizHistory'
+import type { QuizResultRow } from '../types/history'
+import { bucketsToChartGroups, bucketsToRadarAxes, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, computeRecords, computeThemeWeekHeatmap, sumBuckets, weekStartKey } from './quizHistory'
 
 const themes: Theme[] = [{ id: 'histoire', label: 'Histoire' }, { id: 'geo', label: 'Géographie' }]
 
@@ -300,79 +300,5 @@ describe('buildQuestionResultPayloads', () => {
 
   it('returns an empty array for no questions', () => {
     expect(buildQuestionResultPayloads([], {}, 'Culture générale', null)).toEqual([])
-  })
-})
-
-function questionRow(overrides: Partial<QuestionResultRow>): QuestionResultRow {
-  return {
-    id: '1', created_at: '2026-01-01T00:00:00Z', quiz_title: 'Culture générale', quiz_id: null,
-    question_id: 'q1', question_text: 'Q ?', correct: true,
-    ...overrides,
-  }
-}
-
-describe('computeMissedQuestions', () => {
-  it('counts wrong attempts per question', () => {
-    const rows = [
-      questionRow({ correct: false }),
-      questionRow({ correct: true }),
-      questionRow({ correct: false }),
-    ]
-    const [missed] = computeMissedQuestions(rows, 'Culture générale', null)
-    expect(missed).toEqual({ questionId: 'q1', questionText: 'Q ?', attempts: 3, wrongCount: 2 })
-  })
-
-  it('excludes questions that were always answered correctly', () => {
-    const rows = [questionRow({ correct: true }), questionRow({ correct: true })]
-    expect(computeMissedQuestions(rows, 'Culture générale', null)).toEqual([])
-  })
-
-  it('sorts by wrong count, most missed first', () => {
-    const rows = [
-      questionRow({ question_id: 'q1', correct: false }),
-      questionRow({ question_id: 'q2', correct: false }),
-      questionRow({ question_id: 'q2', correct: false }),
-    ]
-    const missed = computeMissedQuestions(rows, 'Culture générale', null)
-    expect(missed.map((entry) => entry.questionId)).toEqual(['q2', 'q1'])
-  })
-
-  it('ignores rows from other quizzes', () => {
-    const rows = [questionRow({ quiz_title: 'Autre quiz', correct: false })]
-    expect(computeMissedQuestions(rows, 'Culture générale', null)).toEqual([])
-  })
-
-  it('prefers matching by quiz_id over the frozen title when both are known', () => {
-    const rows = [questionRow({ quiz_id: 'quiz-1', quiz_title: 'Ancien titre', correct: false })]
-    expect(computeMissedQuestions(rows, 'Nouveau titre', 'quiz-1')).toHaveLength(1)
-    expect(computeMissedQuestions(rows, 'Nouveau titre', 'quiz-2')).toEqual([])
-  })
-
-  it('returns an empty array for no history', () => {
-    expect(computeMissedQuestions([], 'Culture générale', null)).toEqual([])
-  })
-
-  const at = (iso: string, correct: boolean) => questionRow({ created_at: iso, correct })
-
-  it('drops a question once its 5 most recent attempts are majority correct, even with a heavy wrong history', () => {
-    const rows = [
-      at('2026-01-01T00:00:00Z', false), at('2026-01-02T00:00:00Z', false), at('2026-01-03T00:00:00Z', false),
-      at('2026-01-04T00:00:00Z', false), at('2026-01-05T00:00:00Z', false), at('2026-01-06T00:00:00Z', false),
-      at('2026-02-01T00:00:00Z', true), at('2026-02-02T00:00:00Z', true), at('2026-02-03T00:00:00Z', true),
-    ]
-    expect(computeMissedQuestions(rows, 'Culture générale', null)).toEqual([])
-  })
-
-  it('keeps a question when its recent attempts are exactly half correct (not a strict majority)', () => {
-    const rows = [at('2026-01-01T00:00:00Z', false), at('2026-01-02T00:00:00Z', true)]
-    expect(computeMissedQuestions(rows, 'Culture générale', null)).toHaveLength(1)
-  })
-
-  it('ignores attempts older than the 5 most recent when judging mastery', () => {
-    const rows = [
-      at('2026-01-01T00:00:00Z', true), at('2026-01-02T00:00:00Z', true), at('2026-01-03T00:00:00Z', true), // ignored, outside the window
-      at('2026-01-04T00:00:00Z', false), at('2026-01-05T00:00:00Z', false), at('2026-01-06T00:00:00Z', false), at('2026-01-07T00:00:00Z', false), at('2026-01-08T00:00:00Z', false),
-    ]
-    expect(computeMissedQuestions(rows, 'Culture générale', null)).toHaveLength(1)
   })
 })

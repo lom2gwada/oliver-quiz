@@ -28,7 +28,7 @@ export interface QuestionCorrectness {
 }
 
 /** Mode test : pour chaque question du quiz, combien de répondants l'ont réussie. Recalculé à la volée depuis les
- * réponses brutes (comme `computeMissedQuestions`) — une question modifiée depuis se juge donc sur sa version actuelle. */
+ * réponses brutes — une question modifiée depuis se juge donc sur sa version actuelle. */
 export function computeQuestionCorrectness(results: GuestResultRow[], questions: Question[]): QuestionCorrectness[] {
   return questions.map((question) => ({
     question,

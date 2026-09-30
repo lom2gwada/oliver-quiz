@@ -64,18 +64,6 @@ export interface QuestionResultPayload {
   correct: boolean
 }
 
-export interface QuestionResultRow extends QuestionResultPayload {
-  id: string
-  created_at: string
-}
-
-export interface MissedQuestion {
-  questionId: string
-  questionText: string
-  attempts: number
-  wrongCount: number
-}
-
 export interface StreakResultPayload {
   quiz_title: string
   quiz_id: string | null

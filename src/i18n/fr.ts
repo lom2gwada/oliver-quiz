@@ -298,9 +298,9 @@ export const fr = {
   'history.streakSectionTitle': 'Mode sans-faute',
   'history.bestStreak': 'Meilleure série',
   'history.timedSectionTitle': 'Mode contre-la-montre',
-  'history.missedTitle': (count: number) => `Questions à retravailler (${count})`,
-  'history.replayMissed': 'Reprendre mes erreurs',
-  'history.missedRatio': (wrong: number, attempts: number) => `Ratée ${wrong} fois sur ${attempts}`,
+  'history.dueTitle': (count: number) => `Questions à réviser (${count})`,
+  'history.reviewButton': 'Réviser ces questions',
+  'history.dueBox': (box: number) => `Boîte ${box}/5`,
 
   'leaderboard.title': 'Classement',
   'leaderboard.modeOverall': '🏅 Général',
