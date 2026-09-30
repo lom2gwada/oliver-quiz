@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import type { Difficulty, Question, Quiz } from '../types/quiz'
-import type { QuestionResultRow, QuizResultRow, StreakResultRow, TimedResultRow } from '../types/history'
+import type { QuizResultRow, StreakResultRow, TimedResultRow } from '../types/history'
 import type { Language } from '../i18n/types'
 import { useTranslation } from '../i18n'
-import { bucketsToChartGroups, bucketsToRadarAxes, computeMissedQuestions, computeRecords, computeThemeWeekHeatmap, fetchQuestionResults, fetchQuizHistory, fetchStreakHistory, fetchTimedHistory, sumBuckets } from '../utils/quizHistory'
+import { bucketsToChartGroups, bucketsToRadarAxes, computeRecords, computeThemeWeekHeatmap, fetchQuizHistory, fetchStreakHistory, fetchTimedHistory, sumBuckets } from '../utils/quizHistory'
+import { computeDueQuestions, fetchQuestionProgress, type QuestionProgressRow } from '../utils/leitner'
 import { formatDuration } from '../utils/time'
 import { PieChart } from './PieChart'
 import { RadarChart } from './RadarChart'
@@ -22,30 +23,37 @@ interface HistoryPageProps {
   onBack: () => void
   quiz: Quiz
   hostedQuizId: string
-  onReplayMissed: (questions: Question[]) => void
+  onReviewDue: (questions: Question[]) => void
 }
 
 /** Une ligne d'historique "appartient" à `quiz_id` si connu, ou à son titre figé sinon (parties d'avant cette
- * colonne, ou quiz source supprimé depuis) — même repli que `matchesQuiz`, réutilisé ici pour regrouper deux
- * titres successifs d'un même quiz renommé plutôt que de les traiter comme deux quiz différents. */
+ * colonne, ou quiz source supprimé depuis) — regroupe ainsi deux titres successifs d'un même quiz renommé
+ * plutôt que de les traiter comme deux quiz différents. */
 const quizKeyOf = (row: { quiz_id: string | null; quiz_title: string }) => row.quiz_id ?? row.quiz_title
 
-export function HistoryPage({ onBack, quiz, hostedQuizId, onReplayMissed }: HistoryPageProps) {
+export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue }: HistoryPageProps) {
   const { t, language } = useTranslation()
   const [rows, setRows] = useState<QuizResultRow[] | null>(null)
-  const [questionRows, setQuestionRows] = useState<QuestionResultRow[]>([])
   const [streakRows, setStreakRows] = useState<StreakResultRow[]>([])
   const [timedRows, setTimedRows] = useState<TimedResultRow[]>([])
+  const [progress, setProgress] = useState<QuestionProgressRow[]>([])
   const [error, setError] = useState('')
   const [selectedQuiz, setSelectedQuiz] = useState<string | null>(null)
   const [replayLimit, setReplayLimit] = useState(20)
 
   useEffect(() => {
     fetchQuizHistory().then(setRows).catch(() => setError(t('history.errorLoad')))
-    fetchQuestionResults().then(setQuestionRows).catch(() => {})
     fetchStreakHistory().then(setStreakRows).catch(() => {})
     fetchTimedHistory().then(setTimedRows).catch(() => {})
   }, [])
+
+  // Contrairement aux autres blocs d'historique, `question_progress` n'a de sens que pour le quiz actuellement
+  // chargé : ses lignes ne portent que l'id de question et la boîte, pas le texte — il faut `quiz.questions`
+  // pour les résoudre, ce qu'on n'a que pour le quiz actif (voir `canReplay` plus bas).
+  useEffect(() => {
+    if (!hostedQuizId) { setProgress([]); return }
+    fetchQuestionProgress(hostedQuizId).then(setProgress).catch(() => setProgress([]))
+  }, [hostedQuizId])
 
   const activeQuizKey = hostedQuizId || quiz.metadata.title
 
@@ -54,11 +62,9 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReplayMissed }: Hist
   // et on force le titre courant pour le quiz actuellement chargé si son historique apparaît dans la liste
   // (seul quiz dont on connaît le titre à jour sans dépendre de ce qui a été figé au moment de chaque partie).
   const keyLabels = new Map<string, string>()
-  const keyQuizIds = new Map<string, string | null>()
   const rememberKey = (row: { quiz_id: string | null; quiz_title: string }) => {
     const key = quizKeyOf(row)
     if (!keyLabels.has(key)) keyLabels.set(key, row.quiz_title)
-    if (!keyQuizIds.has(key)) keyQuizIds.set(key, row.quiz_id)
   }
   ;(rows ?? []).forEach(rememberKey)
   streakRows.forEach(rememberKey)
@@ -67,8 +73,6 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReplayMissed }: Hist
   const quizKeys = Array.from(keyLabels.keys())
 
   const activeQuiz = selectedQuiz && quizKeys.includes(selectedQuiz) ? selectedQuiz : (quizKeys.includes(activeQuizKey) ? activeQuizKey : quizKeys[0] ?? activeQuizKey)
-  const activeQuizTitle = keyLabels.get(activeQuiz) ?? quiz.metadata.title
-  const activeQuizId = keyQuizIds.get(activeQuiz) ?? null
   const quizRows = rows ? rows.filter((row) => quizKeyOf(row) === activeQuiz) : null
   const quizStreakRows = streakRows.filter((row) => quizKeyOf(row) === activeQuiz)
   const bestStreak = quizStreakRows.length ? Math.max(...quizStreakRows.map((row) => row.streak_count)) : 0
@@ -86,13 +90,11 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReplayMissed }: Hist
   const radarTruncated = Object.keys(themeBuckets).length > radarAxes.length
   const heatmap = computeThemeWeekHeatmap(quizRows ?? [])
 
-  const missedQuestions = activeQuiz ? computeMissedQuestions(questionRows, activeQuizTitle, activeQuizId) : []
   const canReplay = activeQuiz === activeQuizKey
-  // `missedQuestions` est déjà trié des plus ratées aux moins ratées (cf. `computeMissedQuestions`) : tronquer
-  // ce tableau garde donc les questions les plus problématiques en priorité.
-  const replayQuestions = canReplay
-    ? missedQuestions.map((missed) => quiz.questions.find((question) => question.id === missed.questionId)).filter((question): question is Question => Boolean(question))
-    : []
+  // `computeDueQuestions` trie déjà de la boîte la plus basse (la plus fragile) à la plus haute : tronquer
+  // ce tableau garde donc les cartes les plus prioritaires.
+  const dueCards = canReplay ? computeDueQuestions(progress, quiz.questions) : []
+  const replayQuestions = dueCards.map((card) => card.question)
   const replayCap = Math.min(replayLimit, replayQuestions.length)
 
   return <section className="stats-page">
@@ -170,21 +172,21 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReplayMissed }: Hist
         </li>)}
       </ul>
     </div>}
-    {missedQuestions.length > 0 && <div className="missed-questions">
+    {dueCards.length > 0 && <div className="missed-questions">
       <div className="stats-group-header">
-        <h3 className="stats-group-title">{t('history.missedTitle', missedQuestions.length)}</h3>
+        <h3 className="stats-group-title">{t('history.dueTitle', dueCards.length)}</h3>
         {replayQuestions.length > 0 && <label className="question-count">{t('start.questionCountLabel')}
           <select value={replayCap} onChange={(event) => setReplayLimit(Number(event.target.value))}>
             {REPLAY_COUNTS.filter((count) => count < replayQuestions.length).map((count) => <option key={count} value={count}>{t('start.questionCountOption', count, false)}</option>)}
             <option value={replayQuestions.length}>{t('start.allQuestionsOption', replayQuestions.length)}</option>
           </select>
         </label>}
-        {replayQuestions.length > 0 && <button type="button" onClick={() => onReplayMissed(replayQuestions.slice(0, replayCap))}>{t('history.replayMissed')}</button>}
+        {replayQuestions.length > 0 && <button type="button" onClick={() => onReviewDue(replayQuestions.slice(0, replayCap))}>{t('history.reviewButton')}</button>}
       </div>
       <ul className="missed-list">
-        {missedQuestions.map((missed) => <li className="missed-item" key={missed.questionId}>
-          <span>{missed.questionText}</span>
-          <span className="missed-ratio">{t('history.missedRatio', missed.wrongCount, missed.attempts)}</span>
+        {dueCards.map(({ question, box }) => <li className="missed-item" key={question.id}>
+          <span>{question.question}</span>
+          <span className="missed-ratio">{t('history.dueBox', box)}</span>
         </li>)}
       </ul>
     </div>}

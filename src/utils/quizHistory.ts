@@ -1,5 +1,5 @@
 import type { AnswersByQuestion, Question, QuestionAttempt, Theme } from '../types/quiz'
-import type { ChartGroup, MissedQuestion, QuestionResultPayload, QuestionResultRow, QuizRecords, QuizResultPayload, QuizResultRow, RadarAxis, StatBucket, StreakResultPayload, StreakResultRow, ThemeWeekHeatmap, TimedResultPayload, TimedResultRow } from '../types/history'
+import type { ChartGroup, QuestionResultPayload, QuizRecords, QuizResultPayload, QuizResultRow, RadarAxis, StatBucket, StreakResultPayload, StreakResultRow, ThemeWeekHeatmap, TimedResultPayload, TimedResultRow } from '../types/history'
 import { isCorrect } from '../components/ResultPage'
 import { supabase } from './supabase'
 
@@ -13,13 +13,6 @@ function aggregate(questions: Question[], answers: AnswersByQuestion, keyOf: (qu
     buckets[key] = bucket
   })
   return buckets
-}
-
-/** Une ligne d'historique/classement représente le même quiz que `quizId`/`quizTitle` si son id correspond
- * (lien stable), ou si elle n'a pas d'id (partie d'avant cette colonne, ou quiz source depuis supprimé) et que
- * son titre figé correspond encore — permet de continuer à regrouper les anciennes lignes sans id. */
-export function matchesQuiz(row: { quiz_id: string | null; quiz_title: string }, quizId: string | null, quizTitle: string): boolean {
-  return row.quiz_id ? row.quiz_id === quizId : row.quiz_title === quizTitle
 }
 
 /** Construit le résumé d'une partie terminée, prêt à être enregistré. Les thèmes sont figés en libellés (pas des ids) pour rester lisibles même si le quiz importé change ensuite. */
@@ -58,7 +51,8 @@ export async function fetchQuizHistory(): Promise<QuizResultRow[]> {
   return data ?? []
 }
 
-/** Une ligne par question de la partie, pour pouvoir repérer plus tard les questions ratées de façon récurrente. */
+/** Une ligne par question de la partie : journal brut, conservé même si la sélection des questions à réviser
+ * repose désormais sur `question_progress` (boîtes de Leitner, voir `utils/leitner.ts`) plutôt que sur ce log. */
 export function buildQuestionResultPayloads(questions: Question[], answers: AnswersByQuestion, quizTitle: string, quizId: string | null): QuestionResultPayload[] {
   return questions.map((question) => ({
     quiz_title: quizTitle,
@@ -74,45 +68,6 @@ export async function saveQuestionResults(payloads: QuestionResultPayload[]): Pr
   if (!payloads.length) return
   const { error } = await supabase.from('question_results').insert(payloads)
   if (error) console.error("Impossible d'enregistrer le détail des réponses.", error)
-}
-
-export async function fetchQuestionResults(): Promise<QuestionResultRow[]> {
-  const { data, error } = await supabase.from('question_results').select('*')
-  if (error) throw error
-  return data ?? []
-}
-
-/** Regroupe les résultats par question pour un quiz donné, ne garde que celles ratées au moins une fois, triées de la plus problématique à la moins. */
-/** Une question reste "à retravailler" tant qu'elle n'est pas majoritairement réussie sur ses `RECENT_WINDOW`
- * tentatives les plus récentes — pas sur toute sa durée de vie, sinon une question ratée il y a longtemps mais
- * maîtrisée depuis resterait affichée indéfiniment (il faudrait autant de bonnes réponses que de mauvaises
- * accumulées pour repasser sous la barre). `wrongCount`/`attempts` restent cumulés sur toute la durée de vie
- * pour l'affichage ("ratée x fois sur y") — seul le critère d'inclusion dans la liste change. */
-const RECENT_WINDOW = 5
-
-export function computeMissedQuestions(rows: QuestionResultRow[], quizTitle: string, quizId: string | null): MissedQuestion[] {
-  const byQuestion = new Map<string, QuestionResultRow[]>()
-  rows.filter((row) => matchesQuiz(row, quizId, quizTitle)).forEach((row) => {
-    const attempts = byQuestion.get(row.question_id) ?? []
-    attempts.push(row)
-    byQuestion.set(row.question_id, attempts)
-  })
-  return Array.from(byQuestion.values())
-    .map((attempts) => {
-      const chronological = [...attempts].sort((a, b) => a.created_at.localeCompare(b.created_at))
-      const recent = chronological.slice(-RECENT_WINDOW)
-      const recentCorrect = recent.filter((row) => row.correct).length
-      const missed: MissedQuestion = {
-        questionId: chronological[0].question_id,
-        questionText: chronological[chronological.length - 1].question_text,
-        attempts: chronological.length,
-        wrongCount: chronological.filter((row) => !row.correct).length,
-      }
-      return { missed, recentlyMastered: recentCorrect * 2 > recent.length }
-    })
-    .filter(({ missed, recentlyMastered }) => missed.wrongCount > 0 && !recentlyMastered)
-    .map(({ missed }) => missed)
-    .sort((a, b) => b.wrongCount - a.wrongCount)
 }
 
 /** `rows` peut être dans n'importe quel ordre — seuls les agrégats comptent ici. */
