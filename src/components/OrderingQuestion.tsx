@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { OrderingQuestion as Question, UserAnswer } from '../types/quiz'
 import { useTranslation } from '../i18n'
 import { playClick } from '../utils/sound'
@@ -8,6 +8,12 @@ export function OrderingQuestion({ question, answer, onChange }: { question: Que
   const order = Array.isArray(answer) && answer.length ? answer : question.content.items.map((item) => item.id)
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const itemRefs = useRef(new Map<string, HTMLLIElement>())
+
+  // Si l'ordre affiché au premier rendu est déjà le bon et que l'utilisateur ne touche à rien, la réponse ne
+  // doit pas rester vide pour autant : on l'initialise à l'ordre affiché dès le montage (une fois par question,
+  // le composant est remonté à chaque changement via `key={question.id}` chez tous les appelants).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!Array.isArray(answer)) onChange(order) }, [])
 
   const move = (index: number, direction: -1 | 1) => {
     const next = [...order]
