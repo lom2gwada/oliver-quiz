@@ -147,6 +147,10 @@ pre { padding: 1rem; overflow: auto; background: var(--code-bg); border: 1px sol
 .table-field-row button, .table-field-spacer { padding: .4rem .6rem; flex: none; }
 .table-field-spacer { visibility: hidden; }
 .table-field-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .3rem; }
+.dictation-row { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.dictation-row .text-answer { flex: 1; width: auto; min-width: 0; }
+.dictation-button { white-space: nowrap; }
+.dictation-message { flex-basis: 100%; margin: 0; font-size: .85rem; }
 .reorder-controls button { padding: .3rem .5rem; }
 .question-edit-actions { display: flex; gap: .8rem; }
 .question-list-prompt { font-weight: 700; color: var(--ink); }
