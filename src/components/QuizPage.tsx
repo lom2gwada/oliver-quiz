@@ -6,10 +6,7 @@ import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
 import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
-import { MermaidDiagram } from './MermaidDiagram'
-import { QuestionImage } from './QuestionImage'
-import { QuestionRenderer } from './QuestionRenderer'
-import { QuestionTable } from './QuestionTable'
+import { QuestionBody } from './QuestionBody'
 
 export const TYPE_ICONS: Record<Question['type'], string> = { qcm: '🧩', code: '💻', text: '✍️', ordering: '🔀', boolean: '⚖️', cloze: '📝', matching: '🔗', numeric: '🎚️' }
 
@@ -72,13 +69,7 @@ export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel }: Qui
     <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span>{remaining !== null && timeLimit !== null && <span className={`quiz-timer-${questionTimerUrgency(remaining, timeLimit)}`}>⏳ {remaining}s</span>}{!timeboxed && <span>⏱ {formatDuration(elapsed)}</span>}</div>
     <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${((current + 1) / shuffledQuestions.length) * 100}%` }} /></div>
     <p className="progress">{t('quiz.questionProgress', current + 1, shuffledQuestions.length)}</p>
-    <div className="question-body" key={question.id}>
-      {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
-      {question.diagram && <MermaidDiagram chart={question.diagram} />}
-      {question.table && <QuestionTable table={question.table} />}
-      {question.type !== 'cloze' && <h2>{question.question}</h2>}
-      <QuestionRenderer question={question} answer={answers[question.id]} onChange={updateAnswer} onEnter={goNext} />
-    </div>
+    <QuestionBody key={question.id} question={question} answer={answers[question.id]} onChange={updateAnswer} onEnter={goNext} />
     <div className="quiz-actions">
       <button type="button" className="secondary" onClick={cancelQuiz}>{t('common.cancel')}</button>
       <div className="quiz-nav">
