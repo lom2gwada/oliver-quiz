@@ -7,6 +7,7 @@ import { MermaidDiagram } from './MermaidDiagram'
 import { PieChart } from './PieChart'
 import { createBlankQuestion, QuestionEditForm } from './QuestionEditForm'
 import { QuestionImage } from './QuestionImage'
+import { QuestionPreview } from './QuestionPreview'
 import { QuestionTable } from './QuestionTable'
 import { QuizAccessManager } from './QuizAccessManager'
 import { difficultyLabel, TYPE_ICONS, typeLabel } from './QuizPage'
@@ -45,6 +46,8 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
   const { t } = useTranslation()
   const [deleteHistoryToo, setDeleteHistoryToo] = useState(false)
   const [editingQuestionId, setEditingQuestionId] = useState('')
+  const [previewingIds, setPreviewingIds] = useState<string[]>([])
+  const setPreview = (id: string, on: boolean) => setPreviewingIds((current) => (on ? [...current, id] : current.filter((existing) => existing !== id)))
   const [creatingType, setCreatingType] = useState<Question['type']>('qcm')
   const [creatingTheme, setCreatingTheme] = useState(quiz.themes[0]?.id ?? '')
   // `creatingTheme` peut devenir obsolète (thème d'un quiz précédent, ou d'avant l'ajout d'un thème) sans que ce
@@ -158,17 +161,20 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
                 error={editError}
                 onCancel={() => setEditingQuestionId('')}
                 onSave={async (updated) => { try { await onSaveQuestion(updated); setEditingQuestionId('') } catch { /* editError affiché par le parent, formulaire laissé ouvert */ } }}
-              /> : <>
+              /> : previewingIds.includes(question.id) ? <QuestionPreview question={question} onClose={() => setPreview(question.id, false)} /> : <>
                 <p className="question-list-prompt">{question.question}</p>
                 {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
                 {question.diagram && <MermaidDiagram chart={question.diagram} />}
                 {question.table && <QuestionTable table={question.table} />}
                 <p><strong>{t('admin.answerLabel')}</strong> {correctAnswer(question, t)}</p>
                 <p className="question-list-explanation">{question.explanation}</p>
-                {canEditQuiz && <div className="edit-toggle">
-                  <button type="button" className="secondary" onClick={() => setEditingQuestionId(question.id)}>{t('admin.editButton')}</button>
-                  <button type="button" className="secondary" onClick={() => onDeleteQuestion(question.id)}>{t('admin.deleteButton')}</button>
-                </div>}
+                <div className="edit-toggle">
+                  <button type="button" className="secondary" onClick={() => setPreview(question.id, true)}>{t('admin.previewButton')}</button>
+                  {canEditQuiz && <>
+                    <button type="button" className="secondary" onClick={() => setEditingQuestionId(question.id)}>{t('admin.editButton')}</button>
+                    <button type="button" className="secondary" onClick={() => onDeleteQuestion(question.id)}>{t('admin.deleteButton')}</button>
+                  </>}
+                </div>
               </>}
             </article>)}
           </div>

@@ -5,7 +5,7 @@ import { LanguageProvider, useTranslation } from '../i18n'
 import { fetchGuestQuiz, submitGuestResult } from '../utils/guestQuiz'
 import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
-import { QuestionRenderer } from './QuestionRenderer'
+import { QuestionBody } from './QuestionBody'
 import { QuestionTable } from './QuestionTable'
 import { TYPE_ICONS, typeLabel, withShuffledAnswers } from './QuizPage'
 import { correctAnswer, isCorrect, userAnswer } from './ResultPage'
@@ -122,13 +122,7 @@ function GuestSession({ token, mode, quiz }: { token: string; mode: GuestLinkMod
       <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span>{isTest && <span>{question.points} pts</span>}</div>
       <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${((current + 1) / questions.length) * 100}%` }} /></div>
       <p className="progress">{t('quiz.questionProgress', current + 1, questions.length)}</p>
-      <div className="question-body" key={question.id}>
-        {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
-        {question.diagram && <MermaidDiagram chart={question.diagram} />}
-        {question.table && <QuestionTable table={question.table} />}
-        {question.type !== 'cloze' && <h2>{question.question}</h2>}
-        <QuestionRenderer question={question} answer={answers[question.id]} onChange={(answer) => setAnswers((previous) => ({ ...previous, [question.id]: answer }))} onEnter={() => { if (isLast) { if (!submitting) finish() } else setCurrent((value) => value + 1) }} />
-      </div>
+      <QuestionBody key={question.id} question={question} answer={answers[question.id]} onChange={(answer) => setAnswers((previous) => ({ ...previous, [question.id]: answer }))} onEnter={() => { if (isLast) { if (!submitting) finish() } else setCurrent((value) => value + 1) }} />
       {submitError && <p className="alert" role="alert">{t('guest.errorSubmit')}</p>}
       <div className="quiz-actions">
         <button type="button" className="secondary" onClick={() => setCurrent((value) => value - 1)} disabled={current === 0 || submitting}>{t('quiz.previous')}</button>

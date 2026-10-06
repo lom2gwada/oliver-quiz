@@ -6,10 +6,7 @@ import { shuffle } from '../utils/shuffle'
 import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { isCorrect } from './ResultPage'
-import { MermaidDiagram } from './MermaidDiagram'
-import { QuestionImage } from './QuestionImage'
-import { QuestionTable } from './QuestionTable'
-import { QuestionRenderer } from './QuestionRenderer'
+import { QuestionBody } from './QuestionBody'
 import { TYPE_ICONS, difficultyLabel, typeLabel, withShuffledAnswers } from './QuizPage'
 
 export interface StreakResult {
@@ -68,13 +65,7 @@ export function StreakQuizPage({ quiz, pool, timeboxed, onFinish, onCancel }: St
     <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span><span>🔥 {streakCount}</span>{remaining !== null && timeLimit !== null && <span className={`quiz-timer-${questionTimerUrgency(remaining, timeLimit)}`}>⏳ {remaining}s</span>}{!timeboxed && <span>⏱ {formatDuration(elapsed)}</span>}</div>
     <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${((index + 1) / order.length) * 100}%` }} /></div>
     <p className="progress">{t('quiz.questionProgress', index + 1, order.length)}</p>
-    <div className="question-body" key={question.id}>
-      {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
-      {question.diagram && <MermaidDiagram chart={question.diagram} />}
-      {question.table && <QuestionTable table={question.table} />}
-      {question.type !== 'cloze' && <h2>{question.question}</h2>}
-      <QuestionRenderer question={question} answer={answer} onChange={setAnswer} onEnter={advance} />
-    </div>
+    <QuestionBody key={question.id} question={question} answer={answer} onChange={setAnswer} onEnter={advance} />
     <div className="quiz-actions">
       <button type="button" className="secondary" onClick={cancelQuiz}>{t('quiz.abandon')}</button>
       <button type="button" onClick={advance}>{index + 1 === order.length ? t('quiz.viewCorrection') : t('quiz.next')}</button>

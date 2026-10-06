@@ -155,6 +155,8 @@ pre { padding: 1rem; overflow: auto; background: var(--code-bg); border: 1px sol
 .question-edit-actions { display: flex; gap: .8rem; }
 .question-list-prompt { font-weight: 700; color: var(--ink); }
 .question-list-explanation { margin-bottom: 0; }
+.preview-result { margin: 1rem 0; padding: .8rem 1rem; background: var(--surface-solid); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: .5rem; }
+.preview-result p { margin: .3rem 0; }
 .pie-chart { margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 1.2rem; display: grid; justify-items: center; gap: .8rem; }
 .pie-chart svg { width: 140px; height: 140px; }
 .pie-chart h3 { text-align: center; margin: 0 0 .6rem; }

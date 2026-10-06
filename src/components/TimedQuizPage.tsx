@@ -5,10 +5,7 @@ import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
 import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
-import { MermaidDiagram } from './MermaidDiagram'
-import { QuestionImage } from './QuestionImage'
-import { QuestionTable } from './QuestionTable'
-import { QuestionRenderer } from './QuestionRenderer'
+import { QuestionBody } from './QuestionBody'
 import { TYPE_ICONS, difficultyLabel, typeLabel, withShuffledAnswers } from './QuizPage'
 
 export interface TimedResult {
@@ -75,13 +72,7 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish
     <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span><span>✅ {attempts.length}</span>{questionRemaining !== null && questionTimeLimitSeconds !== null && <span className={`quiz-timer-${questionTimerUrgency(questionRemaining, questionTimeLimitSeconds)}`}>⏳ {questionRemaining}s</span>}<span>⏱ {remaining !== null ? formatDuration(remaining) : formatDuration(elapsed)}</span></div>
     {durationSeconds > 0 && <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${Math.min(100, (elapsed / durationSeconds) * 100)}%` }} /></div>}
     <p className="progress">{t('quiz.questionNumber', attempts.length + 1)}</p>
-    <div className="question-body" key={`${question.id}-${index}`}>
-      {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
-      {question.diagram && <MermaidDiagram chart={question.diagram} />}
-      {question.table && <QuestionTable table={question.table} />}
-      {question.type !== 'cloze' && <h2>{question.question}</h2>}
-      <QuestionRenderer question={question} answer={answer} onChange={setAnswer} onEnter={advance} />
-    </div>
+    <QuestionBody key={`${question.id}-${index}`} question={question} answer={answer} onChange={setAnswer} onEnter={advance} />
     <div className="quiz-actions">
       <button type="button" className="secondary" onClick={cancelQuiz}>{t('quiz.abandon')}</button>
       <div className="quiz-nav">
