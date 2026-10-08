@@ -6,6 +6,7 @@ import { fetchGuestQuiz, submitGuestResult } from '../utils/guestQuiz'
 import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
 import { QuestionBody } from './QuestionBody'
+import { QuestionReplay } from './QuestionReplay'
 import { QuestionTable } from './QuestionTable'
 import { TYPE_ICONS, typeLabel, withShuffledAnswers } from './QuizPage'
 import { correctAnswer, isCorrect, userAnswer } from './ResultPage'
@@ -105,6 +106,7 @@ function GuestSession({ token, mode, quiz }: { token: string; mode: GuestLinkMod
             {!correct && <p><strong>{t('result.yourAnswer')}</strong> {userAnswer(item, answers[item.id], t)}</p>}
             {!correct && <p><strong>{t('result.correctAnswerLabel')}</strong> {correctAnswer(item, t)}</p>}
             <p>{item.explanation}</p>
+            <QuestionReplay question={item} answer={answers[item.id]} />
           </article>
         })}</div>
       </> : <div className="score">

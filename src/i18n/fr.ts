@@ -264,6 +264,8 @@ export const fr = {
   'result.byDifficulty': 'Par difficulté',
   'result.correct': '✓ Bonne réponse',
   'result.incorrect': '✗ Réponse incorrecte',
+  'result.replayOpen': '👁️ Revoir la question',
+  'result.replayClose': 'Masquer la question',
   'result.yourAnswer': 'Votre réponse :',
   'result.correctAnswerLabel': 'Bonne réponse :',
   'result.mentionExcellent': 'Excellent',

@@ -5,6 +5,7 @@ import { formatDuration } from '../utils/time'
 import { playFinish, playVictory } from '../utils/sound'
 import { Confetti } from './Confetti'
 import { MermaidDiagram } from './MermaidDiagram'
+import { QuestionReplay } from './QuestionReplay'
 import { QuestionTable } from './QuestionTable'
 import { QuestionImage } from './QuestionImage'
 import { ResultActions } from './ResultActions'
@@ -49,6 +50,7 @@ export function StreakResultPage({ streakCount, elapsedSeconds, victory, playedQ
         {!correct && <p><strong>{t('result.yourAnswer')}</strong> {userAnswer(question, answers[question.id], t)}</p>}
         {!correct && <p><strong>{t('result.correctAnswerLabel')}</strong> {correctAnswer(question, t)}</p>}
         <p>{question.explanation}</p>
+        <QuestionReplay question={question} answer={answers[question.id]} />
       </article>
     })}</div>
   </section>
