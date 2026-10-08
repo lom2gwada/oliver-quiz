@@ -456,11 +456,11 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       <p>{t('start.availability', filteredQuestions.length, gameMode, Math.min(questionCount, filteredQuestions.length))}</p>
       <button type="button" onClick={gameMode === 'classic' ? startQuiz : gameMode === 'streak' ? startStreak : startTimed} disabled={!filteredQuestions.length}>{gameMode === 'classic' ? t('start.startClassic') : gameMode === 'streak' ? t('start.startStreak') : t('start.startTimed')}</button>
     </section>}
-    {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} timeboxed={timeboxed} onFinish={(nextAnswers, duration) => {
-      setAnswers(nextAnswers); setElapsedSeconds(duration); replace('results')
-      saveQuizResult(buildQuizResultPayload(sessionQuestions, nextAnswers, quiz.themes, duration, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered && !isReplay))
-      saveQuestionResults(buildQuestionResultPayloads(sessionQuestions, nextAnswers, quiz.metadata.title, selectedHostedQuizId || null))
-      if (selectedHostedQuizId) recordQuestionProgress(selectedHostedQuizId, sessionQuestions, nextAnswers)
+    {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} timeboxed={timeboxed} onFinish={(nextAnswers, duration, played) => {
+      setAnswers(nextAnswers); setElapsedSeconds(duration); setSessionQuestions(played); replace('results')
+      saveQuizResult(buildQuizResultPayload(played, nextAnswers, quiz.themes, duration, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered && !isReplay))
+      saveQuestionResults(buildQuestionResultPayloads(played, nextAnswers, quiz.metadata.title, selectedHostedQuizId || null))
+      if (selectedHostedQuizId) recordQuestionProgress(selectedHostedQuizId, played, nextAnswers)
     }} onCancel={backToStart} />}
     {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.themes} elapsedSeconds={elapsedSeconds} onRestartSame={isReplay ? undefined : restartQuiz} onBackToSettings={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} />}
     {view === 'streak' && <StreakQuizPage quiz={quiz} pool={filteredQuestions} timeboxed={timeboxed} onFinish={finishStreak} onCancel={backToStart} />}

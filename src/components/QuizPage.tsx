@@ -24,10 +24,13 @@ export function difficultyLabel(t: (key: TranslationKey, ...args: unknown[]) => 
   return t(DIFFICULTY_LABEL_KEYS[difficulty])
 }
 
-/** Mélange les options de réponse une fois par question, pour que la bonne réponse ne soit pas toujours au même endroit. */
+/** Mélange les options de réponse une fois par question, pour que la bonne réponse ne soit pas toujours au même endroit.
+ * Les colonnes d'une association sont mélangées ici plutôt que dans le composant : la question mélangée est
+ * conservée pour la correction, qui peut ainsi remontrer la question dans l'ordre où elle a été jouée. */
 export function withShuffledAnswers(question: Question): Question {
   if (question.type === 'qcm') return { ...question, content: { ...question.content, answers: shuffle(question.content.answers) } }
   if (question.type === 'code') return { ...question, content: { ...question.content, answers: shuffle(question.content.answers) } }
+  if (question.type === 'matching') return { ...question, content: { ...question.content, left: shuffle(question.content.left), right: shuffle(question.content.right) } }
   return question
 }
 
@@ -36,7 +39,8 @@ interface QuizPageProps {
   questions: Question[]
   /** Si vrai, chaque question a un temps limite (le sien, sinon le barème par défaut) — voir `questionTimeLimits.ts`. */
   timeboxed: boolean
-  onFinish: (answers: AnswersByQuestion, elapsedSeconds: number) => void
+  /** `playedQuestions` : les questions telles qu'elles ont été affichées (réponses mélangées), pour la correction. */
+  onFinish: (answers: AnswersByQuestion, elapsedSeconds: number, playedQuestions: Question[]) => void
   onCancel: () => void
 }
 
@@ -57,7 +61,7 @@ export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel }: Qui
 
   const goNext = () => {
     if (!question) return
-    if (current === shuffledQuestions.length - 1) onFinish(answers, elapsed)
+    if (current === shuffledQuestions.length - 1) onFinish(answers, elapsed, shuffledQuestions)
     else setCurrent((value) => value + 1)
   }
   const timeLimit = timeboxed && question ? questionTimeLimit(question) : null

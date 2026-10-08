@@ -5,6 +5,7 @@ import { formatDuration } from '../utils/time'
 import { playFinish, playVictory } from '../utils/sound'
 import { Confetti } from './Confetti'
 import { MermaidDiagram } from './MermaidDiagram'
+import { QuestionReplay } from './QuestionReplay'
 import { QuestionTable } from './QuestionTable'
 import { QuestionImage } from './QuestionImage'
 import { ResultActions } from './ResultActions'
@@ -48,6 +49,7 @@ export function TimedResultPage({ attempts, elapsedSeconds, onRestartSame, onBac
         {!correct && <p><strong>{t('result.yourAnswer')}</strong> {userAnswer(question, answer, t)}</p>}
         {!correct && <p><strong>{t('result.correctAnswerLabel')}</strong> {correctAnswer(question, t)}</p>}
         <p>{question.explanation}</p>
+        <QuestionReplay question={question} answer={answer} />
       </article>
     })}</div>
   </section>
