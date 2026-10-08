@@ -3,7 +3,7 @@ import type { AnswersByQuestion, Difficulty, Question, Quiz } from '../types/qui
 import type { TranslationKey } from '../i18n'
 import { useTranslation } from '../i18n'
 import { formatDuration } from '../utils/time'
-import { shuffle } from '../utils/shuffle'
+import { shuffle, shuffleAwayFrom } from '../utils/shuffle'
 import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { QuestionBody } from './QuestionBody'
@@ -26,10 +26,13 @@ export function difficultyLabel(t: (key: TranslationKey, ...args: unknown[]) => 
 
 /** Mélange les options de réponse une fois par question, pour que la bonne réponse ne soit pas toujours au même endroit.
  * Les colonnes d'une association sont mélangées ici plutôt que dans le composant : la question mélangée est
- * conservée pour la correction, qui peut ainsi remontrer la question dans l'ordre où elle a été jouée. */
+ * conservée pour la correction, qui peut ainsi remontrer la question dans l'ordre où elle a été jouée.
+ * Les items d'une question "Ordre" sont mélangés eux aussi, et jamais dans l'ordre de la solution : l'ordre de
+ * stockage est celui de l'auteur, souvent déjà le bon. */
 export function withShuffledAnswers(question: Question): Question {
   if (question.type === 'qcm') return { ...question, content: { ...question.content, answers: shuffle(question.content.answers) } }
   if (question.type === 'code') return { ...question, content: { ...question.content, answers: shuffle(question.content.answers) } }
+  if (question.type === 'ordering') return { ...question, content: { ...question.content, items: shuffleAwayFrom(question.content.items, question.content.correctOrder) } }
   if (question.type === 'matching') return { ...question, content: { ...question.content, left: shuffle(question.content.left), right: shuffle(question.content.right) } }
   return question
 }
