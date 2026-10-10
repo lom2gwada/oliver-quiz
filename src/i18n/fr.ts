@@ -308,6 +308,7 @@ export const fr = {
   'history.heatmapCellTitle': (correct: number, total: number) => `${correct} bonne${correct > 1 ? 's' : ''} réponse${correct > 1 ? 's' : ''} sur ${total}`,
   'history.heatmapNote': (count: number) => `Les ${count} thèmes les plus joués sont affichés.`,
   'history.byType': 'Par type de question',
+  'history.typeRadarTitle': 'Taux de réussite par type de question',
   'history.streakSectionTitle': 'Mode sans-faute',
   'history.bestStreak': 'Meilleure série',
   'history.timedSectionTitle': 'Mode contre-la-montre',
