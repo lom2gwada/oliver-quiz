@@ -1,4 +1,5 @@
 import type { HostedQuizSummary } from '../types/hostedQuiz'
+import { retryWithBackoff } from './retry'
 import { supabase } from './supabase'
 
 /** Les quiz hébergés auxquels l'utilisateur courant a accès (RLS filtre déjà — un admin les voit tous). */
@@ -6,6 +7,19 @@ export async function fetchAccessibleQuizzes(): Promise<HostedQuizSummary[]> {
   const { data, error } = await supabase.from('quizzes').select('id, title, is_public').order('title')
   if (error) throw error
   return data ?? []
+}
+
+/** Jeton rejeté par PostgREST (expiré, ou que le client croyait encore valide) : `PGRST301`/`PGRST303`. */
+const isRejectedJwt = (error: unknown) => ['PGRST301', 'PGRST303'].includes((error as { code?: string } | null)?.code ?? '')
+
+/** Comme `fetchAccessibleQuizzes`, avec deux reprises (0,6 s puis 1,8 s) — un échec isolé (réseau qui bascule,
+ * jeton à renouveler) ne doit pas laisser l'appli sans liste de quiz. Un jeton rejeté est renouvelé avant la
+ * reprise : la rejouer avec le même jeton échouerait à l'identique. */
+export function fetchAccessibleQuizzesWithRetry(): Promise<HostedQuizSummary[]> {
+  return retryWithBackoff(fetchAccessibleQuizzes, {
+    delaysMs: [600, 1800],
+    onRetry: async (error) => { if (isRejectedJwt(error)) await supabase.auth.refreshSession() },
+  })
 }
 
 /** Le contenu brut (non validé) d'un quiz hébergé — à faire passer par `parseQuiz` côté appelant, comme un fichier importé. */

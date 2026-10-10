@@ -19,7 +19,7 @@ import { buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultP
 import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchStreakTopScore, fetchTimedTopScore, fetchTopScore } from './utils/leaderboard'
 import { recordQuestionProgress } from './utils/leitner'
-import { deleteQuiz, fetchAccessibleQuizzes, fetchQuizContent, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
+import { deleteQuiz, fetchAccessibleQuizzes, fetchAccessibleQuizzesWithRetry, fetchQuizContent, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
 import { applyTheme } from './utils/theme'
 import { LanguageProvider, translate } from './i18n'
 import type { Language, TranslationKey } from './i18n'
@@ -94,15 +94,36 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   // Le quiz d'exemple bundlé (`initialQuiz`) ne sert plus que de premier affichage le temps de ce fetch : dès
   // qu'un quiz `is_public` existe en base, il devient le quiz actif réel (avec un vrai id, éditable comme
   // n'importe quel quiz hébergé) — sauf si l'utilisateur a déjà sélectionné autre chose entre-temps.
-  useEffect(() => {
-    fetchAccessibleQuizzes().then((quizzes) => {
+  //
+  // Un échec ne doit jamais passer inaperçu : le quiz embarqué est visuellement identique au quiz d'exemple, et
+  // jouer dessus enregistrerait la partie sans `quiz_id` ni progression de révision. Le chargement est donc
+  // repris automatiquement, signalé s'il échoue, rejoué au retour du réseau ou de l'onglet, et le démarrage
+  // d'une partie reste bloqué tant qu'aucun quiz hébergé n'est chargé.
+  const [quizListState, setQuizListState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const selectedIdRef = useRef('')
+  selectedIdRef.current = selectedHostedQuizId
+  const loadQuizzes = () => {
+    setQuizListState('loading')
+    fetchAccessibleQuizzesWithRetry().then((quizzes) => {
       setHostedQuizzes(quizzes)
-      if (!selectedHostedQuizId) {
+      setQuizListState('ready')
+      if (!selectedIdRef.current) {
         const defaultQuiz = quizzes.find((hosted) => hosted.is_public)
         if (defaultQuiz) selectHostedQuiz(defaultQuiz.id)
       }
-    }).catch(() => {})
-  }, [])
+    }).catch((error) => {
+      console.error('Impossible de charger la liste des quiz.', error)
+      setQuizListState('error')
+    })
+  }
+  useEffect(() => { loadQuizzes() }, [])
+  useEffect(() => {
+    if (quizListState !== 'error') return
+    const retry = () => { if (document.visibilityState === 'visible') loadQuizzes() }
+    window.addEventListener('online', retry)
+    document.addEventListener('visibilitychange', retry)
+    return () => { window.removeEventListener('online', retry); document.removeEventListener('visibilitychange', retry) }
+  }, [quizListState])
   // Reflète le mode sélectionné sur la page d'accueil (le sélecteur de mode juste en dessous) plutôt que
   // toujours le classique — sinon le record affiché n'a aucun rapport avec le mode que l'utilisateur s'apprête
   // à lancer. Un seul badge affiché à la fois : `avatar`/`pseudo`/`scoreText` déjà mis en forme pour rester
@@ -164,6 +185,11 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     const averageLimit = filteredQuestions.reduce((sum, question) => sum + questionTimeLimit(question), 0) / filteredQuestions.length
     return Math.round(averageLimit * Math.min(questionCount, filteredQuestions.length))
   }, [filteredQuestions, questionCount])
+
+  // Sans quiz hébergé identifié (liste non chargée, ou contenu en échec), démarrer jouerait le quiz embarqué.
+  // Exception : aucun quiz hébergé accessible du tout, où le quiz embarqué est alors la seule option.
+  const quizReady = quizListState === 'ready' && !quizLoadError && (selectedHostedQuizId !== '' || hostedQuizzes.length === 0)
+  const retryQuizLoad = () => (quizListState === 'error' ? loadQuizzes() : selectHostedQuiz(selectedHostedQuizId))
 
   const toggleTheme = (themeId: string) => setSelectedThemes((previous) =>
     previous.includes(themeId) ? previous.filter((id) => id !== themeId) : [...previous, themeId])
@@ -438,7 +464,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
           {hostedQuizzes.map((hosted) => <option key={hosted.id} value={hosted.id}>{hosted.title}</option>)}
         </select>
       </label>}
-      {quizLoadError && <p className="alert" role="alert">{quizLoadError}</p>}
+      {quizListState === 'loading' && <p className="mode-hint">{t('start.quizListLoading')}</p>}
+      {(quizListState === 'error' || quizLoadError) && <p className="alert" role="alert">{quizListState === 'error' ? t('start.quizListError') : quizLoadError} <button type="button" className="secondary alert-retry" onClick={retryQuizLoad}>{t('start.retry')}</button></p>}
       <div className="mode-picker" role="group" aria-label={t('start.modeGroupLabel')}>
         <button type="button" className={gameMode === 'classic' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('classic') }}>{t('common.modeClassic')}</button>
         <button type="button" className={gameMode === 'streak' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('streak') }}>{t('common.modeStreak')}</button>
@@ -454,7 +481,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       </label>
       {gameMode === 'classic' && timeboxed && <p className="mode-hint">{t('start.timedEstimate', formatDuration(timedEstimateSeconds))}</p>}
       <p>{t('start.availability', filteredQuestions.length, gameMode, Math.min(questionCount, filteredQuestions.length))}</p>
-      <button type="button" onClick={gameMode === 'classic' ? startQuiz : gameMode === 'streak' ? startStreak : startTimed} disabled={!filteredQuestions.length}>{gameMode === 'classic' ? t('start.startClassic') : gameMode === 'streak' ? t('start.startStreak') : t('start.startTimed')}</button>
+      <button type="button" onClick={gameMode === 'classic' ? startQuiz : gameMode === 'streak' ? startStreak : startTimed} disabled={!filteredQuestions.length || !quizReady}>{gameMode === 'classic' ? t('start.startClassic') : gameMode === 'streak' ? t('start.startStreak') : t('start.startTimed')}</button>
     </section>}
     {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} timeboxed={timeboxed} onFinish={(nextAnswers, duration, played) => {
       setAnswers(nextAnswers); setElapsedSeconds(duration); setSessionQuestions(played); replace('results')

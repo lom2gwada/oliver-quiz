@@ -1,5 +1,6 @@
 import type { AnswersByQuestion, Question } from '../types/quiz'
 import { isCorrect } from '../components/ResultPage'
+import { retryWithBackoff } from './retry'
 import { supabase } from './supabase'
 
 export interface QuestionProgressRow {
@@ -37,15 +38,20 @@ export async function fetchQuestionProgress(quizId: string): Promise<QuestionPro
  * empêcher l'utilisateur de voir son résultat. */
 export async function recordQuestionProgress(quizId: string, questions: Question[], answers: AnswersByQuestion): Promise<void> {
   try {
-    const previous = await fetchQuestionProgress(quizId)
+    // Lecture et écriture reprises séparément : la lecture peut être rejouée sans risque, et l'écriture pose un
+    // état absolu (boîte + échéance déjà calculées). Rejouer toute la chaîne après une réponse perdue ferait
+    // avancer une seconde fois les cartes dont la première écriture avait pourtant réussi.
+    const previous = await retryWithBackoff(() => fetchQuestionProgress(quizId), { delaysMs: [800, 2400] })
     const previousBox = new Map(previous.map((row) => [row.question_id, row.box]))
     const updatedAt = new Date().toISOString()
     const payloads = questions.map((question) => {
       const box = nextBox(previousBox.get(question.id) ?? 1, isCorrect(question, answers[question.id]))
       return { quiz_id: quizId, question_id: question.id, box, due_at: dueAtFor(box), updated_at: updatedAt }
     })
-    const { error } = await supabase.from('question_progress').upsert(payloads, { onConflict: 'user_id,quiz_id,question_id' })
-    if (error) throw error
+    await retryWithBackoff(async () => {
+      const { error } = await supabase.from('question_progress').upsert(payloads, { onConflict: 'user_id,quiz_id,question_id' })
+      if (error) throw error
+    }, { delaysMs: [800, 2400] })
   } catch (error) {
     console.error("Impossible d'enregistrer la progression Leitner.", error)
   }
