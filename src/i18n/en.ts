@@ -23,6 +23,9 @@ export const en = {
   'nav.by': (author: string) => `by ${author}`,
 
   'start.quizLabel': 'Quiz',
+  'start.quizListLoading': 'Loading quizzes…',
+  'start.quizListError': 'Could not load the quiz list.',
+  'start.retry': 'Retry',
   'start.modeGroupLabel': 'Game mode',
   'start.questionCountLabel': 'Number of questions',
   'start.questionCountOption': (count: number, unavailable: boolean) =>
