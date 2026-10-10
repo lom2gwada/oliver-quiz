@@ -83,7 +83,6 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue }: History
   const records = quizRows ? computeRecords(quizRows) : null
   const chartPoints = quizRows ? [...quizRows].reverse().map((row) => ({ label: shortDate(row.created_at, language), score: row.score })) : []
   const themeBuckets = quizRows ? sumBuckets(quizRows, (row) => row.by_theme) : {}
-  const byTheme = bucketsToChartGroups(themeBuckets, (key) => key, t('result.succeeded'), t('result.missed'))
   const byType = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_type), (key) => typeLabel(t, key as Question['type']), t('result.succeeded'), t('result.missed')) : []
   const byDifficulty = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_difficulty), (key) => difficultyLabel(t, key as Difficulty), t('result.succeeded'), t('result.missed')) : []
   const radarAxes = bucketsToRadarAxes(themeBuckets, (key) => key)
@@ -129,10 +128,6 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue }: History
         note={heatmap.truncated ? t('history.heatmapNote', heatmap.themes.length) : undefined}
       />}
       <div className="stats-groups">
-        <div className="stats-group">
-          <h3 className="stats-group-title">{t('result.byTheme')}</h3>
-          <div className="stats-grid">{byTheme.map((group) => <PieChart key={`theme-${group.key}`} title={group.label} data={group.data} />)}</div>
-        </div>
         <div className="stats-group">
           <h3 className="stats-group-title">{t('history.byType')}</h3>
           <div className="stats-grid">{byType.map((group) => <PieChart key={`type-${group.key}`} title={group.label} data={group.data} />)}</div>
