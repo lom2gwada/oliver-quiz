@@ -11,6 +11,8 @@ export interface LeaderboardRow {
   question_count: number
   correct_count: number
   pace_per_minute: number | null
+  /** Date de la partie retenue pour ce joueur. */
+  played_at: string
 }
 
 export interface StreakLeaderboardRow {
@@ -27,6 +29,7 @@ export interface StreakLeaderboardRow {
   /** `null` pour les parties jouées avant l'introduction de ces champs. */
   earned_points: number | null
   total_points: number | null
+  played_at: string
 }
 
 export interface TimedLeaderboardRow {
@@ -44,6 +47,7 @@ export interface TimedLeaderboardRow {
   /** `null` pour les parties jouées avant l'introduction de ces champs. */
   earned_points: number | null
   total_points: number | null
+  played_at: string
 }
 
 /** Cumulé sur toutes les parties (non filtrées) tous modes confondus, contrairement aux 3 autres
@@ -59,4 +63,6 @@ export interface OverallLeaderboardRow {
   success_rate: number | null
   games_played: number
   total_earned_points: number
+  /** Date de la dernière partie du joueur (le classement Général cumule toutes ses parties). */
+  last_played_at: string
 }

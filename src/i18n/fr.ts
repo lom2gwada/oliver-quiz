@@ -317,6 +317,7 @@ export const fr = {
   'history.dueBox': (box: number) => `Boîte ${box}/5`,
 
   'leaderboard.title': 'Classement',
+  'leaderboard.lastGame': (date: string) => `dernière partie le ${date}`,
   'leaderboard.modeOverall': '🏅 Général',
   'leaderboard.errorLoad': 'Impossible de charger le classement.',
   'leaderboard.emptyState': "Aucune partie enregistrée pour ce quiz dans ce mode.",

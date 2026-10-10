@@ -4,6 +4,7 @@ import type { LeaderboardRow, OverallLeaderboardRow, StreakLeaderboardRow, Timed
 import { useTranslation } from '../i18n'
 import { fetchLeaderboard, fetchOverallLeaderboard, fetchStreakLeaderboard, fetchTimedLeaderboard } from '../utils/leaderboard'
 import { supabase } from '../utils/supabase'
+import { longDate } from '../utils/dateFormat'
 import { formatDuration } from '../utils/time'
 
 const RANK_MEDALS: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
@@ -16,6 +17,8 @@ interface DisplayRow {
   pseudo: string
   avatar: string
   details: string
+  /** Date de la partie retenue (ou de la dernière partie, pour « Général »), déjà formatée. */
+  date: string
   score: string
 }
 
@@ -39,7 +42,7 @@ const pointsLabel = (points: number | null) => (points !== null ? `${points} pts
 const percentLabel = (earned: number | null, total: number | null) => (total ? `${Math.round(((earned ?? 0) / total) * 100)}%` : '—')
 
 export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', onBack }: LeaderboardPageProps) {
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
   const [mode, setMode] = useState<LeaderboardTab>(initialMode)
   const [rows, setRows] = useState<LeaderboardRow[] | null>(null)
   const [streakRows, setStreakRows] = useState<StreakLeaderboardRow[] | null>(null)
@@ -79,6 +82,7 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
         .slice(0, MAX_ROWS)
         .map((row) => ({
           userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
+          date: longDate(row.played_at, language),
           details: t('leaderboard.detailsClassic', row.correct_count, row.question_count, row.best_score, paceLabel(row.pace_per_minute), pointsLabel(row.earned_points), formatDuration(row.elapsed_seconds)),
           score: `✓ ${row.correct_count}`,
         }))
@@ -88,6 +92,7 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
           .slice(0, MAX_ROWS)
           .map((row) => ({
             userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
+            date: longDate(row.played_at, language),
             details: t('leaderboard.detailsStreak', row.themes.join(', ') || t('common.allThemes'), paceLabel(row.pace_per_minute), percentLabel(row.earned_points, row.total_points), pointsLabel(row.earned_points), formatDuration(row.elapsed_seconds)),
             score: `${row.victory ? '🏆' : '🔥'} ${row.best_streak}`,
           }))
@@ -97,6 +102,7 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
             .slice(0, MAX_ROWS)
             .map((row) => ({
               userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
+              date: longDate(row.played_at, language),
               details: t('leaderboard.detailsTimed', row.correct_count, row.question_count, percentLabel(row.earned_points, row.total_points), pointsLabel(row.earned_points), row.duration_seconds === 0 ? t('common.unlimited') : t('common.minutesShort', Math.round(row.duration_seconds / 60)), formatDuration(row.elapsed_seconds)),
               score: row.pace_per_minute !== null ? `${row.pace_per_minute}/min` : '—',
             }))
@@ -105,6 +111,7 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
             .slice(0, MAX_ROWS)
             .map((row) => ({
               userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
+              date: t('leaderboard.lastGame', longDate(row.last_played_at, language)),
               details: t('leaderboard.detailsOverall', row.total_attempted, row.games_played, row.success_rate ?? 0, pointsLabel(row.total_earned_points)),
               score: `✓ ${row.total_correct}`,
             }))
@@ -133,7 +140,7 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
         <span className="leaderboard-rank">{RANK_MEDALS[index + 1] ?? index + 1}</span>
         <span className="leaderboard-avatar">{row.avatar}</span>
         <div className="leaderboard-main">
-          <span className="leaderboard-pseudo">{row.pseudo}</span>
+          <span className="leaderboard-pseudo">{row.pseudo} <span className="leaderboard-date">· {row.date}</span></span>
           <span className="leaderboard-details">{row.details}</span>
         </div>
         <span className="leaderboard-score">{row.score}</span>
