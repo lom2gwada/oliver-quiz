@@ -1,19 +1,16 @@
 import { useEffect, useState } from 'react'
 import type { Difficulty, Question, Quiz } from '../types/quiz'
 import type { QuizResultRow, StreakResultRow, TimedResultRow } from '../types/history'
-import type { Language } from '../i18n/types'
 import { useTranslation } from '../i18n'
 import { bucketsToChartGroups, bucketsToRadarAxes, computeRecords, computeThemeWeekHeatmap, fetchQuizHistory, fetchStreakHistory, fetchTimedHistory, sumBuckets } from '../utils/quizHistory'
 import { computeDueQuestions, fetchQuestionProgress, type QuestionProgressRow } from '../utils/leitner'
+import { longDate, shortDate } from '../utils/dateFormat'
 import { formatDuration } from '../utils/time'
 import { PieChart } from './PieChart'
 import { RadarChart } from './RadarChart'
 import { difficultyLabel, typeLabel } from './QuizPage'
 import { ScoreChart } from './ScoreChart'
 import { ThemeHeatmap } from './ThemeHeatmap'
-
-const shortDate = (iso: string, language: Language) => new Date(iso).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'short' })
-const longDate = (iso: string, language: Language) => new Date(iso).toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 
 /** Tailles de lot proposées pour "Reprendre mes erreurs" — au-delà de quelques dizaines de questions
  * accumulées, tout reprendre d'un coup n'est plus une session de pratique digeste. */

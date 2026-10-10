@@ -319,6 +319,7 @@ export const en = {
   'history.dueBox': (box: number) => `Box ${box}/5`,
 
   'leaderboard.title': 'Leaderboard',
+  'leaderboard.lastGame': (date: string) => `last game on ${date}`,
   'leaderboard.modeOverall': '🏅 Overall',
   'leaderboard.errorLoad': 'Could not load the leaderboard.',
   'leaderboard.emptyState': 'No games recorded for this quiz in this mode.',
