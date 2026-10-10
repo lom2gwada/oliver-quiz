@@ -310,6 +310,7 @@ export const en = {
   'history.heatmapCellTitle': (correct: number, total: number) => `${correct} correct answer${correct !== 1 ? 's' : ''} out of ${total}`,
   'history.heatmapNote': (count: number) => `Showing the ${count} most played themes.`,
   'history.byType': 'By question type',
+  'history.typeRadarTitle': 'Success rate by question type',
   'history.streakSectionTitle': 'Streak mode',
   'history.bestStreak': 'Best streak',
   'history.timedSectionTitle': 'Time attack mode',

@@ -83,7 +83,10 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue }: History
   const records = quizRows ? computeRecords(quizRows) : null
   const chartPoints = quizRows ? [...quizRows].reverse().map((row) => ({ label: shortDate(row.created_at, language), score: row.score })) : []
   const themeBuckets = quizRows ? sumBuckets(quizRows, (row) => row.by_theme) : {}
-  const byType = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_type), (key) => typeLabel(t, key as Question['type']), t('result.succeeded'), t('result.missed')) : []
+  const typeBuckets = quizRows ? sumBuckets(quizRows, (row) => row.by_type) : {}
+  const typeAxes = bucketsToRadarAxes(typeBuckets, (key) => typeLabel(t, key as Question['type']))
+  // Un radar exige 3 axes : un quiz qui n'a que 1-2 types de questions garde les camemberts.
+  const byType = typeAxes.length < 3 ? bucketsToChartGroups(typeBuckets, (key) => typeLabel(t, key as Question['type']), t('result.succeeded'), t('result.missed')) : []
   const byDifficulty = quizRows ? bucketsToChartGroups(sumBuckets(quizRows, (row) => row.by_difficulty), (key) => difficultyLabel(t, key as Difficulty), t('result.succeeded'), t('result.missed')) : []
   const radarAxes = bucketsToRadarAxes(themeBuckets, (key) => key)
   const radarTruncated = Object.keys(themeBuckets).length > radarAxes.length
@@ -127,11 +130,12 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue }: History
         title={t('history.heatmapTitle')}
         note={heatmap.truncated ? t('history.heatmapNote', heatmap.themes.length) : undefined}
       />}
+      <RadarChart title={t('history.typeRadarTitle')} axes={typeAxes} />
       <div className="stats-groups">
-        <div className="stats-group">
+        {byType.length > 0 && <div className="stats-group">
           <h3 className="stats-group-title">{t('history.byType')}</h3>
           <div className="stats-grid">{byType.map((group) => <PieChart key={`type-${group.key}`} title={group.label} data={group.data} />)}</div>
-        </div>
+        </div>}
         <div className="stats-group">
           <h3 className="stats-group-title">{t('result.byDifficulty')}</h3>
           <div className="stats-grid">{byDifficulty.map((group) => <PieChart key={`difficulty-${group.key}`} title={group.label} data={group.data} />)}</div>
