@@ -329,6 +329,7 @@ export const en = {
   'overview.games': (count: number) => `${count} game${count > 1 ? 's' : ''}`,
   'overview.lastPlayed': (date: string) => `last played ${date}`,
   'overview.review': (count: number) => `🔁 Review ${count} question${count > 1 ? 's' : ''}`,
+  'overview.history': '📈 History',
   'overview.dueNote': (count: number) => `${count} due in total`,
   'overview.nothingDue': 'Nothing to review right now',
   'overview.errorReview': 'Could not start the review.',

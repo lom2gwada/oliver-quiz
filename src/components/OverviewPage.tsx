@@ -8,6 +8,8 @@ interface OverviewPageProps {
   onSelectQuiz: (quizId: string) => void
   /** Charge le quiz et lance une session sur ses cartes Leitner échues ; rejette si le chargement échoue. */
   onReviewQuiz: (quizId: string) => Promise<void>
+  /** Sélectionne le quiz puis ouvre son historique ; « Retour » ramène ici. */
+  onViewHistory: (quizId: string) => void
   onBack: () => void
 }
 
@@ -17,7 +19,7 @@ function CoverageBar({ percent, label }: { percent: number; label: string }) {
   </div>
 }
 
-export function OverviewPage({ onSelectQuiz, onReviewQuiz, onBack }: OverviewPageProps) {
+export function OverviewPage({ onSelectQuiz, onReviewQuiz, onViewHistory, onBack }: OverviewPageProps) {
   const { t, language } = useTranslation()
   const [rows, setRows] = useState<QuizCoverage[] | null>(null)
   const [error, setError] = useState(false)
@@ -75,12 +77,9 @@ export function OverviewPage({ onSelectQuiz, onReviewQuiz, onBack }: OverviewPag
               </span>
             </button>
             <div className="overview-review">
-              {batch > 0
-                ? <>
-                  <button type="button" className="secondary" disabled={reviewingId !== null} onClick={() => review(row.quiz_id)}>{reviewingId === row.quiz_id ? t('common.loading') : t('overview.review', batch)}</button>
-                  <span className="overview-item-meta">{t('overview.dueNote', row.due_count)}</span>
-                </>
-                : <span className="overview-item-meta">{t('overview.nothingDue')}</span>}
+              {batch > 0 && <button type="button" className="secondary" disabled={reviewingId !== null} onClick={() => review(row.quiz_id)}>{reviewingId === row.quiz_id ? t('common.loading') : t('overview.review', batch)}</button>}
+              <button type="button" className="secondary" disabled={reviewingId !== null} onClick={() => onViewHistory(row.quiz_id)}>{t('overview.history')}</button>
+              <span className="overview-item-meta">{batch > 0 ? t('overview.dueNote', row.due_count) : t('overview.nothingDue')}</span>
             </div>
           </li>
         })}
