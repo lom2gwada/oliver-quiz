@@ -98,6 +98,7 @@ pre { padding: 1rem; overflow: auto; background: var(--code-bg); border: 1px sol
 .confetti { position: absolute; top: 0; left: 0; right: 0; height: 420px; overflow: hidden; pointer-events: none; z-index: 1; }
 .confetti-piece { position: absolute; top: -12px; width: 8px; height: 14px; border-radius: 2px; opacity: .9; animation-name: confetti-fall; animation-timing-function: ease-in; animation-fill-mode: forwards; }
 @keyframes confetti-fall { to { transform: translateY(440px) rotate(340deg); opacity: 0; } }
+.stats-header-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .6rem; }
 .stats-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; } .stats-header h2 { margin: 0; }
 .guest-results { margin-top: 1rem; }
 .guest-results h4 { margin: 1.2rem 0 .6rem; }
