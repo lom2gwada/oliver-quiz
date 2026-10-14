@@ -18,6 +18,7 @@ export const en = {
 
   'nav.profile': '👤 Profile',
   'nav.quiz': '⚙️ Quiz',
+  'nav.overview': '📊 My quizzes',
   'nav.muteSound': 'Mute sound',
   'nav.unmuteSound': 'Unmute sound',
   'nav.by': (author: string) => `by ${author}`,
@@ -317,6 +318,18 @@ export const en = {
   'history.dueTitle': (count: number) => `Questions to review (${count})`,
   'history.reviewButton': 'Review these questions',
   'history.dueBox': (box: number) => `Box ${box}/5`,
+
+  'overview.title': 'Overview',
+  'overview.errorLoad': 'Could not load the overview.',
+  'overview.emptyState': "You haven't played any quiz yet.",
+  'overview.summary': (quizCount: number, seen: number, total: number) =>
+    `${quizCount} quiz${quizCount > 1 ? 'zes' : ''} in progress · ${seen} of ${total} questions seen`,
+  'overview.summaryBarLabel': 'Questions seen, all quizzes combined',
+  'overview.seen': (seen: number, total: number) => `${seen}/${total} questions seen`,
+  'overview.games': (count: number) => `${count} game${count > 1 ? 's' : ''}`,
+  'overview.lastPlayed': (date: string) => `last played ${date}`,
+  'overview.untouchedTitle': (count: number) => `Not started yet (${count})`,
+  'overview.questionCount': (count: number) => `${count} questions`,
 
   'leaderboard.title': 'Leaderboard',
   'leaderboard.lastGame': (date: string) => `last game on ${date}`,

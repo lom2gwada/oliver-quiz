@@ -16,6 +16,7 @@ export const fr = {
 
   'nav.profile': '👤 Profil',
   'nav.quiz': '⚙️ Quiz',
+  'nav.overview': '📊 Mes quiz',
   'nav.muteSound': 'Couper le son',
   'nav.unmuteSound': 'Activer le son',
   'nav.by': (author: string) => `par ${author}`,
@@ -315,6 +316,18 @@ export const fr = {
   'history.dueTitle': (count: number) => `Questions à réviser (${count})`,
   'history.reviewButton': 'Réviser ces questions',
   'history.dueBox': (box: number) => `Boîte ${box}/5`,
+
+  'overview.title': "Vue d'ensemble",
+  'overview.errorLoad': "Impossible de charger la vue d'ensemble.",
+  'overview.emptyState': "Tu n'as encore joué aucun quiz.",
+  'overview.summary': (quizCount: number, seen: number, total: number) =>
+    `${quizCount} quiz en cours · ${seen} questions vues sur ${total}`,
+  'overview.summaryBarLabel': 'Questions vues, tous quiz confondus',
+  'overview.seen': (seen: number, total: number) => `${seen}/${total} questions vues`,
+  'overview.games': (count: number) => `${count} partie${count > 1 ? 's' : ''}`,
+  'overview.lastPlayed': (date: string) => `dernière le ${date}`,
+  'overview.untouchedTitle': (count: number) => `Pas encore commencés (${count})`,
+  'overview.questionCount': (count: number) => `${count} questions`,
 
   'leaderboard.title': 'Classement',
   'leaderboard.lastGame': (date: string) => `dernière partie le ${date}`,
