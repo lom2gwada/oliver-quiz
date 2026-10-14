@@ -434,6 +434,15 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     reviewDue(due)
   }
 
+  const [reviewing, setReviewing] = useState(false)
+  const [reviewError, setReviewError] = useState(false)
+  /** Bouton « Réviser » de l'accueil : même session que depuis la vue d'ensemble, sur le quiz actif. */
+  const reviewActiveQuiz = async () => {
+    setReviewError(false)
+    setReviewing(true)
+    try { await reviewQuizDue(selectedHostedQuizId) } catch { setReviewError(true) } finally { setReviewing(false) }
+  }
+
   const startStreak = () => {
     playClick()
     navigate('streak')
@@ -488,7 +497,11 @@ export default function App({ onLogout }: { onLogout: () => void }) {
           <CoverageBar percent={coveragePercent(activeCoverage.seen_count, activeCoverage.question_count)} label={t('start.quizLabel')} />
           <span className="mode-hint">{t('overview.seen', activeCoverage.seen_count, activeCoverage.question_count)} · {coveragePercent(activeCoverage.seen_count, activeCoverage.question_count)}%</span>
         </>}
-        <button type="button" className="secondary" onClick={() => { playClick(); viewOverview('start') }}>{t('start.changeQuiz')}</button>
+        <div className="active-quiz-actions">
+          {activeCoverage?.quiz_id === selectedHostedQuizId && activeCoverage.due_count > 0 && <button type="button" className="secondary" disabled={reviewing} onClick={reviewActiveQuiz}>{reviewing ? t('common.loading') : t('overview.review', Math.min(activeCoverage.due_count, REVIEW_BATCH_SIZE))}</button>}
+          <button type="button" className="secondary" disabled={reviewing} onClick={() => { playClick(); viewOverview('start') }}>{t('start.changeQuiz')}</button>
+        </div>
+        {reviewError && <p className="alert" role="alert">{t('overview.errorReview')}</p>}
       </div>}
       {quizListState === 'loading' && <p className="mode-hint">{t('start.quizListLoading')}</p>}
       {(quizListState === 'error' || quizLoadError) && <p className="alert" role="alert">{quizListState === 'error' ? t('start.quizListError') : quizLoadError} <button type="button" className="secondary alert-retry" onClick={retryQuizLoad}>{t('start.retry')}</button></p>}
