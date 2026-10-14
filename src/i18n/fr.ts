@@ -328,6 +328,7 @@ export const fr = {
   'overview.lastPlayed': (date: string) => `dernière le ${date}`,
   'overview.review': (count: number) => `🔁 Réviser ${count} question${count > 1 ? 's' : ''}`,
   'overview.history': '📈 Historique',
+  'overview.leaderboard': '🏆 Classement',
   'overview.dueNote': (count: number) => `${count} à revoir au total`,
   'overview.nothingDue': 'Rien à réviser pour le moment',
   'overview.errorReview': 'Impossible de lancer la révision.',
@@ -338,7 +339,7 @@ export const fr = {
   'leaderboard.lastGame': (date: string) => `dernière partie le ${date}`,
   'leaderboard.modeOverall': '🏅 Général',
   'leaderboard.errorLoad': 'Impossible de charger le classement.',
-  'leaderboard.emptyState': "Aucune partie enregistrée pour ce quiz dans ce mode.",
+  'leaderboard.emptyState': "Aucune partie classée pour ce quiz dans ce mode. Seules comptent les parties jouées sans filtre de thème ni de difficulté, hors révision.",
   'leaderboard.detailsClassic': (correct: number, total: number, rate: number, pace: string, points: string, duration: string) =>
     `${correct}/${total} (${rate}%) · ${pace} · ${points} · ⏱ ${duration}`,
   'leaderboard.detailsStreak': (themes: string, pace: string, rate: string, points: string, duration: string) =>

@@ -330,6 +330,7 @@ export const en = {
   'overview.lastPlayed': (date: string) => `last played ${date}`,
   'overview.review': (count: number) => `🔁 Review ${count} question${count > 1 ? 's' : ''}`,
   'overview.history': '📈 History',
+  'overview.leaderboard': '🏆 Leaderboard',
   'overview.dueNote': (count: number) => `${count} due in total`,
   'overview.nothingDue': 'Nothing to review right now',
   'overview.errorReview': 'Could not start the review.',
@@ -340,7 +341,7 @@ export const en = {
   'leaderboard.lastGame': (date: string) => `last game on ${date}`,
   'leaderboard.modeOverall': '🏅 Overall',
   'leaderboard.errorLoad': 'Could not load the leaderboard.',
-  'leaderboard.emptyState': 'No games recorded for this quiz in this mode.',
+  'leaderboard.emptyState': 'No ranked games for this quiz in this mode. Only games played without theme or difficulty filters, and outside review sessions, count.',
   'leaderboard.detailsClassic': (correct: number, total: number, rate: number, pace: string, points: string, duration: string) =>
     `${correct}/${total} (${rate}%) · ${pace} · ${points} · ⏱ ${duration}`,
   'leaderboard.detailsStreak': (themes: string, pace: string, rate: string, points: string, duration: string) =>
