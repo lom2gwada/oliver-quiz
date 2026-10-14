@@ -12,12 +12,11 @@ interface ProfilePageProps {
   profile: Profile | null
   onBack: () => void
   onSave: (profile: Profile) => Promise<void>
-  onViewHistory: () => void
-  onViewLeaderboard: () => void
+  onViewOverview: () => void
   onPreviewLanguage: (language: Language) => void
 }
 
-export function ProfilePage({ profile, onBack, onSave, onViewHistory, onViewLeaderboard, onPreviewLanguage }: ProfilePageProps) {
+export function ProfilePage({ profile, onBack, onSave, onViewOverview, onPreviewLanguage }: ProfilePageProps) {
   const { t } = useTranslation()
   const [pseudo, setPseudo] = useState(profile?.pseudo ?? '')
   const [avatar, setAvatar] = useState(profile?.avatar ?? AVATAR_OPTIONS[0])
@@ -71,8 +70,7 @@ export function ProfilePage({ profile, onBack, onSave, onViewHistory, onViewLead
       <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
     </div>
     <div className="nav-links">
-      <button type="button" className="secondary" onClick={onViewHistory}>{t('common.viewHistory')}</button>
-      <button type="button" className="secondary" onClick={onViewLeaderboard}>{t('common.viewLeaderboard')}</button>
+      <button type="button" className="secondary" onClick={onViewOverview}>{t('nav.overview')}</button>
     </div>
     <form className="profile-form" onSubmit={submit}>
       <label>{t('profile.pseudoLabel')}
