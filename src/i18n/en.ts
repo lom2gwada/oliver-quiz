@@ -24,6 +24,7 @@ export const en = {
   'nav.by': (author: string) => `by ${author}`,
 
   'start.quizLabel': 'Quiz',
+  'start.changeQuiz': '🔄 Change quiz',
   'start.quizListLoading': 'Loading quizzes…',
   'start.quizListError': 'Could not load the quiz list.',
   'start.retry': 'Retry',

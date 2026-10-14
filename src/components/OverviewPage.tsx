@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from '../i18n'
+import { CoverageBar } from './CoverageBar'
 import { coveragePercent, coverageTotals, fetchQuizCoverage, REVIEW_BATCH_SIZE, splitCoverage, type QuizCoverage } from '../utils/coverage'
 import { longDate } from '../utils/dateFormat'
 
@@ -13,12 +14,6 @@ interface OverviewPageProps {
   /** Sélectionne le quiz puis ouvre son classement ; « Retour » ramène ici. */
   onViewLeaderboard: (quizId: string) => void
   onBack: () => void
-}
-
-function CoverageBar({ percent, label }: { percent: number; label: string }) {
-  return <div className="quiz-progress overview-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-label={label}>
-    <div className={percent === 100 ? 'quiz-progress-fill overview-bar-complete' : 'quiz-progress-fill'} style={{ width: `${percent}%` }} />
-  </div>
 }
 
 export function OverviewPage({ onSelectQuiz, onReviewQuiz, onViewHistory, onViewLeaderboard, onBack }: OverviewPageProps) {

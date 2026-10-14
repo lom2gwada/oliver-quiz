@@ -3,6 +3,7 @@ import sampleQuiz from './data/sample-quiz.json'
 import { FilterPanel } from './components/FilterPanel'
 import { HistoryPage } from './components/HistoryPage'
 import { LeaderboardPage } from './components/LeaderboardPage'
+import { CoverageBar } from './components/CoverageBar'
 import { OverviewPage } from './components/OverviewPage'
 import { ProfilePage } from './components/ProfilePage'
 import { QuizDetailPage } from './components/QuizDetailPage'
@@ -20,7 +21,7 @@ import { buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultP
 import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchStreakTopScore, fetchTimedTopScore, fetchTopScore } from './utils/leaderboard'
 import { computeDueQuestions, fetchQuestionProgress, recordQuestionProgress } from './utils/leitner'
-import { REVIEW_BATCH_SIZE } from './utils/coverage'
+import { coveragePercent, fetchQuizCoverage, REVIEW_BATCH_SIZE, type QuizCoverage } from './utils/coverage'
 import { deleteQuiz, fetchAccessibleQuizzes, fetchAccessibleQuizzesWithRetry, fetchQuizContent, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
 import { applyTheme } from './utils/theme'
 import { LanguageProvider, translate } from './i18n'
@@ -147,6 +148,15 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const [leaderboardBack, setLeaderboardBack] = useState<View>('profile')
   const [leaderboardMode, setLeaderboardMode] = useState<GameMode>('classic')
   const viewLeaderboard = (from: View, mode: GameMode = 'classic') => { setLeaderboardBack(from); setLeaderboardMode(mode); navigate('leaderboard') }
+  // Progression du quiz actif, affichée sur l'accueil : rechargée à chaque retour sur l'accueil (une partie vient
+  // peut-être de la faire avancer). Purement informative — un échec masque simplement la barre.
+  const [activeCoverage, setActiveCoverage] = useState<QuizCoverage | null>(null)
+  useEffect(() => {
+    if (view !== 'start' || !selectedHostedQuizId) return
+    let cancelled = false
+    fetchQuizCoverage().then((rows) => { if (!cancelled) setActiveCoverage(rows.find((row) => row.quiz_id === selectedHostedQuizId) ?? null) }).catch(() => { if (!cancelled) setActiveCoverage(null) })
+    return () => { cancelled = true }
+  }, [view, selectedHostedQuizId])
   const [overviewBack, setOverviewBack] = useState<View>('start')
   const viewOverview = (from: View) => { setOverviewBack(from); navigate('overview') }
   const [historyBack, setHistoryBack] = useState<View>('profile')
@@ -473,11 +483,13 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   return <LanguageProvider language={language}><main className="app-shell">
     <header><div><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>{t('nav.by', quiz.metadata.author)}</p>{view === 'start' && quiz.metadata.description && <p className="quiz-description-preview">{quiz.metadata.description}</p>}{view === 'start' && topScore && <button type="button" className="top-score" onClick={() => viewLeaderboard('start', gameMode)}>🏆 {topScore.avatar} {topScore.pseudo} — {topScore.scoreText}</button>}</div><div className="header-actions"><button type="button" className="secondary" onClick={toggleSound} aria-label={muted ? t('nav.unmuteSound') : t('nav.muteSound')}>{muted ? '🔇' : '🔊'}</button>{view === 'start' && <button type="button" className="secondary" onClick={() => navigate('profile')}>{profile ? `${profile.avatar} ${profile.pseudo}` : t('nav.profile')}</button>}{view === 'start' && <button type="button" className="secondary" onClick={() => viewOverview('start')}>{t('nav.overview')}</button>}{view === 'start' && profile?.isAdmin && <button type="button" className="secondary" onClick={() => navigate('quizzes')}>{t('nav.quiz')}</button>}<button type="button" className="secondary" onClick={onLogout}>{t('common.logout')}</button></div></header>
     {view === 'start' && <section className="start-page">
-      {hostedQuizzes.length > 0 && <label className="quiz-select">{t('start.quizLabel')}
-        <select value={selectedHostedQuizId} onChange={(event) => { playClick(); selectHostedQuiz(event.target.value) }}>
-          {hostedQuizzes.map((hosted) => <option key={hosted.id} value={hosted.id}>{hosted.title}</option>)}
-        </select>
-      </label>}
+      {hostedQuizzes.length > 0 && <div className="active-quiz">
+        {activeCoverage?.quiz_id === selectedHostedQuizId && <>
+          <CoverageBar percent={coveragePercent(activeCoverage.seen_count, activeCoverage.question_count)} label={t('start.quizLabel')} />
+          <span className="mode-hint">{t('overview.seen', activeCoverage.seen_count, activeCoverage.question_count)} · {coveragePercent(activeCoverage.seen_count, activeCoverage.question_count)}%</span>
+        </>}
+        <button type="button" className="secondary" onClick={() => { playClick(); viewOverview('start') }}>{t('start.changeQuiz')}</button>
+      </div>}
       {quizListState === 'loading' && <p className="mode-hint">{t('start.quizListLoading')}</p>}
       {(quizListState === 'error' || quizLoadError) && <p className="alert" role="alert">{quizListState === 'error' ? t('start.quizListError') : quizLoadError} <button type="button" className="secondary alert-retry" onClick={retryQuizLoad}>{t('start.retry')}</button></p>}
       <div className="mode-picker" role="group" aria-label={t('start.modeGroupLabel')}>
