@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from '../i18n'
-import { coveragePercent, coverageTotals, fetchQuizCoverage, splitCoverage, type QuizCoverage } from '../utils/coverage'
+import { coveragePercent, coverageTotals, fetchQuizCoverage, REVIEW_BATCH_SIZE, splitCoverage, type QuizCoverage } from '../utils/coverage'
 import { longDate } from '../utils/dateFormat'
 
 interface OverviewPageProps {
   /** Sélectionne le quiz cliqué comme quiz actif et revient à l'accueil, prêt à le lancer. */
   onSelectQuiz: (quizId: string) => void
+  /** Charge le quiz et lance une session sur ses cartes Leitner échues ; rejette si le chargement échoue. */
+  onReviewQuiz: (quizId: string) => Promise<void>
   onBack: () => void
 }
 
@@ -15,16 +17,29 @@ function CoverageBar({ percent, label }: { percent: number; label: string }) {
   </div>
 }
 
-export function OverviewPage({ onSelectQuiz, onBack }: OverviewPageProps) {
+export function OverviewPage({ onSelectQuiz, onReviewQuiz, onBack }: OverviewPageProps) {
   const { t, language } = useTranslation()
   const [rows, setRows] = useState<QuizCoverage[] | null>(null)
   const [error, setError] = useState(false)
+  const [reviewingId, setReviewingId] = useState<string | null>(null)
+  const [reviewError, setReviewError] = useState(false)
 
   const load = () => {
     setError(false)
     fetchQuizCoverage().then(setRows).catch(() => setError(true))
   }
   useEffect(load, [])
+
+  const review = async (quizId: string) => {
+    setReviewError(false)
+    setReviewingId(quizId)
+    try {
+      await onReviewQuiz(quizId)
+    } catch {
+      setReviewError(true)
+      setReviewingId(null)
+    }
+  }
 
   const { started, untouched } = splitCoverage(rows ?? [])
   const totals = coverageTotals(started)
@@ -35,6 +50,7 @@ export function OverviewPage({ onSelectQuiz, onBack }: OverviewPageProps) {
       <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
     </div>
     {error && <p className="alert" role="alert">{t('overview.errorLoad')} <button type="button" className="secondary alert-retry" onClick={load}>{t('start.retry')}</button></p>}
+    {reviewError && <p className="alert" role="alert">{t('overview.errorReview')}</p>}
     {!rows && !error && <p>{t('common.loading')}</p>}
     {rows && !started.length && <p>{t('overview.emptyState')}</p>}
     {started.length > 0 && <>
@@ -45,7 +61,8 @@ export function OverviewPage({ onSelectQuiz, onBack }: OverviewPageProps) {
       <ul className="overview-list">
         {started.map((row) => {
           const percent = coveragePercent(row.seen_count, row.question_count)
-          return <li key={row.quiz_id}>
+          const batch = Math.min(row.due_count, REVIEW_BATCH_SIZE)
+          return <li key={row.quiz_id} className="overview-card">
             <button type="button" className="overview-item" onClick={() => onSelectQuiz(row.quiz_id)}>
               <span className="overview-item-head">
                 <span className="overview-item-title">{row.quiz_title}</span>
@@ -57,6 +74,14 @@ export function OverviewPage({ onSelectQuiz, onBack }: OverviewPageProps) {
                 {row.last_played_at && <> · {t('overview.lastPlayed', longDate(row.last_played_at, language))}</>}
               </span>
             </button>
+            <div className="overview-review">
+              {batch > 0
+                ? <>
+                  <button type="button" className="secondary" disabled={reviewingId !== null} onClick={() => review(row.quiz_id)}>{reviewingId === row.quiz_id ? t('common.loading') : t('overview.review', batch)}</button>
+                  <span className="overview-item-meta">{t('overview.dueNote', row.due_count)}</span>
+                </>
+                : <span className="overview-item-meta">{t('overview.nothingDue')}</span>}
+            </div>
           </li>
         })}
       </ul>

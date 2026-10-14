@@ -206,6 +206,11 @@ pre { padding: 1rem; overflow: auto; background: var(--code-bg); border: 1px sol
 .overview-list { display: grid; gap: .6rem; list-style: none; margin: 0 0 1.5rem; padding: 0; }
 .overview-item { display: grid; gap: .5rem; width: 100%; padding: .9rem 1rem; text-align: left; font-weight: 400; background: var(--surface); border: 1px solid var(--border); border-radius: .6rem; color: var(--text); transition: border-color .15s; }
 .overview-item:hover { border-color: var(--accent); }
+.overview-card { background: var(--surface); border: 1px solid var(--border); border-radius: .6rem; transition: border-color .15s; }
+.overview-card:hover, .overview-card:focus-within { border-color: var(--accent); }
+.overview-card .overview-item { background: transparent; border: 0; }
+.overview-review { display: flex; align-items: center; flex-wrap: wrap; gap: .8rem; padding: 0 1rem .9rem; }
+.overview-review button { width: auto; padding: .5rem .9rem; font-size: .9rem; }
 .overview-item-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
 .overview-item-title { font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
 .overview-item-percent { font-weight: 800; color: var(--ink); white-space: nowrap; }

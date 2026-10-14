@@ -9,7 +9,13 @@ export interface QuizCoverage {
   seen_count: number
   games_played: number
   last_played_at: string | null
+  /** Cartes Leitner échues dont la question existe encore : ce que « Réviser » proposera. */
+  due_count: number
 }
+
+/** Taille d'une session de révision lancée depuis la vue d'ensemble (les plus fragiles d'abord) — la page
+ * d'historique propose, elle, de choisir cette taille. */
+export const REVIEW_BATCH_SIZE = 20
 
 export async function fetchQuizCoverage(): Promise<QuizCoverage[]> {
   return retryWithBackoff(async () => {
