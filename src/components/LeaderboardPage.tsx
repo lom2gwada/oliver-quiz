@@ -26,6 +26,7 @@ interface LeaderboardPageProps {
   quiz: Quiz
   hostedQuizId: string
   initialMode?: GameMode
+  onViewOverview: () => void
   onBack: () => void
 }
 
@@ -41,7 +42,7 @@ const paceLabel = (pace: number | null) => (pace !== null ? `${pace}/min` : '—
 const pointsLabel = (points: number | null) => (points !== null ? `${points} pts` : '—')
 const percentLabel = (earned: number | null, total: number | null) => (total ? `${Math.round(((earned ?? 0) / total) * 100)}%` : '—')
 
-export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', onBack }: LeaderboardPageProps) {
+export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', onViewOverview, onBack }: LeaderboardPageProps) {
   const { t, language } = useTranslation()
   const [mode, setMode] = useState<LeaderboardTab>(initialMode)
   const [rows, setRows] = useState<LeaderboardRow[] | null>(null)
@@ -123,7 +124,10 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
   return <section className="stats-page">
     <div className="stats-header">
       <h2>{t('leaderboard.title')}</h2>
-      <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
+      <div className="stats-header-actions">
+        <button type="button" className="secondary" onClick={onViewOverview}>{t('nav.overview')}</button>
+        <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
+      </div>
     </div>
     <div className="mode-picker" role="group" aria-label={t('start.modeGroupLabel')}>
       <button type="button" className={mode === 'classic' ? 'mode-option active' : 'mode-option'} onClick={() => setMode('classic')}>{t('common.modeClassic')}</button>
