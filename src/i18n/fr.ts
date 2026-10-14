@@ -22,7 +22,7 @@ export const fr = {
   'nav.by': (author: string) => `par ${author}`,
 
   'start.quizLabel': 'Quiz',
-  'start.changeQuiz': '🔄 Changer de quiz',
+  'start.changeQuiz': '📊 Changer de quiz',
   'start.quizListLoading': 'Chargement des quiz…',
   'start.quizListError': 'Impossible de charger la liste des quiz.',
   'start.retry': 'Réessayer',
