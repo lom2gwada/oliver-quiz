@@ -499,6 +499,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
         </>}
         <div className="active-quiz-actions">
           {activeCoverage?.quiz_id === selectedHostedQuizId && activeCoverage.due_count > 0 && <button type="button" className="secondary" disabled={reviewing} onClick={reviewActiveQuiz}>{reviewing ? t('common.loading') : t('overview.review', Math.min(activeCoverage.due_count, REVIEW_BATCH_SIZE))}</button>}
+          <button type="button" className="secondary" disabled={reviewing} onClick={() => { playClick(); viewHistory('start') }}>{t('overview.history')}</button>
           <button type="button" className="secondary" disabled={reviewing} onClick={() => { playClick(); viewOverview('start') }}>{t('start.changeQuiz')}</button>
         </div>
         {reviewError && <p className="alert" role="alert">{t('overview.errorReview')}</p>}
