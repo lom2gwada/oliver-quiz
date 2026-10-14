@@ -326,6 +326,10 @@ export const fr = {
   'overview.seen': (seen: number, total: number) => `${seen}/${total} questions vues`,
   'overview.games': (count: number) => `${count} partie${count > 1 ? 's' : ''}`,
   'overview.lastPlayed': (date: string) => `dernière le ${date}`,
+  'overview.review': (count: number) => `🔁 Réviser ${count} question${count > 1 ? 's' : ''}`,
+  'overview.dueNote': (count: number) => `${count} à revoir au total`,
+  'overview.nothingDue': 'Rien à réviser pour le moment',
+  'overview.errorReview': 'Impossible de lancer la révision.',
   'overview.untouchedTitle': (count: number) => `Pas encore commencés (${count})`,
   'overview.questionCount': (count: number) => `${count} questions`,
 

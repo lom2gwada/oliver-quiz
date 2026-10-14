@@ -19,7 +19,8 @@ import type { HostedQuizSummary } from './types/hostedQuiz'
 import { buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, deleteQuizHistory, saveQuestionResults, saveQuizResult, saveStreakResult, saveTimedResult } from './utils/quizHistory'
 import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchStreakTopScore, fetchTimedTopScore, fetchTopScore } from './utils/leaderboard'
-import { recordQuestionProgress } from './utils/leitner'
+import { computeDueQuestions, fetchQuestionProgress, recordQuestionProgress } from './utils/leitner'
+import { REVIEW_BATCH_SIZE } from './utils/coverage'
 import { deleteQuiz, fetchAccessibleQuizzes, fetchAccessibleQuizzesWithRetry, fetchQuizContent, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
 import { applyTheme } from './utils/theme'
 import { LanguageProvider, translate } from './i18n'
@@ -411,6 +412,16 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     navigate('quiz')
   }
 
+  /** Depuis la vue d'ensemble : charge le quiz choisi et lance directement une révision sur ses cartes Leitner
+   * échues (les plus fragiles d'abord). Rejette en cas d'échec de chargement pour que la page l'affiche. */
+  const reviewQuizDue = async (id: string) => {
+    const content = parseQuiz(await fetchQuizContent(id))
+    const due = computeDueQuestions(await fetchQuestionProgress(id), content.questions).slice(0, REVIEW_BATCH_SIZE).map((card) => card.question)
+    if (!due.length) throw new Error('no due question')
+    setSelectedHostedQuizId(id); setQuiz(content); setSelectedThemes([]); setDifficulty(''); setQuizLoadError('')
+    reviewDue(due)
+  }
+
   const startStreak = () => {
     playClick()
     navigate('streak')
@@ -497,7 +508,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'timedResults' && timedResult && <TimedResultPage {...timedResult} onRestartSame={restartTimed} onBackToSettings={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} />}
     {view === 'quizzes' && <QuizListPage hostedQuizzes={hostedQuizzes} isAdmin={profile?.isAdmin ?? false} onBack={() => navigate('start')} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} />}
     {view === 'quizDetail' && <QuizDetailPage quiz={quiz} hostedQuizId={selectedHostedQuizId} isPublic={hostedQuizzes.find((hosted) => hosted.id === selectedHostedQuizId)?.is_public ?? false} onTogglePublic={(isPublic) => togglePublicLocally(selectedHostedQuizId, isPublic)} onBack={() => navigate('quizzes')} onExport={exportQuiz} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onAddTheme={addTheme} quizLoadError={quizLoadError} onUpdateQuizMeta={updateQuizMeta} onDeleteQuiz={deleteHostedQuiz} deleteQuizError={deleteQuizError} />}
-    {view === 'overview' && <OverviewPage onBack={() => navigate('start')} onSelectQuiz={async (id) => { playClick(); await selectHostedQuiz(id); navigate('start') }} />}
+    {view === 'overview' && <OverviewPage onReviewQuiz={reviewQuizDue} onBack={() => navigate('start')} onSelectQuiz={async (id) => { playClick(); await selectHostedQuiz(id); navigate('start') }} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} hostedQuizId={selectedHostedQuizId} onReviewDue={reviewDue} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} hostedQuizId={selectedHostedQuizId} initialMode={leaderboardMode} onBack={() => navigate(leaderboardBack)} />}
     {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} onViewHistory={() => viewHistory('profile')} onViewLeaderboard={() => viewLeaderboard('profile')} onPreviewLanguage={setLanguage} />}

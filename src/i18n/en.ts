@@ -328,6 +328,10 @@ export const en = {
   'overview.seen': (seen: number, total: number) => `${seen}/${total} questions seen`,
   'overview.games': (count: number) => `${count} game${count > 1 ? 's' : ''}`,
   'overview.lastPlayed': (date: string) => `last played ${date}`,
+  'overview.review': (count: number) => `🔁 Review ${count} question${count > 1 ? 's' : ''}`,
+  'overview.dueNote': (count: number) => `${count} due in total`,
+  'overview.nothingDue': 'Nothing to review right now',
+  'overview.errorReview': 'Could not start the review.',
   'overview.untouchedTitle': (count: number) => `Not started yet (${count})`,
   'overview.questionCount': (count: number) => `${count} questions`,
 
