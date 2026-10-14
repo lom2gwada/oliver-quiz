@@ -490,21 +490,22 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   }
 
   return <LanguageProvider language={language}><main className="app-shell">
-    <header><div><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>{t('nav.by', quiz.metadata.author)}</p>{view === 'start' && quiz.metadata.description && <p className="quiz-description-preview">{quiz.metadata.description}</p>}{view === 'start' && topScore && <button type="button" className="top-score" onClick={() => viewLeaderboard('start', gameMode)}>🏆 {topScore.avatar} {topScore.pseudo} — {topScore.scoreText}</button>}</div><div className="header-actions"><button type="button" className="secondary" onClick={toggleSound} aria-label={muted ? t('nav.unmuteSound') : t('nav.muteSound')}>{muted ? '🔇' : '🔊'}</button>{view === 'start' && <button type="button" className="secondary" onClick={() => navigate('profile')}>{profile ? `${profile.avatar} ${profile.pseudo}` : t('nav.profile')}</button>}{view === 'start' && profile?.isAdmin && <button type="button" className="secondary" onClick={() => navigate('quizzes')}>{t('nav.quiz')}</button>}<button type="button" className="secondary" onClick={onLogout}>{t('common.logout')}</button></div></header>
+    <header className={view === 'start' && hostedQuizzes.length > 0 ? 'header-with-quick-actions' : undefined}><div className="header-main"><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>{t('nav.by', quiz.metadata.author)}</p>{view === 'start' && quiz.metadata.description && <p className="quiz-description-preview">{quiz.metadata.description}</p>}{view === 'start' && topScore && <button type="button" className="top-score" onClick={() => viewLeaderboard('start', gameMode)}>🏆 {topScore.avatar} {topScore.pseudo} — {topScore.scoreText}</button>}
+</div><div className="header-actions"><button type="button" className="secondary" onClick={toggleSound} aria-label={muted ? t('nav.unmuteSound') : t('nav.muteSound')}>{muted ? '🔇' : '🔊'}</button>{view === 'start' && <button type="button" className="secondary" onClick={() => navigate('profile')}>{profile ? `${profile.avatar} ${profile.pseudo}` : t('nav.profile')}</button>}{view === 'start' && profile?.isAdmin && <button type="button" className="secondary" onClick={() => navigate('quizzes')}>{t('nav.quiz')}</button>}<button type="button" className="secondary" onClick={onLogout}>{t('common.logout')}</button></div>{view === 'start' && hostedQuizzes.length > 0 && <div className="active-quiz">
+  {activeCoverage?.quiz_id === selectedHostedQuizId && <>
+    <CoverageBar percent={coveragePercent(activeCoverage.seen_count, activeCoverage.question_count)} label={t('start.quizLabel')} />
+    <span className="mode-hint">{t('overview.seen', activeCoverage.seen_count, activeCoverage.question_count)} · {coveragePercent(activeCoverage.seen_count, activeCoverage.question_count)}%</span>
+  </>}
+  <div className="active-quiz-actions">
+    {activeCoverage?.quiz_id === selectedHostedQuizId && activeCoverage.due_count > 0 && <button type="button" className="secondary" disabled={reviewing} onClick={reviewActiveQuiz}>{reviewing ? t('common.loading') : t('overview.review', Math.min(activeCoverage.due_count, REVIEW_BATCH_SIZE))}</button>}
+    <button type="button" className="secondary" disabled={reviewing} onClick={() => { playClick(); viewHistory('start') }}>{t('overview.history')}</button>
+    <button type="button" className="secondary" disabled={reviewing} onClick={() => { playClick(); viewLeaderboard('start', gameMode) }}>{t('overview.leaderboard')}</button>
+    <button type="button" className="secondary" disabled={reviewing} onClick={() => { playClick(); viewOverview('start') }}>{t('start.changeQuiz')}</button>
+  </div>
+  {reviewError && <p className="alert" role="alert">{t('overview.errorReview')}</p>}
+</div>}
+</header>
     {view === 'start' && <section className="start-page">
-      {hostedQuizzes.length > 0 && <div className="active-quiz">
-        {activeCoverage?.quiz_id === selectedHostedQuizId && <>
-          <CoverageBar percent={coveragePercent(activeCoverage.seen_count, activeCoverage.question_count)} label={t('start.quizLabel')} />
-          <span className="mode-hint">{t('overview.seen', activeCoverage.seen_count, activeCoverage.question_count)} · {coveragePercent(activeCoverage.seen_count, activeCoverage.question_count)}%</span>
-        </>}
-        <div className="active-quiz-actions">
-          {activeCoverage?.quiz_id === selectedHostedQuizId && activeCoverage.due_count > 0 && <button type="button" className="secondary" disabled={reviewing} onClick={reviewActiveQuiz}>{reviewing ? t('common.loading') : t('overview.review', Math.min(activeCoverage.due_count, REVIEW_BATCH_SIZE))}</button>}
-          <button type="button" className="secondary" disabled={reviewing} onClick={() => { playClick(); viewHistory('start') }}>{t('overview.history')}</button>
-          <button type="button" className="secondary" disabled={reviewing} onClick={() => { playClick(); viewLeaderboard('start', gameMode) }}>{t('overview.leaderboard')}</button>
-          <button type="button" className="secondary" disabled={reviewing} onClick={() => { playClick(); viewOverview('start') }}>{t('start.changeQuiz')}</button>
-        </div>
-        {reviewError && <p className="alert" role="alert">{t('overview.errorReview')}</p>}
-      </div>}
       {quizListState === 'loading' && <p className="mode-hint">{t('start.quizListLoading')}</p>}
       {(quizListState === 'error' || quizLoadError) && <p className="alert" role="alert">{quizListState === 'error' ? t('start.quizListError') : quizLoadError} <button type="button" className="secondary alert-retry" onClick={retryQuizLoad}>{t('start.retry')}</button></p>}
       <div className="mode-picker" role="group" aria-label={t('start.modeGroupLabel')}>
