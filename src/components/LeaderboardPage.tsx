@@ -67,10 +67,14 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
   // resélectionner un autre silencieusement, sans que l'utilisateur comprenne pourquoi. Le quiz choisi reste
   // donc le même en changeant d'onglet ; s'il n'a pas de partie dans ce mode, `displayRows` sera simplement vide.
   const allSources = [rows, streakRows, timedRows, overallRows]
-  const quizKeys = Array.from(new Set(allSources.flatMap((source) => (source ?? []).map(quizKeyOf))))
-  const keyLabels = new Map<string, string>()
-  allSources.forEach((source) => (source ?? []).forEach((row) => { if (!keyLabels.has(quizKeyOf(row))) keyLabels.set(quizKeyOf(row), row.quiz_title) }))
   const activeQuizKey = hostedQuizId || quiz.metadata.title
+  // Le quiz actuellement chargé figure toujours dans la liste, même sans aucune partie classée : les vues du
+  // classement ne retiennent que les parties sans filtre, donc un quiz joué uniquement avec des filtres en
+  // serait absent — et la page afficherait silencieusement le classement d'un autre quiz (cas typique en
+  // arrivant depuis « Mes quiz »).
+  const quizKeys = Array.from(new Set([activeQuizKey, ...allSources.flatMap((source) => (source ?? []).map(quizKeyOf))]))
+  const keyLabels = new Map<string, string>([[activeQuizKey, quiz.metadata.title]])
+  allSources.forEach((source) => (source ?? []).forEach((row) => { if (!keyLabels.has(quizKeyOf(row))) keyLabels.set(quizKeyOf(row), row.quiz_title) }))
   const activeQuiz = selectedQuiz && quizKeys.includes(selectedQuiz) ? selectedQuiz : (quizKeys.includes(activeQuizKey) ? activeQuizKey : quizKeys[0])
 
   // Chaque vue est déjà triée côté base, mais le tri global (toutes parties confondues) ne correspond pas
