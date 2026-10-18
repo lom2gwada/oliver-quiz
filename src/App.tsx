@@ -4,7 +4,7 @@ import { FilterPanel } from './components/FilterPanel'
 import { HistoryPage } from './components/HistoryPage'
 import { LeaderboardPage } from './components/LeaderboardPage'
 import { CoverageBar } from './components/CoverageBar'
-import { isKnownQuizLanguage, normalizeQuizLanguage, quizLanguageLabel } from './utils/quizLanguage'
+import { isKnownQuizLanguage, normalizeQuizLanguage, quizInterfaceLanguage, quizLanguageLabel } from './utils/quizLanguage'
 import { OverviewPage } from './components/OverviewPage'
 import { ProfilePage } from './components/ProfilePage'
 import { QuizDetailPage } from './components/QuizDetailPage'
@@ -89,7 +89,17 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   // La langue doit faire re-render tout l'arbre (contrairement au thème, un simple attribut DOM) : elle vit
   // comme un état React fourni via `LanguageProvider`, synchronisé depuis le profil comme le thème l'est.
   const [language, setLanguage] = useState<Language>('fr')
-  useEffect(() => { setLanguage(profile?.language ?? 'fr') }, [profile?.language])
+  // Langue imposée par le dernier quiz chargé qui en avait une gérée : elle prime sur celle du profil (qui peut
+  // arriver après le quiz), jusqu'à ce que l'utilisateur enregistre une autre langue dans son profil.
+  const [quizLanguage, setQuizLanguage] = useState<Language | null>(null)
+  useEffect(() => { setLanguage(quizLanguage ?? profile?.language ?? 'fr') }, [quizLanguage, profile?.language])
+  /** Au chargement d'un quiz : passe l'interface dans sa langue si l'application la gère, sinon ne change rien. */
+  const applyQuizLanguage = (loaded: Quiz) => {
+    const next = quizInterfaceLanguage(loaded.metadata.language)
+    if (!next) return
+    setQuizLanguage(next)
+    setLanguage(next)
+  }
   // `App` rend lui-même `LanguageProvider` plus bas : il ne peut donc pas consommer son propre contexte via
   // `useTranslation()` (un composant ne voit pas le contexte qu'il fournit à ses descendants) — on appelle
   // directement `translate` avec l'état local `language` à la place.
@@ -214,7 +224,9 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     setSelectedHostedQuizId(id)
     if (!id) { setQuiz(initialQuiz); setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setQuizLoadError(''); return }
     try {
-      setQuiz(parseQuiz(await fetchQuizContent(id)))
+      const loaded = parseQuiz(await fetchQuizContent(id))
+      setQuiz(loaded)
+      applyQuizLanguage(loaded)
       setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setQuizLoadError('')
     } catch (error) {
       setQuizLoadError(error instanceof Error ? error.message : t('admin.errorLoadQuiz'))
@@ -247,6 +259,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       })
       const id = await upsertQuiz(newQuiz.metadata.title, newQuiz)
       setQuiz(newQuiz)
+      applyQuizLanguage(newQuiz)
       setSelectedHostedQuizId(id)
       setSelectedThemes([]); setDifficulty(''); setSessionQuestions([])
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
@@ -435,7 +448,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     const content = parseQuiz(await fetchQuizContent(id))
     const due = computeDueQuestions(await fetchQuestionProgress(id), content.questions).slice(0, REVIEW_BATCH_SIZE).map((card) => card.question)
     if (!due.length) throw new Error('no due question')
-    setSelectedHostedQuizId(id); setQuiz(content); setSelectedThemes([]); setDifficulty(''); setQuizLoadError('')
+    setSelectedHostedQuizId(id); setQuiz(content); applyQuizLanguage(content); setSelectedThemes([]); setDifficulty(''); setQuizLoadError('')
     reviewDue(due)
   }
 
@@ -546,6 +559,6 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'overview' && <OverviewPage onReviewQuiz={reviewQuizDue} onViewHistory={async (id) => { playClick(); await selectHostedQuiz(id); viewHistory('overview') }} onViewLeaderboard={async (id) => { playClick(); await selectHostedQuiz(id); viewLeaderboard('overview') }} onBack={() => navigate(overviewBack)} onSelectQuiz={async (id) => { playClick(); await selectHostedQuiz(id); navigate('start') }} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} hostedQuizId={selectedHostedQuizId} onReviewDue={reviewDue} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} hostedQuizId={selectedHostedQuizId} initialMode={leaderboardMode} onViewOverview={() => viewOverview('leaderboard')} onBack={() => navigate(leaderboardBack)} />}
-    {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} onViewOverview={() => viewOverview('profile')} onPreviewLanguage={setLanguage} />}
+    {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); if (next.language !== profile?.language) setQuizLanguage(null); setProfile((current) => ({ ...current, ...next })) }} onViewOverview={() => viewOverview('profile')} onPreviewLanguage={setLanguage} />}
   </main></LanguageProvider>
 }

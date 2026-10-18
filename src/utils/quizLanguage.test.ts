@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isKnownQuizLanguage, normalizeQuizLanguage, quizLanguageLabel } from './quizLanguage'
+import { isKnownQuizLanguage, normalizeQuizLanguage, quizInterfaceLanguage, quizLanguageLabel } from './quizLanguage'
 
 const translate = (key: 'profile.languageFr' | 'profile.languageEn') => (key === 'profile.languageFr' ? 'Français' : 'English')
 
@@ -15,6 +15,18 @@ describe('isKnownQuizLanguage', () => {
     expect(isKnownQuizLanguage('fr')).toBe(true)
     expect(isKnownQuizLanguage('en')).toBe(true)
     expect(isKnownQuizLanguage('de')).toBe(false)
+  })
+})
+
+describe('quizInterfaceLanguage', () => {
+  it('renvoie la langue du quiz quand l’application la gère, quelle que soit la casse', () => {
+    expect(quizInterfaceLanguage('en')).toBe('en')
+    expect(quizInterfaceLanguage(' FR ')).toBe('fr')
+  })
+  it('renvoie null pour une langue absente, vide ou non prise en charge', () => {
+    expect(quizInterfaceLanguage(undefined)).toBeNull()
+    expect(quizInterfaceLanguage('')).toBeNull()
+    expect(quizInterfaceLanguage('de')).toBeNull()
   })
 })
 
