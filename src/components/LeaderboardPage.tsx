@@ -26,6 +26,9 @@ interface LeaderboardPageProps {
   quiz: Quiz
   hostedQuizId: string
   initialMode?: GameMode
+  /** Quiz à afficher d'emblée quand on arrive depuis la page d'historique (qui peut montrer un autre quiz que
+   * le quiz actif) ; ajouté au sélecteur même sans partie classée, pour ne pas retomber sur un autre quiz. */
+  focusQuiz?: { key: string; label: string } | null
   onViewOverview: () => void
   onBack: () => void
 }
@@ -42,7 +45,7 @@ const paceLabel = (pace: number | null) => (pace !== null ? `${pace}/min` : '—
 const pointsLabel = (points: number | null) => (points !== null ? `${points} pts` : '—')
 const percentLabel = (earned: number | null, total: number | null) => (total ? `${Math.round(((earned ?? 0) / total) * 100)}%` : '—')
 
-export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', onViewOverview, onBack }: LeaderboardPageProps) {
+export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', focusQuiz = null, onViewOverview, onBack }: LeaderboardPageProps) {
   const { t, language } = useTranslation()
   const [mode, setMode] = useState<LeaderboardTab>(initialMode)
   const [rows, setRows] = useState<LeaderboardRow[] | null>(null)
@@ -50,7 +53,7 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
   const [timedRows, setTimedRows] = useState<TimedLeaderboardRow[] | null>(null)
   const [overallRows, setOverallRows] = useState<OverallLeaderboardRow[] | null>(null)
   const [error, setError] = useState('')
-  const [selectedQuiz, setSelectedQuiz] = useState<string | null>(null)
+  const [selectedQuiz, setSelectedQuiz] = useState<string | null>(focusQuiz?.key ?? null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -73,8 +76,9 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', o
   // classement ne retiennent que les parties sans filtre, donc un quiz joué uniquement avec des filtres en
   // serait absent — et la page afficherait silencieusement le classement d'un autre quiz (cas typique en
   // arrivant depuis « Mes quiz »).
-  const quizKeys = Array.from(new Set([activeQuizKey, ...allSources.flatMap((source) => (source ?? []).map(quizKeyOf))]))
+  const quizKeys = Array.from(new Set([activeQuizKey, ...(focusQuiz ? [focusQuiz.key] : []), ...allSources.flatMap((source) => (source ?? []).map(quizKeyOf))]))
   const keyLabels = new Map<string, string>([[activeQuizKey, quiz.metadata.title]])
+  if (focusQuiz && !keyLabels.has(focusQuiz.key)) keyLabels.set(focusQuiz.key, focusQuiz.label)
   allSources.forEach((source) => (source ?? []).forEach((row) => { if (!keyLabels.has(quizKeyOf(row))) keyLabels.set(quizKeyOf(row), row.quiz_title) }))
   const activeQuiz = selectedQuiz && quizKeys.includes(selectedQuiz) ? selectedQuiz : (quizKeys.includes(activeQuizKey) ? activeQuizKey : quizKeys[0])
 

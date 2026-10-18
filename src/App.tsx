@@ -160,7 +160,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   }, [view, gameMode, quiz.metadata.title, selectedHostedQuizId])
   const [leaderboardBack, setLeaderboardBack] = useState<View>('profile')
   const [leaderboardMode, setLeaderboardMode] = useState<GameMode>('classic')
-  const viewLeaderboard = (from: View, mode: GameMode = 'classic') => { setLeaderboardBack(from); setLeaderboardMode(mode); navigate('leaderboard') }
+  const [leaderboardFocus, setLeaderboardFocus] = useState<{ key: string; label: string } | null>(null)
+  const viewLeaderboard = (from: View, mode: GameMode = 'classic', focus: { key: string; label: string } | null = null) => { setLeaderboardBack(from); setLeaderboardMode(mode); setLeaderboardFocus(focus); navigate('leaderboard') }
   // Progression du quiz actif, affichée sur l'accueil : rechargée à chaque retour sur l'accueil (une partie vient
   // peut-être de la faire avancer). Purement informative — un échec masque simplement la barre.
   const [activeCoverage, setActiveCoverage] = useState<QuizCoverage | null>(null)
@@ -558,8 +559,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'quizzes' && <QuizListPage hostedQuizzes={hostedQuizzes} isAdmin={profile?.isAdmin ?? false} onBack={() => navigate('start')} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} publishWarning={publishWarning} />}
     {view === 'quizDetail' && <QuizDetailPage quiz={quiz} hostedQuizId={selectedHostedQuizId} isPublic={hostedQuizzes.find((hosted) => hosted.id === selectedHostedQuizId)?.is_public ?? false} onTogglePublic={(isPublic) => togglePublicLocally(selectedHostedQuizId, isPublic)} onBack={() => navigate('quizzes')} onExport={exportQuiz} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onAddTheme={addTheme} quizLoadError={quizLoadError} onUpdateQuizMeta={updateQuizMeta} onDeleteQuiz={deleteHostedQuiz} deleteQuizError={deleteQuizError} />}
     {view === 'overview' && <OverviewPage onReviewQuiz={reviewQuizDue} onViewHistory={async (id) => { playClick(); await selectHostedQuiz(id); viewHistory('overview') }} onViewLeaderboard={async (id) => { playClick(); await selectHostedQuiz(id); viewLeaderboard('overview') }} onBack={() => navigate(overviewBack)} onSelectQuiz={async (id) => { playClick(); await selectHostedQuiz(id); navigate('start') }} />}
-    {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} hostedQuizId={selectedHostedQuizId} onReviewDue={reviewDue} />}
-    {view === 'leaderboard' && <LeaderboardPage quiz={quiz} hostedQuizId={selectedHostedQuizId} initialMode={leaderboardMode} onViewOverview={() => viewOverview('leaderboard')} onBack={() => navigate(leaderboardBack)} />}
+    {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} hostedQuizId={selectedHostedQuizId} onReviewDue={reviewDue} onViewLeaderboard={(key, label) => { playClick(); viewLeaderboard('history', 'classic', { key, label }) }} />}
+    {view === 'leaderboard' && <LeaderboardPage quiz={quiz} hostedQuizId={selectedHostedQuizId} initialMode={leaderboardMode} focusQuiz={leaderboardFocus} onViewOverview={() => viewOverview('leaderboard')} onBack={() => navigate(leaderboardBack)} />}
     {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); if (next.language !== profile?.language) setQuizLanguage(null); setProfile((current) => ({ ...current, ...next })) }} onViewOverview={() => viewOverview('profile')} onPreviewLanguage={setLanguage} />}
   </main></QuizLanguageProvider></LanguageProvider>
 }

@@ -21,6 +21,9 @@ interface HistoryPageProps {
   quiz: Quiz
   hostedQuizId: string
   onReviewDue: (questions: Question[]) => void
+  /** Ouvre le classement du quiz affiché ici (pas forcément le quiz actif de l'appli : le sélecteur de cette page
+   * ne change que l'affichage) — `key`/`label` sont ceux de ce quiz dans le sélecteur. */
+  onViewLeaderboard: (key: string, label: string) => void
 }
 
 /** Une ligne d'historique "appartient" à `quiz_id` si connu, ou à son titre figé sinon (parties d'avant cette
@@ -28,7 +31,7 @@ interface HistoryPageProps {
  * plutôt que de les traiter comme deux quiz différents. */
 const quizKeyOf = (row: { quiz_id: string | null; quiz_title: string }) => row.quiz_id ?? row.quiz_title
 
-export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue }: HistoryPageProps) {
+export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue, onViewLeaderboard }: HistoryPageProps) {
   const { t, language } = useTranslation()
   const [rows, setRows] = useState<QuizResultRow[] | null>(null)
   const [streakRows, setStreakRows] = useState<StreakResultRow[]>([])
@@ -99,7 +102,10 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue }: History
   return <section className="stats-page">
     <div className="stats-header">
       <h2>{t('history.title')}</h2>
-      <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
+      <div className="stats-header-actions">
+        <button type="button" className="secondary" onClick={() => onViewLeaderboard(activeQuiz, keyLabels.get(activeQuiz) ?? quiz.metadata.title)}>{t('common.viewLeaderboard')}</button>
+        <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
+      </div>
     </div>
     {error && <p className="alert" role="alert">{error}</p>}
     {!error && !rows && <p>{t('common.loading')}</p>}
