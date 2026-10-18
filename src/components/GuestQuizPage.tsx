@@ -3,6 +3,7 @@ import type { GuestLinkMode } from '../types/guestLink'
 import type { AnswersByQuestion, Quiz } from '../types/quiz'
 import { LanguageProvider, useTranslation } from '../i18n'
 import { fetchGuestQuiz, submitGuestResult } from '../utils/guestQuiz'
+import { QuizLanguageProvider } from '../utils/quizLanguageContext'
 import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
 import { QuestionBody } from './QuestionBody'
@@ -31,7 +32,7 @@ function GuestQuizLoader({ token }: { token: string }) {
 
   if (loaded === null) return <p>{t('common.loading')}</p>
   if (loaded === 'invalid') return <section className="login-page"><p className="eyebrow">OLIVER QUIZ</p><p className="alert" role="alert">{t('guest.invalidLink')}</p></section>
-  return <GuestSession token={token} mode={loaded.mode} quiz={loaded.quiz} />
+  return <QuizLanguageProvider language={loaded.quiz.metadata.language}><GuestSession token={token} mode={loaded.mode} quiz={loaded.quiz} /></QuizLanguageProvider>
 }
 
 function GuestSession({ token, mode, quiz }: { token: string; mode: GuestLinkMode; quiz: Quiz }) {

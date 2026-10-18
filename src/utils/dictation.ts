@@ -27,6 +27,18 @@ export function speechLanguageTag(language: Language): string {
   return language === 'en' ? 'en-GB' : 'fr-FR'
 }
 
+/** Forme minimale d'un code de langue exploitable par le moteur de dictée (« de », « pt-br »…) : un texte libre
+ * comme « Français » ne l'est pas et ferait échouer la dictée. */
+const LANGUAGE_CODE = /^[a-z]{2,3}(-[a-z0-9]{2,8})*$/i
+
+/** Langue de dictée : celle du quiz quand elle est précisée (fr/en avec leur variante habituelle, tout autre code
+ * exploitable tel quel — le moteur sait dicter bien d'autres langues que l'interface), sinon celle de l'interface. */
+export function dictationLanguageTag(quizLanguage: string | undefined, uiLanguage: Language): string {
+  const code = (quizLanguage ?? '').trim().toLowerCase()
+  if (code === 'fr' || code === 'en') return speechLanguageTag(code)
+  return LANGUAGE_CODE.test(code) ? code : speechLanguageTag(uiLanguage)
+}
+
 /** Le moteur de dictée ajoute volontiers une ponctuation finale ("Paris."), qui ferait rater la comparaison
  * avec la réponse attendue — l'utilisateur peut de toute façon retoucher le champ ensuite. */
 export function cleanTranscript(transcript: string): string {
