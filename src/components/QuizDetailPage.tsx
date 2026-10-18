@@ -35,7 +35,7 @@ interface QuizDetailPageProps {
   editError: string
   onAddTheme: (label: string) => Promise<void>
   quizLoadError: string
-  onUpdateQuizMeta: (title: string, author: string, description: string) => Promise<void>
+  onUpdateQuizMeta: (title: string, author: string, description: string, language: string) => Promise<void>
   onDeleteQuiz: (id: string, title: string, deleteHistoryToo: boolean) => Promise<void>
   deleteQuizError: string
 }
@@ -89,6 +89,7 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
         title={quiz.metadata.title}
         author={quiz.metadata.author}
         description={quiz.metadata.description ?? ''}
+        language={quiz.metadata.language ?? ''}
         error={editError}
         onSave={onUpdateQuizMeta}
       />}

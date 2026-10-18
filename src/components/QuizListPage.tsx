@@ -7,16 +7,18 @@ interface QuizListPageProps {
   isAdmin: boolean
   onBack: () => void
   onSelectQuiz: (id: string) => void
-  onCreateQuiz: (title: string, author: string, description: string, themeLabels: string[]) => Promise<void>
+  onCreateQuiz: (title: string, author: string, description: string, themeLabels: string[], language: string) => Promise<void>
   createError: string
   onPublish: (file?: File) => void
   publishError: string
   publishSuccess: boolean
+  /** Avertissement non bloquant après un import réussi (ex. langue du quiz non reconnue). */
+  publishWarning: string
 }
 
 /** Page générale : liste (tuiles) des quiz hébergés, création et import/mise à jour par JSON.
  * Cliquer une tuile sélectionne ce quiz comme quiz actif puis navigue vers `QuizDetailPage`. */
-export function QuizListPage({ hostedQuizzes, isAdmin, onBack, onSelectQuiz, onCreateQuiz, createError, onPublish, publishError, publishSuccess }: QuizListPageProps) {
+export function QuizListPage({ hostedQuizzes, isAdmin, onBack, onSelectQuiz, onCreateQuiz, createError, onPublish, publishError, publishSuccess, publishWarning }: QuizListPageProps) {
   const { t } = useTranslation()
   return <section className="stats-page">
     <div className="stats-header">
@@ -39,6 +41,7 @@ export function QuizListPage({ hostedQuizzes, isAdmin, onBack, onSelectQuiz, onC
         <label className="file-input">{t('admin.importLabel')}<input type="file" accept="application/json,.json" onChange={(event) => onPublish(event.target.files?.[0])} /></label>
         {publishError && <p className="alert" role="alert">{publishError}</p>}
         {publishSuccess && <p className="profile-saved">{t('admin.publishSuccess')}</p>}
+        {publishSuccess && publishWarning && <p className="mode-hint" role="status">{publishWarning}</p>}
       </div>
     </>}
   </section>
