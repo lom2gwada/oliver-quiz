@@ -4,6 +4,7 @@ import { FilterPanel } from './components/FilterPanel'
 import { HistoryPage } from './components/HistoryPage'
 import { LeaderboardPage } from './components/LeaderboardPage'
 import { CoverageBar } from './components/CoverageBar'
+import { QuizLanguageProvider } from './utils/quizLanguageContext'
 import { isKnownQuizLanguage, normalizeQuizLanguage, quizInterfaceLanguage, quizLanguageLabel } from './utils/quizLanguage'
 import { OverviewPage } from './components/OverviewPage'
 import { ProfilePage } from './components/ProfilePage'
@@ -507,7 +508,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     setMuted(!muted)
   }
 
-  return <LanguageProvider language={language}><main className="app-shell">
+  return <LanguageProvider language={language}><QuizLanguageProvider language={quiz.metadata.language}><main className="app-shell">
     <header className={view === 'start' && hostedQuizzes.length > 0 ? 'header-with-quick-actions' : undefined}><div className="header-main"><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>{t('nav.by', quiz.metadata.author)}{quiz.metadata.language && <> · {quizLanguageLabel(quiz.metadata.language, language, t)}</>}</p>{view === 'start' && quiz.metadata.description && <p className="quiz-description-preview">{quiz.metadata.description}</p>}{view === 'start' && topScore && <button type="button" className="top-score" onClick={() => viewLeaderboard('start', gameMode)}>🏆 {topScore.avatar} {topScore.pseudo} — {topScore.scoreText}</button>}
 </div><div className="header-actions"><button type="button" className="secondary" onClick={toggleSound} aria-label={muted ? t('nav.unmuteSound') : t('nav.muteSound')}>{muted ? '🔇' : '🔊'}</button>{view === 'start' && <button type="button" className="secondary" onClick={() => navigate('profile')}>{profile ? `${profile.avatar} ${profile.pseudo}` : t('nav.profile')}</button>}{view === 'start' && profile?.isAdmin && <button type="button" className="secondary" onClick={() => navigate('quizzes')}>{t('nav.quiz')}</button>}<button type="button" className="secondary" onClick={onLogout}>{t('common.logout')}</button></div>{view === 'start' && hostedQuizzes.length > 0 && <div className="active-quiz">
   {activeCoverage?.quiz_id === selectedHostedQuizId && <>
@@ -560,5 +561,5 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} hostedQuizId={selectedHostedQuizId} onReviewDue={reviewDue} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} hostedQuizId={selectedHostedQuizId} initialMode={leaderboardMode} onViewOverview={() => viewOverview('leaderboard')} onBack={() => navigate(leaderboardBack)} />}
     {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); if (next.language !== profile?.language) setQuizLanguage(null); setProfile((current) => ({ ...current, ...next })) }} onViewOverview={() => viewOverview('profile')} onPreviewLanguage={setLanguage} />}
-  </main></LanguageProvider>
+  </main></QuizLanguageProvider></LanguageProvider>
 }

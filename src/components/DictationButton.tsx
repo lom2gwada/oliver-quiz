@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from '../i18n'
 import type { TranslationKey } from '../i18n'
-import { cleanTranscript, getSpeechRecognition, speechLanguageTag, type SpeechRecognitionLike } from '../utils/dictation'
+import { cleanTranscript, dictationLanguageTag, getSpeechRecognition, type SpeechRecognitionLike } from '../utils/dictation'
+import { useQuizLanguage } from '../utils/quizLanguageContext'
 
 const ERROR_KEYS: Record<string, TranslationKey | null> = {
   'not-allowed': 'quiz.dictateDenied',
@@ -16,6 +17,7 @@ const ERROR_KEYS: Record<string, TranslationKey | null> = {
  * navigateur ne sait pas dicter. */
 export function DictationButton({ onResult }: { onResult: (text: string) => void }) {
   const { t, language } = useTranslation()
+  const quizLanguage = useQuizLanguage()
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const [listening, setListening] = useState(false)
   const [errorKey, setErrorKey] = useState<TranslationKey | null>(null)
@@ -29,7 +31,7 @@ export function DictationButton({ onResult }: { onResult: (text: string) => void
     if (listening) { recognitionRef.current?.stop(); return }
     setErrorKey(null)
     const recognition = new Recognition()
-    recognition.lang = speechLanguageTag(language)
+    recognition.lang = dictationLanguageTag(quizLanguage, language)
     recognition.interimResults = false
     recognition.maxAlternatives = 1
     recognition.continuous = false
