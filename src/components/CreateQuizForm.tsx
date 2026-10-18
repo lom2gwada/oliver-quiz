@@ -1,29 +1,32 @@
 import { useState } from 'react'
 import { useTranslation } from '../i18n'
+import { QuizLanguageField } from './QuizLanguageField'
 
 interface CreateQuizFormProps {
   error: string
-  onCreate: (title: string, author: string, description: string, themeLabels: string[]) => Promise<void>
+  onCreate: (title: string, author: string, description: string, themeLabels: string[], language: string) => Promise<void>
 }
 
 /** Admin uniquement : créer un quiz hébergé de zéro (aucun import JSON requis). Le quiz créé démarre sans
  * questions — l'admin les ajoute ensuite via "➕ Ajouter une question" dans la liste juste en dessous. */
 export function CreateQuizForm({ error, onCreate }: CreateQuizFormProps) {
-  const { t } = useTranslation()
+  const { t, language: uiLanguage } = useTranslation()
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [description, setDescription] = useState('')
   const [themesText, setThemesText] = useState('')
+  // Par défaut la langue de l'interface (le cas le plus probable), modifiable ou remise à « non précisée ».
+  const [quizLanguage, setQuizLanguage] = useState<string>(uiLanguage)
   const [creating, setCreating] = useState(false)
 
-  const reset = () => { setTitle(''); setAuthor(''); setDescription(''); setThemesText(''); setOpen(false) }
+  const reset = () => { setTitle(''); setAuthor(''); setDescription(''); setThemesText(''); setQuizLanguage(uiLanguage); setOpen(false) }
 
   const create = async () => {
     setCreating(true)
     try {
       const themeLabels = themesText.split(',').map((label) => label.trim()).filter(Boolean)
-      await onCreate(title.trim(), author.trim(), description.trim(), themeLabels)
+      await onCreate(title.trim(), author.trim(), description.trim(), themeLabels, quizLanguage)
       reset()
     } catch {
       /* erreur déjà affichée via la prop `error`, formulaire laissé ouvert pour correction */
@@ -44,6 +47,7 @@ export function CreateQuizForm({ error, onCreate }: CreateQuizFormProps) {
     <label>{t('admin.themesCsvLabel')}
       <input type="text" value={themesText} onChange={(event) => setThemesText(event.target.value)} placeholder={t('admin.themesCsvPlaceholder')} />
     </label>
+    <QuizLanguageField value={quizLanguage} onChange={setQuizLanguage} />
     {error && <p className="alert" role="alert">{error}</p>}
     <div className="question-edit-actions">
       <button type="button" onClick={create} disabled={creating || !canCreate}>{t('admin.createButton')}</button>

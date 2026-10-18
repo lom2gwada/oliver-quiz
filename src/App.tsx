@@ -4,6 +4,7 @@ import { FilterPanel } from './components/FilterPanel'
 import { HistoryPage } from './components/HistoryPage'
 import { LeaderboardPage } from './components/LeaderboardPage'
 import { CoverageBar } from './components/CoverageBar'
+import { isKnownQuizLanguage, normalizeQuizLanguage, quizLanguageLabel } from './utils/quizLanguage'
 import { OverviewPage } from './components/OverviewPage'
 import { ProfilePage } from './components/ProfilePage'
 import { QuizDetailPage } from './components/QuizDetailPage'
@@ -66,6 +67,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const [answers, setAnswers] = useState<AnswersByQuestion>({})
   const [publishError, setPublishError] = useState('')
   const [publishSuccess, setPublishSuccess] = useState(false)
+  const [publishWarning, setPublishWarning] = useState('')
   const [editError, setEditError] = useState('')
   const [createError, setCreateError] = useState('')
   const [deleteQuizError, setDeleteQuizError] = useState('')
@@ -228,7 +230,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   /** Admin uniquement : crée un quiz vide de zéro (titre/auteur/description + thèmes de départ, aucune question).
    * Bloque si le titre existe déjà (l'upsert par titre écraserait sinon silencieusement un quiz existant).
    * Le nouveau quiz devient le quiz actif, prêt à recevoir des questions via "➕ Ajouter une question". */
-  const createQuiz = async (title: string, author: string, description: string, themeLabels: string[]) => {
+  const createQuiz = async (title: string, author: string, description: string, themeLabels: string[], quizLanguage: string) => {
     setCreateError('')
     if (hostedQuizzes.some((existing) => existing.title === title)) {
       setCreateError(t('admin.errorDuplicateTitle'))
@@ -239,7 +241,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       const themes = themeLabels.map((label) => ({ id: themeIdFrom(label, usedIds), label }))
       const newQuiz = parseQuiz({
         version: '1.0',
-        metadata: { title, author, createdAt: new Date().toISOString(), description: description || undefined },
+        metadata: { title, author, createdAt: new Date().toISOString(), description: description || undefined, language: normalizeQuizLanguage(quizLanguage) || undefined },
         themes,
         questions: [],
       })
@@ -257,8 +259,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   /** Depuis la liste des quiz : créer un quiz navigue directement vers sa page de détail (prêt à ajouter des
    * questions), comme aujourd'hui. En cas d'échec (ex. titre dupliqué), `createQuiz` rejette : l'erreur remonte
    * telle quelle pour que `CreateQuizForm` garde son propre `catch` (formulaire laissé ouvert) — pas de navigation. */
-  const createQuizAndOpen = async (title: string, author: string, description: string, themeLabels: string[]) => {
-    await createQuiz(title, author, description, themeLabels)
+  const createQuizAndOpen = async (title: string, author: string, description: string, themeLabels: string[], quizLanguage: string) => {
+    await createQuiz(title, author, description, themeLabels, quizLanguage)
     navigate('quizDetail')
   }
 
@@ -266,12 +268,15 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const publishQuiz = async (file?: File) => {
     if (!file) return
     setPublishSuccess(false)
+    setPublishWarning('')
     try {
       const content = JSON.parse(await file.text())
       const parsed = parseQuiz(content)
       await upsertQuiz(parsed.metadata.title, content)
       setPublishError('')
       setPublishSuccess(true)
+      const importedLanguage = normalizeQuizLanguage(parsed.metadata.language ?? '')
+      if (importedLanguage && !isKnownQuizLanguage(importedLanguage)) setPublishWarning(t('admin.quizLanguageUnknown', importedLanguage))
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
       setPublishError(error instanceof Error ? error.message : t('admin.errorInvalidJson'))
@@ -343,14 +348,14 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   /** Admin uniquement, sur un quiz hébergé actif : modifie titre/auteur/description. Passe par `updateQuiz`
    * (mise à jour par id) plutôt que `upsertQuiz` (par titre) — un simple upsert avec le nouveau titre créerait
    * une ligne en double au lieu de renommer, ou fusionnerait silencieusement avec un autre quiz du même titre. */
-  const updateQuizMeta = async (title: string, author: string, description: string) => {
+  const updateQuizMeta = async (title: string, author: string, description: string, quizLanguage: string) => {
     setEditError('')
     if (hostedQuizzes.some((existing) => existing.id !== selectedHostedQuizId && existing.title === title)) {
       setEditError(t('admin.errorDuplicateTitleOther'))
       throw new Error('duplicate title')
     }
     try {
-      const updatedQuiz = parseQuiz({ ...quiz, metadata: { ...quiz.metadata, title, author, description: description || undefined } })
+      const updatedQuiz = parseQuiz({ ...quiz, metadata: { ...quiz.metadata, title, author, description: description || undefined, language: normalizeQuizLanguage(quizLanguage) || undefined } })
       await updateQuiz(selectedHostedQuizId, updatedQuiz.metadata.title, updatedQuiz)
       setQuiz(updatedQuiz)
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
@@ -490,7 +495,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   }
 
   return <LanguageProvider language={language}><main className="app-shell">
-    <header className={view === 'start' && hostedQuizzes.length > 0 ? 'header-with-quick-actions' : undefined}><div className="header-main"><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>{t('nav.by', quiz.metadata.author)}</p>{view === 'start' && quiz.metadata.description && <p className="quiz-description-preview">{quiz.metadata.description}</p>}{view === 'start' && topScore && <button type="button" className="top-score" onClick={() => viewLeaderboard('start', gameMode)}>🏆 {topScore.avatar} {topScore.pseudo} — {topScore.scoreText}</button>}
+    <header className={view === 'start' && hostedQuizzes.length > 0 ? 'header-with-quick-actions' : undefined}><div className="header-main"><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>{t('nav.by', quiz.metadata.author)}{quiz.metadata.language && <> · {quizLanguageLabel(quiz.metadata.language, language, t)}</>}</p>{view === 'start' && quiz.metadata.description && <p className="quiz-description-preview">{quiz.metadata.description}</p>}{view === 'start' && topScore && <button type="button" className="top-score" onClick={() => viewLeaderboard('start', gameMode)}>🏆 {topScore.avatar} {topScore.pseudo} — {topScore.scoreText}</button>}
 </div><div className="header-actions"><button type="button" className="secondary" onClick={toggleSound} aria-label={muted ? t('nav.unmuteSound') : t('nav.muteSound')}>{muted ? '🔇' : '🔊'}</button>{view === 'start' && <button type="button" className="secondary" onClick={() => navigate('profile')}>{profile ? `${profile.avatar} ${profile.pseudo}` : t('nav.profile')}</button>}{view === 'start' && profile?.isAdmin && <button type="button" className="secondary" onClick={() => navigate('quizzes')}>{t('nav.quiz')}</button>}<button type="button" className="secondary" onClick={onLogout}>{t('common.logout')}</button></div>{view === 'start' && hostedQuizzes.length > 0 && <div className="active-quiz">
   {activeCoverage?.quiz_id === selectedHostedQuizId && <>
     <CoverageBar percent={coveragePercent(activeCoverage.seen_count, activeCoverage.question_count)} label={t('start.quizLabel')} />
@@ -536,7 +541,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'streakResults' && streakResult && <StreakResultPage {...streakResult} onRestartSame={restartStreak} onBackToSettings={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} />}
     {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
     {view === 'timedResults' && timedResult && <TimedResultPage {...timedResult} onRestartSame={restartTimed} onBackToSettings={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} />}
-    {view === 'quizzes' && <QuizListPage hostedQuizzes={hostedQuizzes} isAdmin={profile?.isAdmin ?? false} onBack={() => navigate('start')} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} />}
+    {view === 'quizzes' && <QuizListPage hostedQuizzes={hostedQuizzes} isAdmin={profile?.isAdmin ?? false} onBack={() => navigate('start')} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} publishWarning={publishWarning} />}
     {view === 'quizDetail' && <QuizDetailPage quiz={quiz} hostedQuizId={selectedHostedQuizId} isPublic={hostedQuizzes.find((hosted) => hosted.id === selectedHostedQuizId)?.is_public ?? false} onTogglePublic={(isPublic) => togglePublicLocally(selectedHostedQuizId, isPublic)} onBack={() => navigate('quizzes')} onExport={exportQuiz} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onAddTheme={addTheme} quizLoadError={quizLoadError} onUpdateQuizMeta={updateQuizMeta} onDeleteQuiz={deleteHostedQuiz} deleteQuizError={deleteQuizError} />}
     {view === 'overview' && <OverviewPage onReviewQuiz={reviewQuizDue} onViewHistory={async (id) => { playClick(); await selectHostedQuiz(id); viewHistory('overview') }} onViewLeaderboard={async (id) => { playClick(); await selectHostedQuiz(id); viewLeaderboard('overview') }} onBack={() => navigate(overviewBack)} onSelectQuiz={async (id) => { playClick(); await selectHostedQuiz(id); navigate('start') }} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} hostedQuizId={selectedHostedQuizId} onReviewDue={reviewDue} />}

@@ -33,6 +33,12 @@ export function parseQuiz(value: unknown): Quiz {
     throw new Error('Metadata, themes ou questions ne respecte pas le schéma attendu.')
   }
 
+  // Seule une valeur qui n'est pas du texte est refusée : un code de langue inconnu (autre que fr/en) est toléré
+  // et simplement signalé à l'affichage, voir `isKnownQuizLanguage`.
+  if (metadata.language !== undefined && typeof metadata.language !== 'string') {
+    throw new Error('metadata.language doit être une chaîne de caractères.')
+  }
+
   const parsedQuestions = questions.map(parseQuestion)
   const themeIds = new Set(themes.map((theme) => (theme as { id: string }).id))
   if (parsedQuestions.some((question) => !themeIds.has(question.theme))) {

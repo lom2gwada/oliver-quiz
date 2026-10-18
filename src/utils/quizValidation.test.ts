@@ -43,6 +43,15 @@ describe('parseQuiz — root schema', () => {
     expect(result.metadata.description).toBe('Un quiz de test.')
   })
 
+  it('accepts an optional metadata language, including codes the app does not know', () => {
+    const meta = (language: unknown) => ({ ...quiz([]), metadata: { ...quiz([]).metadata, language } })
+    expect(parseQuiz(meta('en')).metadata.language).toBe('en')
+    expect(parseQuiz(meta('fr')).metadata.language).toBe('fr')
+    expect(parseQuiz(quiz([])).metadata.language).toBeUndefined()
+    expect(parseQuiz(meta('de')).metadata.language).toBe('de')
+    expect(() => parseQuiz(meta(3))).toThrow(/language/)
+  })
+
   it('rejects a non-string metadata description', () => {
     const bad = { ...quiz([]), metadata: { ...quiz([]).metadata, description: 42 } }
     expect(() => parseQuiz(bad)).toThrow()

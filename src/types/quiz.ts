@@ -145,7 +145,7 @@ export type Question = QCMQuestion | TextQuestion | CodeQuestion | OrderingQuest
 
 export interface Quiz {
   version: string
-  metadata: { title: string; author: string; createdAt: string; description?: string }
+  metadata: { title: string; author: string; createdAt: string; description?: string; /** Code de langue du contenu du quiz (ex. 'fr', 'en' — pas celle de l'interface) ; tout code est toléré. */ language?: string }
   themes: Theme[]
   questions: Question[]
 }
