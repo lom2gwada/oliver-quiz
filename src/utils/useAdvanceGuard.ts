@@ -14,5 +14,12 @@ export const advanceAllowed = (shownAt: number, now: number, minimumMs = MIN_QUE
 export function useAdvanceGuard(questionKey: string): () => boolean {
   const shownAt = useRef(Date.now())
   useEffect(() => { shownAt.current = Date.now() }, [questionKey])
-  return () => advanceAllowed(shownAt.current, Date.now())
+  return () => {
+    const now = Date.now()
+    if (!advanceAllowed(shownAt.current, now)) return false
+    // Marque l'instant tout de suite : le prochain clic, même dans la foulée, compte déjà depuis ce passage, sans
+    // attendre que la nouvelle question soit affichée (l'effet ci-dessus réajuste ensuite à l'affichage réel).
+    shownAt.current = now
+    return true
+  }
 }
