@@ -4,6 +4,7 @@ import { useTranslation } from '../i18n'
 import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
 import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
+import { useAdvanceGuard } from '../utils/useAdvanceGuard'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { isCorrect } from './ResultPage'
 import { QuestionBody } from './QuestionBody'
@@ -55,6 +56,9 @@ export function StreakQuizPage({ quiz, pool, timeboxed, onFinish, onCancel }: St
     setIndex((value) => value + 1)
     setAnswer(undefined)
   }
+  // Un double clic sur « Suivante » validerait la question suivante à vide, et mettrait donc fin à la série.
+  const canAdvance = useAdvanceGuard(question?.id ?? '')
+  const goNext = () => { if (canAdvance()) advance() }
   const timeLimit = timeboxed && question ? questionTimeLimit(question) : null
   const remaining = useQuestionTimer(question?.id ?? '', timeLimit, advance)
 
@@ -65,10 +69,10 @@ export function StreakQuizPage({ quiz, pool, timeboxed, onFinish, onCancel }: St
     <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span><span>🔥 {streakCount}</span>{remaining !== null && timeLimit !== null && <span className={`quiz-timer-${questionTimerUrgency(remaining, timeLimit)}`}>⏳ {remaining}s</span>}{!timeboxed && <span>⏱ {formatDuration(elapsed)}</span>}</div>
     <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${((index + 1) / order.length) * 100}%` }} /></div>
     <p className="progress">{t('quiz.questionProgress', index + 1, order.length)}</p>
-    <QuestionBody key={question.id} question={question} answer={answer} onChange={setAnswer} onEnter={advance} />
+    <QuestionBody key={question.id} question={question} answer={answer} onChange={setAnswer} onEnter={goNext} />
     <div className="quiz-actions">
       <button type="button" className="secondary" onClick={cancelQuiz}>{t('quiz.abandon')}</button>
-      <button type="button" onClick={advance}>{index + 1 === order.length ? t('quiz.viewCorrection') : t('quiz.next')}</button>
+      <button type="button" onClick={goNext}>{index + 1 === order.length ? t('quiz.viewCorrection') : t('quiz.next')}</button>
     </div>
   </section>
 }

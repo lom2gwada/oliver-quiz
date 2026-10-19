@@ -4,6 +4,7 @@ import type { AnswersByQuestion, Quiz } from '../types/quiz'
 import { LanguageProvider, useTranslation } from '../i18n'
 import { fetchGuestQuiz, submitGuestResult } from '../utils/guestQuiz'
 import { QuizLanguageProvider } from '../utils/quizLanguageContext'
+import { useAdvanceGuard } from '../utils/useAdvanceGuard'
 import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from './QuestionImage'
 import { QuestionBody } from './QuestionBody'
@@ -47,6 +48,9 @@ function GuestSession({ token, mode, quiz }: { token: string; mode: GuestLinkMod
   const startedAt = useRef(0)
   const question = questions[current]
   const isTest = mode === 'test'
+  // Ignore un « Suivante » qui suit de trop près l'affichage de la question (double clic) : elle serait sautée sans avoir été vue.
+  const canAdvance = useAdvanceGuard(`${step}-${current}`)
+  const goNext = () => { if (canAdvance()) setCurrent((value) => value + 1) }
 
   const earned = questions.filter((item) => isCorrect(item, answers[item.id])).reduce((sum, item) => sum + item.points, 0)
   const total = questions.reduce((sum, item) => sum + item.points, 0)
@@ -125,13 +129,13 @@ function GuestSession({ token, mode, quiz }: { token: string; mode: GuestLinkMod
       <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span>{isTest && <span>{question.points} pts</span>}</div>
       <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${((current + 1) / questions.length) * 100}%` }} /></div>
       <p className="progress">{t('quiz.questionProgress', current + 1, questions.length)}</p>
-      <QuestionBody key={question.id} question={question} answer={answers[question.id]} onChange={(answer) => setAnswers((previous) => ({ ...previous, [question.id]: answer }))} onEnter={() => { if (isLast) { if (!submitting) finish() } else setCurrent((value) => value + 1) }} />
+      <QuestionBody key={question.id} question={question} answer={answers[question.id]} onChange={(answer) => setAnswers((previous) => ({ ...previous, [question.id]: answer }))} onEnter={() => { if (isLast) { if (!submitting) finish() } else goNext() }} />
       {submitError && <p className="alert" role="alert">{t('guest.errorSubmit')}</p>}
       <div className="quiz-actions">
         <button type="button" className="secondary" onClick={() => setCurrent((value) => value - 1)} disabled={current === 0 || submitting}>{t('quiz.previous')}</button>
         {isLast
           ? <button type="button" onClick={finish} disabled={submitting}>{submitting ? t('guest.submitting') : t('guest.finish')}</button>
-          : <button type="button" onClick={() => setCurrent((value) => value + 1)}>{t('quiz.next')}</button>}
+          : <button type="button" onClick={goNext}>{t('quiz.next')}</button>}
       </div>
     </section>
   </>
