@@ -67,6 +67,7 @@ select, .text-answer { width: 100%; background: var(--surface-solid); color: var
 .quiz-progress { height: .35rem; background: var(--surface-alt); border-radius: 999px; overflow: hidden; margin-top: 1.2rem; }
 .quiz-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-3)); border-radius: 999px; transition: width .35s ease; }
 .progress { font-size: .9rem; margin-top: .6rem; }
+.question-progress-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }.question-progress-row .progress { margin-bottom: 0; }.listen-button { width: auto; padding: .35rem .75rem; font-size: .82rem; margin-top: .4rem; }
 .question-body { animation: question-enter .3s ease; }
 .question-image { display: block; max-width: 100%; max-height: 320px; margin: 0 0 1.2rem; border-radius: .6rem; border: 1px solid var(--border); object-fit: contain; }
 .correction .question-image { max-height: 220px; margin: .8rem 0; }

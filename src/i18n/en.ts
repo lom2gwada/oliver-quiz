@@ -248,6 +248,8 @@ export const en = {
   'quiz.false': 'False',
   'quiz.answerPlaceholder': 'Your answer…',
   'quiz.answerAriaLabel': 'Answer',
+  'quiz.listen': '🗣️ Listen',
+  'quiz.listenStop': '⏹️ Stop',
   'quiz.dictate': '🎙️ Dictate',
   'quiz.dictateStop': '⏹️ Listening… (stop)',
   'quiz.dictateNoSpeech': "I didn't hear anything, try again.",

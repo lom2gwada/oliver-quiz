@@ -246,6 +246,8 @@ export const fr = {
   'quiz.false': 'Faux',
   'quiz.answerPlaceholder': 'Votre réponse…',
   'quiz.answerAriaLabel': 'Réponse',
+  'quiz.listen': '🗣️ Écouter',
+  'quiz.listenStop': '⏹️ Arrêter',
   'quiz.dictate': '🎙️ Dicter',
   'quiz.dictateStop': '⏹️ Écoute… (arrêter)',
   'quiz.dictateNoSpeech': "Je n'ai rien entendu, réessayez.",

@@ -6,6 +6,9 @@ import { formatDuration } from '../utils/time'
 import { shuffle, shuffleAwayFrom } from '../utils/shuffle'
 import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
+import { dictationLanguageTag } from '../utils/dictation'
+import { questionToSpeech } from '../utils/speech'
+import { ListenButton } from './ListenButton'
 import { QuestionBody } from './QuestionBody'
 
 export const TYPE_ICONS: Record<Question['type'], string> = { qcm: '🧩', code: '💻', text: '✍️', ordering: '🔀', boolean: '⚖️', cloze: '📝', matching: '🔗', numeric: '🎚️' }
@@ -48,7 +51,9 @@ interface QuizPageProps {
 }
 
 export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel }: QuizPageProps) {
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
+  // Lecture de l'énoncé dans la langue du quiz (celle de l'interface à défaut) — même règle que la dictée.
+  const speechTag = dictationLanguageTag(quiz.metadata.language, language)
   const [current, setCurrent] = useState(0)
   const [answers, setAnswers] = useState<AnswersByQuestion>({})
   const [elapsed, setElapsed] = useState(0)
@@ -75,7 +80,12 @@ export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel }: Qui
   return <section className="quiz-card">
     <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span>{remaining !== null && timeLimit !== null && <span className={`quiz-timer-${questionTimerUrgency(remaining, timeLimit)}`}>⏳ {remaining}s</span>}{!timeboxed && <span>⏱ {formatDuration(elapsed)}</span>}</div>
     <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${((current + 1) / shuffledQuestions.length) * 100}%` }} /></div>
-    <p className="progress">{t('quiz.questionProgress', current + 1, shuffledQuestions.length)}</p>
+    <div className="question-progress-row">
+      <p className="progress">{t('quiz.questionProgress', current + 1, shuffledQuestions.length)}</p>
+      {/* Pas de lecture avec le chrono par question : elle mangerait le temps de réponse. Cette page ne sert qu'au mode
+          classique et à la révision ; les modes sans-faute et contre-la-montre n'ont pas ce bouton. */}
+      {!timeboxed && <ListenButton key={question.id} text={questionToSpeech(question, speechTag)} languageTag={speechTag} />}
+    </div>
     <QuestionBody key={question.id} question={question} answer={answers[question.id]} onChange={updateAnswer} onEnter={goNext} />
     <div className="quiz-actions">
       <button type="button" className="secondary" onClick={cancelQuiz}>{t('common.cancel')}</button>
