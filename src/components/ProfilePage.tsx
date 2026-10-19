@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import type { Profile, Theme } from '../types/profile'
-import type { Language } from '../i18n/types'
 import { useTranslation } from '../i18n'
 import { playClick } from '../utils/sound'
 import { supabase } from '../utils/supabase'
@@ -13,21 +12,18 @@ interface ProfilePageProps {
   onBack: () => void
   onSave: (profile: Profile) => Promise<void>
   onViewOverview: () => void
-  onPreviewLanguage: (language: Language) => void
 }
 
-export function ProfilePage({ profile, onBack, onSave, onViewOverview, onPreviewLanguage }: ProfilePageProps) {
+export function ProfilePage({ profile, onBack, onSave, onViewOverview }: ProfilePageProps) {
   const { t } = useTranslation()
   const [pseudo, setPseudo] = useState(profile?.pseudo ?? '')
   const [avatar, setAvatar] = useState(profile?.avatar ?? AVATAR_OPTIONS[0])
   const [theme, setTheme] = useState<Theme>(profile?.theme ?? 'dark')
-  const [language, setLanguage] = useState<Language>(profile?.language ?? 'fr')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
   const previewTheme = (next: Theme) => { playClick(); setTheme(next); applyTheme(next); setSaved(false) }
-  const previewLanguage = (next: Language) => { playClick(); setLanguage(next); onPreviewLanguage(next); setSaved(false) }
 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -39,7 +35,9 @@ export function ProfilePage({ profile, onBack, onSave, onViewOverview, onPreview
     event.preventDefault()
     setSaving(true); setError(''); setSaved(false)
     try {
-      await onSave({ pseudo: pseudo.trim(), avatar, theme, language })
+      // La langue ne se règle plus ici mais depuis l'en-tête (`LanguageSwitch`) : on repasse celle du profil telle
+      // qu'elle est au moment de l'envoi, pour ne jamais écraser un changement fait entre-temps.
+      await onSave({ pseudo: pseudo.trim(), avatar, theme, language: profile?.language ?? 'fr' })
       setSaved(true)
     } catch {
       setError(t('profile.errorSave'))
@@ -95,19 +93,6 @@ export function ProfilePage({ profile, onBack, onSave, onViewOverview, onPreview
           <label className="theme-option">
             <input type="radio" name="theme" checked={theme === 'light'} onChange={() => previewTheme('light')} />
             {t('profile.themeLight')}
-          </label>
-        </div>
-      </fieldset>
-      <fieldset className="theme-picker">
-        <legend>{t('profile.languageLabel')}</legend>
-        <div className="theme-options">
-          <label className="theme-option">
-            <input type="radio" name="language" checked={language === 'fr'} onChange={() => previewLanguage('fr')} />
-            {t('profile.languageFr')}
-          </label>
-          <label className="theme-option">
-            <input type="radio" name="language" checked={language === 'en'} onChange={() => previewLanguage('en')} />
-            {t('profile.languageEn')}
           </label>
         </div>
       </fieldset>

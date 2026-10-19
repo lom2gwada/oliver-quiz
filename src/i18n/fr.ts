@@ -16,6 +16,7 @@ export const fr = {
 
   'nav.profile': '👤 Profil',
   'nav.quiz': '⚙️ Quiz',
+  'nav.languageGroupLabel': "Langue de l'interface",
   'nav.overview': '📊 Mes quiz',
   'nav.muteSound': 'Couper le son',
   'nav.unmuteSound': 'Activer le son',
@@ -205,7 +206,6 @@ export const fr = {
   'profile.themeLabel': 'Thème',
   'profile.themeDark': '🌙 Sombre',
   'profile.themeLight': '☀️ Clair',
-  'profile.languageLabel': 'Langue',
   'profile.languageFr': '🇫🇷 Français',
   'profile.languageEn': '🇬🇧 English',
   'profile.saved': 'Profil enregistré ✓',
