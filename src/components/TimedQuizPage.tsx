@@ -4,6 +4,7 @@ import { useTranslation } from '../i18n'
 import { formatDuration } from '../utils/time'
 import { shuffle } from '../utils/shuffle'
 import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
+import { useAdvanceGuard } from '../utils/useAdvanceGuard'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { QuestionBody } from './QuestionBody'
 import { TYPE_ICONS, difficultyLabel, typeLabel, withShuffledAnswers } from './QuizPage'
@@ -56,6 +57,9 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish
     setIndex((value) => value + 1)
     setAnswer(undefined)
   }
+  // Un double clic sur « Suivante » compterait la question suivante comme une tentative vide.
+  const canAdvance = useAdvanceGuard(question ? `${question.id}-${index}` : '')
+  const goNext = () => { if (canAdvance()) advance() }
   const questionTimeLimitSeconds = timeboxed && question ? questionTimeLimit(question) : null
   const questionRemaining = useQuestionTimer(question ? `${question.id}-${index}` : '', questionTimeLimitSeconds, advance)
 
@@ -72,12 +76,12 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish
     <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span><span>✅ {attempts.length}</span>{questionRemaining !== null && questionTimeLimitSeconds !== null && <span className={`quiz-timer-${questionTimerUrgency(questionRemaining, questionTimeLimitSeconds)}`}>⏳ {questionRemaining}s</span>}<span>⏱ {remaining !== null ? formatDuration(remaining) : formatDuration(elapsed)}</span></div>
     {durationSeconds > 0 && <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${Math.min(100, (elapsed / durationSeconds) * 100)}%` }} /></div>}
     <p className="progress">{t('quiz.questionNumber', attempts.length + 1)}</p>
-    <QuestionBody key={`${question.id}-${index}`} question={question} answer={answer} onChange={setAnswer} onEnter={advance} />
+    <QuestionBody key={`${question.id}-${index}`} question={question} answer={answer} onChange={setAnswer} onEnter={goNext} />
     <div className="quiz-actions">
       <button type="button" className="secondary" onClick={cancelQuiz}>{t('quiz.abandon')}</button>
       <div className="quiz-nav">
         <button type="button" className="secondary" onClick={finishNow}>{t('quiz.finish')}</button>
-        <button type="button" onClick={advance}>{t('quiz.next')}</button>
+        <button type="button" onClick={goNext}>{t('quiz.next')}</button>
       </div>
     </div>
   </section>

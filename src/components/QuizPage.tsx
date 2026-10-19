@@ -7,6 +7,7 @@ import { shuffle, shuffleAwayFrom } from '../utils/shuffle'
 import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { dictationLanguageTag } from '../utils/dictation'
+import { useAdvanceGuard } from '../utils/useAdvanceGuard'
 import { questionToSpeech } from '../utils/speech'
 import { ListenButton } from './ListenButton'
 import { QuestionBody } from './QuestionBody'
@@ -67,13 +68,17 @@ export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel }: Qui
     return () => clearInterval(interval)
   }, [])
 
-  const goNext = () => {
+  const canAdvance = useAdvanceGuard(question?.id ?? '')
+  const advance = () => {
     if (!question) return
     if (current === shuffledQuestions.length - 1) onFinish(answers, elapsed, shuffledQuestions)
     else setCurrent((value) => value + 1)
   }
+  // « Suivante » et Entrée ignorent un clic qui suit de trop près l'affichage de la question (double clic) ; l'expiration
+  // du temps limite, elle, avance toujours.
+  const goNext = () => { if (canAdvance()) advance() }
   const timeLimit = timeboxed && question ? questionTimeLimit(question) : null
-  const remaining = useQuestionTimer(question?.id ?? '', timeLimit, goNext)
+  const remaining = useQuestionTimer(question?.id ?? '', timeLimit, advance)
 
   if (!question) return <section className="empty"><h2>{t('quiz.emptyTitle')}</h2><p>{t('quiz.emptyHintQuiz')}</p><button type="button" className="secondary" onClick={onCancel}>{t('common.back')}</button></section>
   const theme = quiz.themes.find((item) => item.id === question.theme)?.label ?? question.theme
