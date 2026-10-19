@@ -1,28 +1,28 @@
 import { useState } from 'react'
 import { supabase } from '../utils/supabase'
 import type { TranslationKey } from '../i18n'
-import { translate } from '../i18n'
-
-const t = (key: TranslationKey) => translate('fr', key)
+import { useTranslation } from '../i18n'
 
 export function SetPassword({ onDone }: { onDone: () => void }) {
+  const { t } = useTranslation()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
-  const [error, setError] = useState('')
+  // Clé de traduction (et non texte) pour suivre le changement de langue de l'écran.
+  const [errorKey, setErrorKey] = useState<TranslationKey | null>(null)
   const [loading, setLoading] = useState(false)
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (password !== confirm) {
-      setError(t('profile.passwordMismatch'))
+      setErrorKey('profile.passwordMismatch')
       return
     }
     setLoading(true)
-    setError('')
+    setErrorKey(null)
     const { error: updateError } = await supabase.auth.updateUser({ password })
     setLoading(false)
     if (updateError) {
-      setError(t('auth.setPasswordError'))
+      setErrorKey('auth.setPasswordError')
       return
     }
     window.history.replaceState(null, '', window.location.pathname)
@@ -40,7 +40,7 @@ export function SetPassword({ onDone }: { onDone: () => void }) {
         <label>{t('profile.confirmPasswordLabel')}
           <input type="password" value={confirm} onChange={(event) => setConfirm(event.target.value)} required minLength={6} autoComplete="new-password" />
         </label>
-        {error && <p className="alert" role="alert">{error}</p>}
+        {errorKey && <p className="alert" role="alert">{t(errorKey)}</p>}
         <button type="submit" disabled={loading}>{loading ? t('auth.validating') : t('auth.validate')}</button>
       </form>
     </section>
