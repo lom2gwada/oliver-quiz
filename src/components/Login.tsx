@@ -1,22 +1,23 @@
 import { useState } from 'react'
 import { supabase } from '../utils/supabase'
 import type { TranslationKey } from '../i18n'
-import { translate } from '../i18n'
+import { useTranslation } from '../i18n'
 
-const t = (key: TranslationKey) => translate('fr', key)
-
-export function Login({ initialError = '' }: { initialError?: string }) {
+/** `inviteLinkError` : le lien d'invitation/récupération cliqué était invalide ou expiré. Les erreurs sont gardées
+ * sous forme de clé de traduction (et non de texte) pour suivre le changement de langue de l'écran. */
+export function Login({ inviteLinkError = false }: { inviteLinkError?: boolean }) {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState(initialError)
+  const [errorKey, setErrorKey] = useState<TranslationKey | null>(inviteLinkError ? 'auth.invalidInviteLink' : null)
   const [loading, setLoading] = useState(false)
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
     setLoading(true)
-    setError('')
+    setErrorKey(null)
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-    if (signInError) setError(t('auth.emailOrPasswordError'))
+    if (signInError) setErrorKey('auth.emailOrPasswordError')
     setLoading(false)
   }
 
@@ -31,7 +32,7 @@ export function Login({ initialError = '' }: { initialError?: string }) {
         <label>{t('profile.passwordTitle')}
           <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required autoComplete="current-password" />
         </label>
-        {error && <p className="alert" role="alert">{error}</p>}
+        {errorKey && <p className="alert" role="alert">{t(errorKey)}</p>}
         <button type="submit" disabled={loading}>{loading ? t('auth.loggingIn') : t('auth.login')}</button>
       </form>
     </section>

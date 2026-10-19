@@ -6,6 +6,7 @@ import { LeaderboardPage } from './components/LeaderboardPage'
 import { CoverageBar } from './components/CoverageBar'
 import { LanguageSwitch } from './components/LanguageSwitch'
 import { QuizLanguageProvider } from './utils/quizLanguageContext'
+import { storeLanguage, takePendingLanguage } from './utils/languagePreference'
 import { isKnownQuizLanguage, normalizeQuizLanguage, quizInterfaceLanguage, quizLanguageLabel } from './utils/quizLanguage'
 import { OverviewPage } from './components/OverviewPage'
 import { ProfilePage } from './components/ProfilePage'
@@ -86,7 +87,30 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const [timeboxed, setTimeboxed] = useState(false)
   const [muted, setMuted] = useState(isSoundMuted())
   const [profile, setProfile] = useState<Profile | null>(null)
-  useEffect(() => { fetchProfile().then(setProfile).catch(() => {}) }, [])
+  // Une seule fois par montage, même quand React rejoue les effets en développement (StrictMode) : la seconde
+  // exécution relirait un profil pas encore mis à jour par l'enregistrement ci-dessous et écraserait l'état.
+  const profileLoadStarted = useRef(false)
+  // Vrai quand l'utilisateur a choisi sa langue sur l'écran de connexion : ce choix explicite prime sur la langue du
+  // quiz par défaut chargé automatiquement au démarrage (qui n'est pas une action de sa part), une seule fois.
+  const keepChosenLanguage = useRef(false)
+  useEffect(() => {
+    if (profileLoadStarted.current) return
+    profileLoadStarted.current = true
+    fetchProfile().then((loaded) => {
+      // Langue choisie sur l'écran de connexion : report dans le profil, puisque l'utilisateur vient de la choisir.
+      const chosenBeforeLogin = takePendingLanguage()
+      if (chosenBeforeLogin) { keepChosenLanguage.current = true; setQuizLanguage(null) }
+      if (loaded && chosenBeforeLogin && chosenBeforeLogin !== loaded.language) {
+        const updated = { ...loaded, language: chosenBeforeLogin }
+        setProfile(updated)
+        saveProfile({ pseudo: updated.pseudo, avatar: updated.avatar, theme: updated.theme, language: updated.language })
+          .catch((error) => { console.error("Impossible d'enregistrer la langue.", error); setProfile(loaded) })
+      } else {
+        setProfile(loaded)
+      }
+      if (loaded) storeLanguage(chosenBeforeLogin ?? loaded.language)
+    }).catch(() => {})
+  }, [])
   useEffect(() => { applyTheme(profile?.theme ?? 'dark') }, [profile?.theme])
   // La langue doit faire re-render tout l'arbre (contrairement au thème, un simple attribut DOM) : elle vit
   // comme un état React fourni via `LanguageProvider`, synchronisé depuis le profil comme le thème l'est.
@@ -101,6 +125,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     playClick()
     setQuizLanguage(null)
     setLanguage(next)
+    storeLanguage(next)
     if (!profile) return
     const previous = profile
     setProfile({ ...profile, language: next })
@@ -142,7 +167,10 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       setQuizListState('ready')
       if (!selectedIdRef.current) {
         const defaultQuiz = quizzes.find((hosted) => hosted.is_public)
-        if (defaultQuiz) selectHostedQuiz(defaultQuiz.id)
+        if (defaultQuiz) {
+          selectHostedQuiz(defaultQuiz.id, keepChosenLanguage.current)
+          keepChosenLanguage.current = false
+        }
       }
     }).catch((error) => {
       console.error('Impossible de charger la liste des quiz.', error)
@@ -239,13 +267,13 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const toggleTheme = (themeId: string) => setSelectedThemes((previous) =>
     previous.includes(themeId) ? previous.filter((id) => id !== themeId) : [...previous, themeId])
 
-  const selectHostedQuiz = async (id: string) => {
+  const selectHostedQuiz = async (id: string, keepLanguage = false) => {
     setSelectedHostedQuizId(id)
     if (!id) { setQuiz(initialQuiz); setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setQuizLoadError(''); return }
     try {
       const loaded = parseQuiz(await fetchQuizContent(id))
       setQuiz(loaded)
-      applyQuizLanguage(loaded)
+      if (!keepLanguage) applyQuizLanguage(loaded)
       setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setQuizLoadError('')
     } catch (error) {
       setQuizLoadError(error instanceof Error ? error.message : t('admin.errorLoadQuiz'))

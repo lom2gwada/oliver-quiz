@@ -1,10 +1,13 @@
 import type { Session } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
 import { supabase } from '../utils/supabase'
-import { translate } from '../i18n'
+import { LanguageProvider, translate } from '../i18n'
+import type { Language } from '../i18n'
+import { readStoredLanguage, storeLanguage } from '../utils/languagePreference'
 import { hasAuthLinkError, needsPasswordSetup } from '../utils/authLink'
 import App from '../App'
 import { GuestQuizPage } from './GuestQuizPage'
+import { LanguageSwitch } from './LanguageSwitch'
 import { Login } from './Login'
 import { SetPassword } from './SetPassword'
 
@@ -21,6 +24,9 @@ function SessionGate() {
   const [loading, setLoading] = useState(true)
   const [settingPassword, setSettingPassword] = useState(() => needsPasswordSetup(window.location.hash))
   const [linkError] = useState(() => hasAuthLinkError(window.location.hash))
+  // Langue des écrans d'avant connexion (pas de profil à ce stade) : la dernière utilisée sur cet appareil.
+  const [preLoginLanguage, setPreLoginLanguage] = useState<Language>(() => readStoredLanguage() ?? 'fr')
+  const chooseLanguage = (next: Language) => { setPreLoginLanguage(next); storeLanguage(next, true) }
 
   useEffect(() => {
     if (/access_token=|error=/.test(window.location.hash)) window.history.replaceState(null, '', window.location.pathname)
@@ -35,8 +41,16 @@ function SessionGate() {
     return () => subscription.subscription.unsubscribe()
   }, [])
 
-  if (loading) return <main className="app-shell"><p>{translate('fr', 'common.loading')}</p></main>
-  if (!session) return <Login initialError={linkError ? translate('fr', 'auth.invalidInviteLink') : ''} />
-  if (settingPassword) return <SetPassword onDone={() => setSettingPassword(false)} />
+  // Après une déconnexion, l'écran de connexion reprend la langue utilisée dans l'appli.
+  useEffect(() => { if (!session) setPreLoginLanguage(readStoredLanguage() ?? 'fr') }, [session])
+
+  const preLogin = (screen: React.ReactNode) => <LanguageProvider language={preLoginLanguage}>
+    <div className="prelogin-language"><LanguageSwitch value={preLoginLanguage} onChange={chooseLanguage} /></div>
+    {screen}
+  </LanguageProvider>
+
+  if (loading) return <main className="app-shell"><p>{translate(preLoginLanguage, 'common.loading')}</p></main>
+  if (!session) return preLogin(<Login inviteLinkError={linkError} />)
+  if (settingPassword) return preLogin(<SetPassword onDone={() => setSettingPassword(false)} />)
   return <App onLogout={() => supabase.auth.signOut()} />
 }
