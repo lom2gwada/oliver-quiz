@@ -6,6 +6,7 @@ import { LeaderboardPage } from './components/LeaderboardPage'
 import { CoverageBar } from './components/CoverageBar'
 import { LanguageSwitch } from './components/LanguageSwitch'
 import { QuizLanguageProvider } from './utils/quizLanguageContext'
+import { confirmWithBlur } from './utils/confirmWithBlur'
 import { storeLanguage, takePendingLanguage } from './utils/languagePreference'
 import { isKnownQuizLanguage, normalizeQuizLanguage, quizInterfaceLanguage, quizLanguageLabel } from './utils/quizLanguage'
 import { OverviewPage } from './components/OverviewPage'
@@ -230,11 +231,13 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     const onPopState = (event: PopStateEvent) => {
       const nextView = (event.state?.view as View | undefined) ?? 'start'
       if ((viewRef.current === 'quiz' || viewRef.current === 'streak' || viewRef.current === 'timed') && nextView !== viewRef.current) {
-        if (!window.confirm(t('start.confirmAbandon'))) {
-          window.history.pushState({ view: viewRef.current }, '')
-          return
-        }
-        setAnswers({}); setSessionQuestions([]); setElapsedSeconds(0)
+        const playingView = viewRef.current
+        confirmWithBlur(t('start.confirmAbandon')).then((leave) => {
+          if (!leave) { window.history.pushState({ view: playingView }, ''); return }
+          setAnswers({}); setSessionQuestions([]); setElapsedSeconds(0)
+          setView(nextView)
+        })
+        return
       }
       setView(nextView)
     }
@@ -376,7 +379,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
 
   /** Admin uniquement, sur un quiz hébergé actif : supprime définitivement une question, après confirmation. */
   const deleteQuestion = async (id: string) => {
-    if (!window.confirm(t('admin.confirmDeleteQuestion'))) return
+    if (!(await confirmWithBlur(t('admin.confirmDeleteQuestion')))) return
     setEditError('')
     try {
       await republishQuestions(quiz.questions.filter((question) => question.id !== id))
@@ -431,7 +434,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
    * n'est pas affecté, `deleteHistoryToo` permet de le purger explicitement en plus. Si le quiz supprimé était
    * le quiz actif, retombe sur le placeholder de premier affichage le temps qu'un autre quiz soit sélectionné. */
   const deleteHostedQuiz = async (id: string, title: string, deleteHistoryToo: boolean) => {
-    if (!window.confirm(t('admin.confirmDeleteQuiz', title, deleteHistoryToo))) return
+    if (!(await confirmWithBlur(t('admin.confirmDeleteQuiz', title, deleteHistoryToo)))) return
     setDeleteQuizError('')
     try {
       await deleteQuiz(id)

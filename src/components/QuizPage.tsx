@@ -7,6 +7,7 @@ import { shuffle, shuffleAwayFrom } from '../utils/shuffle'
 import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { dictationLanguageTag } from '../utils/dictation'
+import { confirmWithBlur } from '../utils/confirmWithBlur'
 import { useAdvanceGuard } from '../utils/useAdvanceGuard'
 import { questionToSpeech } from '../utils/speech'
 import { ListenButton } from './ListenButton'
@@ -61,7 +62,7 @@ export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel }: Qui
   const shuffledQuestions = useMemo(() => questions.map(withShuffledAnswers), [questions])
   const question = shuffledQuestions[current]
   const updateAnswer = (answer: AnswersByQuestion[string]) => setAnswers((previous) => ({ ...previous, [question.id]: answer }))
-  const cancelQuiz = () => { if (window.confirm(t('quiz.confirmAbandonQuiz'))) onCancel() }
+  const cancelQuiz = async () => { if (await confirmWithBlur(t('quiz.confirmAbandonQuiz'))) onCancel() }
 
   useEffect(() => {
     const interval = setInterval(() => setElapsed((value) => value + 1), 1000)
