@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { GuestLink, GuestLinkMode } from '../types/guestLink'
 import { useTranslation } from '../i18n'
-import { confirmWithBlur } from '../utils/confirmWithBlur'
 import { createGuestLink, deleteGuestLink, fetchGuestLinks } from '../utils/guestLinks'
 import type { Quiz } from '../types/quiz'
 import { GuestResultsPanel } from './GuestResultsPanel'
@@ -40,7 +39,7 @@ export function GuestLinksManager({ quizId, quiz }: { quizId: string; quiz: Quiz
   }
 
   const remove = async (token: string) => {
-    if (!(await confirmWithBlur(t('admin.confirmDeleteGuestLink')))) return
+    if (!window.confirm(t('admin.confirmDeleteGuestLink'))) return
     setError('')
     try {
       await deleteGuestLink(token)

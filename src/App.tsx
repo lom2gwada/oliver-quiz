@@ -379,7 +379,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
 
   /** Admin uniquement, sur un quiz hébergé actif : supprime définitivement une question, après confirmation. */
   const deleteQuestion = async (id: string) => {
-    if (!(await confirmWithBlur(t('admin.confirmDeleteQuestion')))) return
+    if (!window.confirm(t('admin.confirmDeleteQuestion'))) return
     setEditError('')
     try {
       await republishQuestions(quiz.questions.filter((question) => question.id !== id))
@@ -434,7 +434,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
    * n'est pas affecté, `deleteHistoryToo` permet de le purger explicitement en plus. Si le quiz supprimé était
    * le quiz actif, retombe sur le placeholder de premier affichage le temps qu'un autre quiz soit sélectionné. */
   const deleteHostedQuiz = async (id: string, title: string, deleteHistoryToo: boolean) => {
-    if (!(await confirmWithBlur(t('admin.confirmDeleteQuiz', title, deleteHistoryToo)))) return
+    if (!window.confirm(t('admin.confirmDeleteQuiz', title, deleteHistoryToo))) return
     setDeleteQuizError('')
     try {
       await deleteQuiz(id)
