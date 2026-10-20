@@ -6,6 +6,7 @@ import { LeaderboardPage } from './components/LeaderboardPage'
 import { CoverageBar } from './components/CoverageBar'
 import { LanguageSwitch } from './components/LanguageSwitch'
 import { QuizLanguageProvider } from './utils/quizLanguageContext'
+import { confirmWithBlur } from './utils/confirmWithBlur'
 import { storeLanguage, takePendingLanguage } from './utils/languagePreference'
 import { isKnownQuizLanguage, normalizeQuizLanguage, quizInterfaceLanguage, quizLanguageLabel } from './utils/quizLanguage'
 import { OverviewPage } from './components/OverviewPage'
@@ -230,11 +231,13 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     const onPopState = (event: PopStateEvent) => {
       const nextView = (event.state?.view as View | undefined) ?? 'start'
       if ((viewRef.current === 'quiz' || viewRef.current === 'streak' || viewRef.current === 'timed') && nextView !== viewRef.current) {
-        if (!window.confirm(t('start.confirmAbandon'))) {
-          window.history.pushState({ view: viewRef.current }, '')
-          return
-        }
-        setAnswers({}); setSessionQuestions([]); setElapsedSeconds(0)
+        const playingView = viewRef.current
+        confirmWithBlur(t('start.confirmAbandon')).then((leave) => {
+          if (!leave) { window.history.pushState({ view: playingView }, ''); return }
+          setAnswers({}); setSessionQuestions([]); setElapsedSeconds(0)
+          setView(nextView)
+        })
+        return
       }
       setView(nextView)
     }
