@@ -3,7 +3,7 @@ import type { Difficulty, Question, Quiz } from '../types/quiz'
 import type { QuizResultRow, StreakResultRow, TimedResultRow } from '../types/history'
 import { useTranslation } from '../i18n'
 import { bucketsToChartGroups, bucketsToRadarAxes, computeRecords, computeThemeWeekHeatmap, fetchQuizHistory, fetchStreakHistory, fetchTimedHistory, sumBuckets } from '../utils/quizHistory'
-import { computeDueQuestions, fetchQuestionProgress, type QuestionProgressRow } from '../utils/leitner'
+import { computeDueQuestions, fetchQuestionProgress, selectReviewQuestions, type QuestionProgressRow } from '../utils/leitner'
 import { longDate, shortDate } from '../utils/dateFormat'
 import { formatDuration } from '../utils/time'
 import { PieChart } from './PieChart'
@@ -93,11 +93,10 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue, onViewLea
   const heatmap = computeThemeWeekHeatmap(quizRows ?? [])
 
   const canReplay = activeQuiz === activeQuizKey
-  // `computeDueQuestions` trie déjà de la boîte la plus basse (la plus fragile) à la plus haute : tronquer
-  // ce tableau garde donc les cartes les plus prioritaires.
+  // `computeDueQuestions` trie de la boîte la plus basse (la plus fragile) à la plus haute ; la session composée au clic
+  // (`selectReviewQuestions`) mêle les plus fragiles et un tirage au hasard parmi le reste, dans un ordre mélangé.
   const dueCards = canReplay ? computeDueQuestions(progress, quiz.questions) : []
-  const replayQuestions = dueCards.map((card) => card.question)
-  const replayCap = Math.min(replayLimit, replayQuestions.length)
+  const replayCap = Math.min(replayLimit, dueCards.length)
 
   return <section className="stats-page">
     <div className="stats-header">
@@ -177,13 +176,13 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue, onViewLea
     {dueCards.length > 0 && <div className="missed-questions">
       <div className="stats-group-header">
         <h3 className="stats-group-title">{t('history.dueTitle', dueCards.length)}</h3>
-        {replayQuestions.length > 0 && <label className="question-count">{t('start.questionCountLabel')}
+        {dueCards.length > 0 && <label className="question-count">{t('start.questionCountLabel')}
           <select value={replayCap} onChange={(event) => setReplayLimit(Number(event.target.value))}>
-            {REPLAY_COUNTS.filter((count) => count < replayQuestions.length).map((count) => <option key={count} value={count}>{t('start.questionCountOption', count, false)}</option>)}
-            <option value={replayQuestions.length}>{t('start.allQuestionsOption', replayQuestions.length)}</option>
+            {REPLAY_COUNTS.filter((count) => count < dueCards.length).map((count) => <option key={count} value={count}>{t('start.questionCountOption', count, false)}</option>)}
+            <option value={dueCards.length}>{t('start.allQuestionsOption', dueCards.length)}</option>
           </select>
         </label>}
-        {replayQuestions.length > 0 && <button type="button" onClick={() => onReviewDue(replayQuestions.slice(0, replayCap))}>{t('history.reviewButton')}</button>}
+        {dueCards.length > 0 && <button type="button" onClick={() => onReviewDue(selectReviewQuestions(dueCards, replayCap))}>{t('history.reviewButton')}</button>}
       </div>
       <ul className="missed-list">
         {dueCards.map(({ question, box }) => <li className="missed-item" key={question.id}>

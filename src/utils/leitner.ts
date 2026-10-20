@@ -1,6 +1,7 @@
 import type { AnswersByQuestion, Question } from '../types/quiz'
 import { isCorrect } from '../components/ResultPage'
 import { retryWithBackoff } from './retry'
+import { shuffle } from './shuffle'
 import { supabase } from './supabase'
 
 export interface QuestionProgressRow {
@@ -66,4 +67,17 @@ export function computeDueQuestions(progress: QuestionProgressRow[], questions: 
     .filter((row) => byId.has(row.question_id) && new Date(row.due_at).getTime() <= now)
     .sort((a, b) => a.box - b.box || a.due_at.localeCompare(b.due_at))
     .map((row) => ({ question: byId.get(row.question_id)!, box: row.box }))
+}
+
+/** Compose une session de révision de `count` questions à partir des cartes échues (déjà triées par priorité, voir
+ * `computeDueQuestions`) : la moitié (arrondie au-dessus) vient des cartes les plus fragiles — les ratées d'abord,
+ * pour qu'elles reviennent vite —, le reste est tiré au hasard parmi les autres cartes échues, pour que tout
+ * l'arriéré finisse par ressortir (sinon, tant qu'il y a plus de `count` cartes en boîte 1, les cartes des boîtes
+ * suivantes n'étaient jamais proposées). L'ordre de la session est mélangé : plus de séquence apprise par cœur. */
+export function selectReviewQuestions(due: { question: Question; box: number }[], count: number): Question[] {
+  const size = Math.min(count, due.length)
+  const priorityCount = Math.ceil(size / 2)
+  const priority = due.slice(0, priorityCount)
+  const randomPart = shuffle(due.slice(priorityCount)).slice(0, size - priorityCount)
+  return shuffle([...priority, ...randomPart]).map((card) => card.question)
 }
