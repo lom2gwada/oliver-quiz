@@ -24,7 +24,7 @@ import type { HostedQuizSummary } from './types/hostedQuiz'
 import { buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, deleteQuizHistory, saveQuestionResults, saveQuizResult, saveStreakResult, saveTimedResult } from './utils/quizHistory'
 import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchStreakTopScore, fetchTimedTopScore, fetchTopScore } from './utils/leaderboard'
-import { computeDueQuestions, fetchQuestionProgress, recordQuestionProgress } from './utils/leitner'
+import { computeDueQuestions, fetchQuestionProgress, recordQuestionProgress, selectReviewQuestions } from './utils/leitner'
 import { coveragePercent, fetchQuizCoverage, REVIEW_BATCH_SIZE, type QuizCoverage } from './utils/coverage'
 import { deleteQuiz, fetchAccessibleQuizzes, fetchAccessibleQuizzesWithRetry, fetchQuizContent, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
 import { applyTheme } from './utils/theme'
@@ -493,7 +493,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
    * échues (les plus fragiles d'abord). Rejette en cas d'échec de chargement pour que la page l'affiche. */
   const reviewQuizDue = async (id: string) => {
     const content = parseQuiz(await fetchQuizContent(id))
-    const due = computeDueQuestions(await fetchQuestionProgress(id), content.questions).slice(0, REVIEW_BATCH_SIZE).map((card) => card.question)
+    const due = selectReviewQuestions(computeDueQuestions(await fetchQuestionProgress(id), content.questions), REVIEW_BATCH_SIZE)
     if (!due.length) throw new Error('no due question')
     setSelectedHostedQuizId(id); setQuiz(content); applyQuizLanguage(content); setSelectedThemes([]); setDifficulty(''); setQuizLoadError('')
     reviewDue(due)
