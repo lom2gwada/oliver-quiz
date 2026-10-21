@@ -250,6 +250,7 @@ export const en = {
   'quiz.answerAriaLabel': 'Answer',
   'quiz.listen': '🗣️ Listen',
   'quiz.listenStop': '⏹️ Stop',
+  'quiz.listenError': 'Reading aloud did not start',
   'quiz.dictate': '🎙️ Dictate',
   'quiz.dictateStop': '⏹️ Listening… (stop)',
   'quiz.dictateNoSpeech': "I didn't hear anything, try again.",

@@ -248,6 +248,7 @@ export const fr = {
   'quiz.answerAriaLabel': 'Réponse',
   'quiz.listen': '🗣️ Écouter',
   'quiz.listenStop': '⏹️ Arrêter',
+  'quiz.listenError': 'La lecture vocale n’a pas démarré',
   'quiz.dictate': '🎙️ Dicter',
   'quiz.dictateStop': '⏹️ Écoute… (arrêter)',
   'quiz.dictateNoSpeech': "Je n'ai rien entendu, réessayez.",

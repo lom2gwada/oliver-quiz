@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from '../i18n'
 import type { TranslationKey } from '../i18n'
-import { cleanTranscript, dictationLanguageTag, getSpeechRecognition, type SpeechRecognitionLike } from '../utils/dictation'
+import { cleanTranscript } from '@engine/utils/dictation'
+import { dictationLanguageTag, getSpeechRecognition, type SpeechRecognitionLike } from '../utils/dictation'
 import { useQuizLanguage } from '../utils/quizLanguageContext'
 
 const ERROR_KEYS: Record<string, TranslationKey | null> = {

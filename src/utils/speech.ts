@@ -1,10 +1,5 @@
 import type { Question } from '../types/quiz'
 
-/** `undefined` quand le navigateur ne sait pas lire un texte à voix haute : le bouton « Écouter » est alors masqué. */
-export function getSpeechSynthesis(): SpeechSynthesis | undefined {
-  return typeof window !== 'undefined' && 'speechSynthesis' in window ? window.speechSynthesis : undefined
-}
-
 /** Mot lu à la place d'un trou (`___`) dans un texte à trous, dans la langue de lecture ; une courte pause sinon
  * (langue sans équivalent connu), plutôt qu'un mot de la mauvaise langue. */
 function blankWord(languageTag: string): string {
