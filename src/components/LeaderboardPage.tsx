@@ -5,7 +5,7 @@ import { useTranslation } from '../i18n'
 import { fetchLeaderboard, fetchOverallLeaderboard, fetchStreakLeaderboard, fetchTimedLeaderboard } from '../utils/leaderboard'
 import { supabase } from '../utils/supabase'
 import { longDate } from '../utils/dateFormat'
-import { formatDuration } from '../utils/time'
+import { formatDuration } from '@engine/utils/time'
 
 const RANK_MEDALS: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
 const MAX_ROWS = 10

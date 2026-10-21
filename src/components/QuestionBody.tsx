@@ -1,6 +1,6 @@
 import type { Question, UserAnswer } from '../types/quiz'
 import { MermaidDiagram } from './MermaidDiagram'
-import { QuestionImage } from './QuestionImage'
+import { QuestionImage } from '@engine/components/QuestionImage'
 import { QuestionRenderer } from './QuestionRenderer'
 import { QuestionTable } from './QuestionTable'
 

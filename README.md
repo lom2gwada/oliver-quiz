@@ -17,8 +17,11 @@ Application web de quiz construite avec React, TypeScript et Vite. Elle permet d
 ## Installation
 
 ```bash
+git submodule update --init   # (ou cloner avec --recurse-submodules)
 npm install
 ```
+
+Une partie du code est partagée avec Quiz Caraïbes et Periodic Quiz : elle vit dans le dépôt [`quiz-engine`](https://github.com/lom2gwada/quiz-engine), inclus comme sous-module git dans `engine/` et importé via l'alias `@engine/...`. Pour récupérer une nouvelle version du moteur : `git -C engine pull`, puis commiter le nouveau pointeur.
 
 ## Authentification
 
