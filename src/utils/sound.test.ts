@@ -8,25 +8,25 @@ describe('sound mute state', () => {
   })
 
   it('defaults to unmuted when nothing is stored', async () => {
-    const { isSoundMuted } = await import('./sound')
+    const { isSoundMuted } = await import('@engine/utils/sound')
     expect(isSoundMuted()).toBe(false)
   })
 
   it('reads the muted state from localStorage on load', async () => {
     localStorage.setItem('oliverquiz-muted', 'true')
-    const { isSoundMuted } = await import('./sound')
+    const { isSoundMuted } = await import('@engine/utils/sound')
     expect(isSoundMuted()).toBe(true)
   })
 
   it('persists the muted state and reflects it immediately', async () => {
-    const { isSoundMuted, setSoundMuted } = await import('./sound')
+    const { isSoundMuted, setSoundMuted } = await import('@engine/utils/sound')
     setSoundMuted(true)
     expect(isSoundMuted()).toBe(true)
     expect(localStorage.getItem('oliverquiz-muted')).toBe('true')
   })
 
   it('can be unmuted again', async () => {
-    const { isSoundMuted, setSoundMuted } = await import('./sound')
+    const { isSoundMuted, setSoundMuted } = await import('@engine/utils/sound')
     setSoundMuted(true)
     setSoundMuted(false)
     expect(isSoundMuted()).toBe(false)

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Profile, Theme } from '../types/profile'
 import { useTranslation } from '../i18n'
-import { playClick } from '../utils/sound'
+import { playClick } from '@engine/utils/sound'
 import { supabase } from '../utils/supabase'
 import { applyTheme } from '../utils/theme'
 

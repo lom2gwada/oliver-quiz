@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { MatchingQuestion as Question, UserAnswer } from '../types/quiz'
-import { playClick } from '../utils/sound'
+import { playClick } from '@engine/utils/sound'
 
 const LINE_COLORS = ['#38bdf8', '#a78bfa', '#fbbf24', '#f472b6', '#34d399', '#fb923c']
 
