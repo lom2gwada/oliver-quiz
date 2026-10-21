@@ -1,5 +1,5 @@
 import type { QCMQuestion as Question, UserAnswer } from '../types/quiz'
-import { playClick } from '../utils/sound'
+import { playClick } from '@engine/utils/sound'
 
 export function QCMQuestion({ question, answer, onChange }: { question: Question; answer?: UserAnswer; onChange: (value: string[]) => void }) {
   const selected = Array.isArray(answer) ? answer : []

@@ -16,7 +16,7 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
-      include: ['src/utils/quizValidation.ts', 'src/utils/shuffle.ts', 'engine/src/utils/time.ts', 'src/utils/sound.ts', 'src/components/ResultPage.tsx'],
+      include: ['src/utils/quizValidation.ts', 'src/utils/shuffle.ts', 'engine/src/utils/time.ts', 'engine/src/utils/sound.ts', 'src/components/ResultPage.tsx'],
     },
   },
 })

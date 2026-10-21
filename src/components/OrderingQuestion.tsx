@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { OrderingQuestion as Question, UserAnswer } from '../types/quiz'
 import { useTranslation } from '../i18n'
-import { playClick } from '../utils/sound'
+import { playClick } from '@engine/utils/sound'
 
 export function OrderingQuestion({ question, answer, onChange }: { question: Question; answer?: UserAnswer; onChange: (value: string[]) => void }) {
   const { t } = useTranslation()
