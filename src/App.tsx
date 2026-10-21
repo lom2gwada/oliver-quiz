@@ -36,7 +36,7 @@ import { questionTimeLimit } from './utils/questionTimeLimits'
 import { isSoundMuted, playClick, setSoundMuted } from './utils/sound'
 import { pickFreshQuestions } from './utils/pickFreshQuestions'
 import { shuffle } from './utils/shuffle'
-import { formatDuration } from './utils/time'
+import { formatDuration } from '@engine/utils/time'
 
 type View = 'start' | 'quiz' | 'results' | 'streak' | 'streakResults' | 'timed' | 'timedResults' | 'quizzes' | 'quizDetail' | 'overview' | 'history' | 'leaderboard' | 'profile'
 

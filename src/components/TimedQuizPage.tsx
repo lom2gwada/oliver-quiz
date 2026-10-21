@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Question, QuestionAttempt, Quiz, UserAnswer } from '../types/quiz'
 import { useTranslation } from '../i18n'
-import { formatDuration } from '../utils/time'
+import { formatDuration } from '@engine/utils/time'
 import { shuffle } from '../utils/shuffle'
 import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
 import { confirmWithBlur } from '../utils/confirmWithBlur'

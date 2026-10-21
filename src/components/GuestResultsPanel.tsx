@@ -4,7 +4,7 @@ import type { Quiz } from '../types/quiz'
 import { useTranslation } from '../i18n'
 import { fetchGuestResults } from '../utils/guestLinks'
 import { computeQuestionCorrectness, summarizeGuestResults, tallyAnswers } from '../utils/guestResults'
-import { formatDuration } from '../utils/time'
+import { formatDuration } from '@engine/utils/time'
 
 const percent = (part: number, whole: number) => (whole ? Math.round((part / whole) * 100) : 0)
 
