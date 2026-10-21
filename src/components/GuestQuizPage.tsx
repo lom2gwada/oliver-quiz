@@ -122,7 +122,7 @@ function GuestSession({ token, mode, quiz }: { token: string; mode: GuestLinkMod
   </>
 
   const isLast = current === questions.length - 1
-  const theme = quiz.themes.find((item) => item.id === question.theme)?.label ?? question.theme
+  const theme = quiz.categories.find((item) => item.id === question.category)?.label ?? question.category
   return <>
     {header}
     <section className="quiz-card">

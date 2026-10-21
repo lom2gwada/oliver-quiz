@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { AnswersByQuestion, Question, Theme } from '../types/quiz'
+import type { AnswersByQuestion, Question, Category } from '../types/quiz'
 import type { TranslationKey } from '../i18n'
 import { translate, useTranslation } from '../i18n'
 import { formatDuration } from '@engine/utils/time'
@@ -92,7 +92,7 @@ function mention(t: TFunction, score: number): { emoji: string; label: string } 
 interface ResultPageProps {
   questions: Question[]
   answers: AnswersByQuestion
-  themes: Theme[]
+  themes: Category[]
   elapsedSeconds: number
   /** Absent après une partie « reprendre mes erreurs » : relancer avec les mêmes paramètres n'a alors pas de sens. */
   onRestartSame?: () => void
@@ -107,7 +107,7 @@ export function ResultPage({ questions, answers, themes, elapsedSeconds, onResta
   const total = questions.reduce((sum, question) => sum + question.points, 0)
   const score = total ? Math.round((earned / total) * 100) : 0
   const { emoji, label } = mention(t, score)
-  const byTheme = correctnessBreakdown(questions, answers, (question) => question.theme, (id) => themes.find((theme) => theme.id === id)?.label ?? id, t)
+  const byTheme = correctnessBreakdown(questions, answers, (question) => question.category, (id) => themes.find((theme) => theme.id === id)?.label ?? id, t)
   const byDifficulty = correctnessBreakdown(questions, answers, (question) => question.difficulty, (difficulty) => difficultyLabel(t, difficulty), t)
   const displayScore = useAnimatedNumber(score)
   useEffect(() => { score >= 90 ? playVictory() : playFinish() }, [])

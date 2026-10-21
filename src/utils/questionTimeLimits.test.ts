@@ -3,11 +3,11 @@ import type { BooleanQuestion, CodeQuestion, MatchingQuestion, OrderingQuestion,
 import { questionTimeLimit } from './questionTimeLimits'
 
 const boolQuestion: BooleanQuestion = {
-  id: 'q1', theme: 'general', difficulty: 'easy', tags: [], explanation: '', points: 1,
+  id: 'q1', category: 'general', difficulty: 'easy', tags: [], explanation: '', points: 1,
   type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true },
 }
 const matchingQuestion: MatchingQuestion = {
-  id: 'q2', theme: 'general', difficulty: 'hard', tags: [], explanation: '', points: 2,
+  id: 'q2', category: 'general', difficulty: 'hard', tags: [], explanation: '', points: 2,
   type: 'matching', question: 'Associez.', content: { left: [], right: [], correctPairs: {} },
 }
 
@@ -27,7 +27,7 @@ describe('questionTimeLimit', () => {
   })
 
   const shortQcm: QCMQuestion = {
-    id: 'q3', theme: 'general', difficulty: 'medium', tags: [], explanation: '', points: 1,
+    id: 'q3', category: 'general', difficulty: 'medium', tags: [], explanation: '', points: 1,
     type: 'qcm', question: 'Capitale de la France ?',
     content: { multiple: false, answers: [{ id: 'a', label: 'Paris', isCorrect: true }, { id: 'b', label: 'Lyon', isCorrect: false }] },
   }
@@ -44,7 +44,7 @@ describe('questionTimeLimit', () => {
 
   it('counts an ordering question\'s item labels, not just its prompt', () => {
     const shortOrdering: OrderingQuestion = {
-      id: 'q4', theme: 'general', difficulty: 'medium', tags: [], explanation: '', points: 1,
+      id: 'q4', category: 'general', difficulty: 'medium', tags: [], explanation: '', points: 1,
       type: 'ordering', question: 'Ordonnez.', content: { items: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }], correctOrder: ['a', 'b'] },
     }
     const longOrdering: OrderingQuestion = { ...shortOrdering, content: { ...shortOrdering.content, items: shortOrdering.content.items.map((item) => ({ ...item, label: item.label.repeat(100) })) } }
@@ -53,7 +53,7 @@ describe('questionTimeLimit', () => {
 
   it('counts a code question\'s snippet toward reading time', () => {
     const shortCode: CodeQuestion = {
-      id: 'q5', theme: 'general', difficulty: 'medium', tags: [], explanation: '', points: 1,
+      id: 'q5', category: 'general', difficulty: 'medium', tags: [], explanation: '', points: 1,
       type: 'code', question: 'Que fait ce code ?',
       content: { language: 'js', snippet: 'x++', multiple: false, answers: [{ id: 'a', label: 'Incrémente x', isCorrect: true }, { id: 'b', label: 'Décrémente x', isCorrect: false }] },
     }

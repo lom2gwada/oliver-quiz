@@ -11,7 +11,10 @@ export interface QuestionAttempt {
   answer: UserAnswer | undefined
 }
 
-export interface Theme {
+/** Vocabulaire interne : « catégorie » (celui du moteur commun). Le format stocké/échangé des quiz — fichiers JSON,
+ *  colonne `quizzes.content` — garde « thème » (`themes`, `theme`) ; la conversion se fait à l'entrée (`parseQuiz`) et à
+ *  la sortie (`serializeQuiz`), dans `utils/quizValidation.ts`. */
+export interface Category {
   id: string
   label: string
 }
@@ -83,7 +86,7 @@ export interface QuestionTable {
 
 export interface BaseQuestion {
   id: string
-  theme: string
+  category: string
   difficulty: Difficulty
   question: string
   tags: string[]
@@ -146,7 +149,7 @@ export type Question = QCMQuestion | TextQuestion | CodeQuestion | OrderingQuest
 export interface Quiz {
   version: string
   metadata: { title: string; author: string; createdAt: string; description?: string; /** Code de langue du contenu du quiz (ex. 'fr', 'en' — pas celle de l'interface) ; tout code est toléré. */ language?: string }
-  themes: Theme[]
+  categories: Category[]
   questions: Question[]
 }
 

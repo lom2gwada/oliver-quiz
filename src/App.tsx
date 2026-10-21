@@ -31,7 +31,7 @@ import { deleteQuiz, fetchAccessibleQuizzes, fetchAccessibleQuizzesWithRetry, fe
 import { applyTheme } from './utils/theme'
 import { LanguageProvider, translate } from './i18n'
 import type { Language, TranslationKey } from './i18n'
-import { parseQuiz } from './utils/quizValidation'
+import { parseQuiz, serializeQuiz } from './utils/quizValidation'
 import { questionTimeLimit } from './utils/questionTimeLimits'
 import { isSoundMuted, playClick, setSoundMuted } from '@engine/utils/sound'
 import { pickFreshQuestions } from './utils/pickFreshQuestions'
@@ -249,7 +249,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   // "quiz" (fin de partie ou abandon), qui n'est pas un état vers lequel on veut pouvoir revenir en arrière.
   const replace = (next: View) => { setView(next); window.history.replaceState({ view: next }, '') }
   const filteredQuestions = useMemo(() => quiz.questions.filter((question) =>
-    (!selectedThemes.length || selectedThemes.includes(question.theme)) && (!difficulty || question.difficulty === difficulty)), [quiz, selectedThemes, difficulty])
+    (!selectedThemes.length || selectedThemes.includes(question.category)) && (!difficulty || question.difficulty === difficulty)), [quiz, selectedThemes, difficulty])
   // Seules les parties jouées sans filtre comptent pour le classement : sinon un thème/une difficulté
   // choisie exprès rendrait les scores/streaks/rythmes incomparables entre joueurs.
   const isUnfiltered = selectedThemes.length === 0 && difficulty === ''
@@ -307,7 +307,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
         themes,
         questions: [],
       })
-      const id = await upsertQuiz(newQuiz.metadata.title, newQuiz)
+      const id = await upsertQuiz(newQuiz.metadata.title, serializeQuiz(newQuiz))
       setQuiz(newQuiz)
       applyQuizLanguage(newQuiz)
       setSelectedHostedQuizId(id)
@@ -350,7 +350,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
    * (mêmes accès `quiz_access` conservés, cf. upsert par titre). Partagé par édition/ajout/suppression. */
   const republishQuestions = async (questions: Question[]) => {
     const updatedQuiz = parseQuiz({ ...quiz, questions })
-    await upsertQuiz(updatedQuiz.metadata.title, updatedQuiz)
+    await upsertQuiz(updatedQuiz.metadata.title, serializeQuiz(updatedQuiz))
     setQuiz(updatedQuiz)
     fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
   }
@@ -392,14 +392,14 @@ export default function App({ onLogout }: { onLogout: () => void }) {
    * pour l'instant). Bloque sur un libellé déjà utilisé pour ne pas avoir deux thèmes identiques dans les listes. */
   const addTheme = async (label: string) => {
     setEditError('')
-    if (quiz.themes.some((theme) => theme.label.toLowerCase() === label.toLowerCase())) {
+    if (quiz.categories.some((theme) => theme.label.toLowerCase() === label.toLowerCase())) {
       setEditError(t('admin.errorDuplicateTheme'))
       throw new Error('duplicate theme')
     }
     try {
-      const usedIds = new Set(quiz.themes.map((theme) => theme.id))
-      const updatedQuiz = parseQuiz({ ...quiz, themes: [...quiz.themes, { id: themeIdFrom(label, usedIds), label }] })
-      await upsertQuiz(updatedQuiz.metadata.title, updatedQuiz)
+      const usedIds = new Set(quiz.categories.map((theme) => theme.id))
+      const updatedQuiz = parseQuiz({ ...quiz, categories: [...quiz.categories, { id: themeIdFrom(label, usedIds), label }] })
+      await upsertQuiz(updatedQuiz.metadata.title, serializeQuiz(updatedQuiz))
       setQuiz(updatedQuiz)
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
@@ -419,7 +419,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     }
     try {
       const updatedQuiz = parseQuiz({ ...quiz, metadata: { ...quiz.metadata, title, author, description: description || undefined, language: normalizeQuizLanguage(quizLanguage) || undefined } })
-      await updateQuiz(selectedHostedQuizId, updatedQuiz.metadata.title, updatedQuiz)
+      await updateQuiz(selectedHostedQuizId, updatedQuiz.metadata.title, serializeQuiz(updatedQuiz))
       setQuiz(updatedQuiz)
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
@@ -457,7 +457,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
 
   /** Télécharge le quiz actuellement chargé (utile pour éditer hors-ligne un quiz déjà publié). */
   const exportQuiz = () => {
-    const blob = new Blob([JSON.stringify(quiz, null, 2)], { type: 'application/json' })
+    const blob = new Blob([JSON.stringify(serializeQuiz(quiz), null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -525,7 +525,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const finishStreak = (result: StreakResult) => {
     setStreakResult(result)
     replace('streakResults')
-    saveStreakResult(buildStreakResultPayload(result.streakCount, result.elapsedSeconds, result.victory, result.playedQuestions, quiz.themes, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered))
+    saveStreakResult(buildStreakResultPayload(result.streakCount, result.elapsedSeconds, result.victory, result.playedQuestions, quiz.categories, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered))
   }
 
   const startTimed = () => {
@@ -542,7 +542,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const finishTimed = (result: TimedResult) => {
     setTimedResult(result)
     replace('timedResults')
-    saveTimedResult(buildTimedResultPayload(result.attempts, result.elapsedSeconds, result.durationSeconds, quiz.themes, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered))
+    saveTimedResult(buildTimedResultPayload(result.attempts, result.elapsedSeconds, result.durationSeconds, quiz.categories, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered))
   }
 
   const backToStart = () => {
@@ -581,7 +581,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
         <button type="button" className={gameMode === 'streak' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('streak') }}>{t('common.modeStreak')}</button>
         <button type="button" className={gameMode === 'timed' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('timed') }}>{t('common.modeTimed')}</button>
       </div>
-      <FilterPanel themes={quiz.themes} selectedThemes={selectedThemes} difficulty={difficulty} onThemeToggle={toggleTheme} onDifficultyChange={setDifficulty} />
+      <FilterPanel themes={quiz.categories} selectedThemes={selectedThemes} difficulty={difficulty} onThemeToggle={toggleTheme} onDifficultyChange={setDifficulty} />
       {gameMode === 'classic' && <label className="question-count">{t('start.questionCountLabel')}<select value={questionCount} onChange={(event) => { playClick(); setQuestionCount(Number(event.target.value)) }}>{questionCounts.map((count) => <option key={count} value={count} disabled={count > filteredQuestions.length}>{t('start.questionCountOption', count, count > filteredQuestions.length)}</option>)}<option value={filteredQuestions.length}>{t('start.allQuestionsOption', filteredQuestions.length)}</option></select></label>}
       {gameMode === 'streak' && <p className="mode-hint">{t('start.streakHint')}</p>}
       {gameMode === 'timed' && <label className="question-count">{t('start.durationLabel')}<select value={durationMinutes} onChange={(event) => { playClick(); setDurationMinutes(Number(event.target.value)) }}>{durationOptions.map((minutes) => <option key={minutes} value={minutes}>{t('start.durationOption', minutes)}</option>)}</select></label>}
@@ -595,11 +595,11 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     </section>}
     {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} timeboxed={timeboxed} onFinish={(nextAnswers, duration, played) => {
       setAnswers(nextAnswers); setElapsedSeconds(duration); setSessionQuestions(played); replace('results')
-      saveQuizResult(buildQuizResultPayload(played, nextAnswers, quiz.themes, duration, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered && !isReplay))
+      saveQuizResult(buildQuizResultPayload(played, nextAnswers, quiz.categories, duration, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered && !isReplay))
       saveQuestionResults(buildQuestionResultPayloads(played, nextAnswers, quiz.metadata.title, selectedHostedQuizId || null))
       if (selectedHostedQuizId) recordQuestionProgress(selectedHostedQuizId, played, nextAnswers)
     }} onCancel={backToStart} />}
-    {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.themes} elapsedSeconds={elapsedSeconds} onRestartSame={isReplay ? undefined : restartQuiz} onBackToSettings={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} />}
+    {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.categories} elapsedSeconds={elapsedSeconds} onRestartSame={isReplay ? undefined : restartQuiz} onBackToSettings={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} />}
     {view === 'streak' && <StreakQuizPage quiz={quiz} pool={filteredQuestions} timeboxed={timeboxed} onFinish={finishStreak} onCancel={backToStart} />}
     {view === 'streakResults' && streakResult && <StreakResultPage {...streakResult} onRestartSame={restartStreak} onBackToSettings={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} />}
     {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}

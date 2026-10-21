@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import type { BooleanQuestion, QCMQuestion, Theme } from '../types/quiz'
+import type { BooleanQuestion, QCMQuestion, Category } from '../types/quiz'
 import type { QuizResultRow } from '../types/history'
 import { bucketsToChartGroups, bucketsToRadarAxes, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, computeRecords, computeThemeWeekHeatmap, sumBuckets, weekStartKey } from './quizHistory'
 
-const themes: Theme[] = [{ id: 'histoire', label: 'Histoire' }, { id: 'geo', label: 'Géographie' }]
+const themes: Category[] = [{ id: 'histoire', label: 'Histoire' }, { id: 'geo', label: 'Géographie' }]
 
 const qcm: QCMQuestion = {
-  id: 'q1', theme: 'histoire', difficulty: 'easy', tags: [], explanation: '', points: 1,
+  id: 'q1', category: 'histoire', difficulty: 'easy', tags: [], explanation: '', points: 1,
   type: 'qcm', question: 'Q ?',
   content: { multiple: false, answers: [{ id: 'a', label: 'A', isCorrect: true }, { id: 'b', label: 'B', isCorrect: false }] },
 }
 const bool: BooleanQuestion = {
-  id: 'q2', theme: 'geo', difficulty: 'medium', tags: [], explanation: '', points: 2,
+  id: 'q2', category: 'geo', difficulty: 'medium', tags: [], explanation: '', points: 2,
   type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true },
 }
 
@@ -40,7 +40,7 @@ describe('buildQuizResultPayload', () => {
   })
 
   it('falls back to the raw id when a theme is unknown', () => {
-    const orphan: QCMQuestion = { ...qcm, id: 'q3', theme: 'unknown' }
+    const orphan: QCMQuestion = { ...qcm, id: 'q3', category: 'unknown' }
     const payload = buildQuizResultPayload([orphan], {}, themes, 0, 'Culture générale', null, true)
     expect(payload.themes).toEqual(['unknown'])
   })
@@ -82,7 +82,7 @@ describe('buildStreakResultPayload', () => {
   })
 
   it('falls back to the raw id when a theme is unknown', () => {
-    const orphan: QCMQuestion = { ...qcm, id: 'q3', theme: 'unknown' }
+    const orphan: QCMQuestion = { ...qcm, id: 'q3', category: 'unknown' }
     const payload = buildStreakResultPayload(0, 0, false, [orphan], themes, 'Culture générale', null, true)
     expect(payload.themes).toEqual(['unknown'])
   })
@@ -133,7 +133,7 @@ describe('buildTimedResultPayload', () => {
   })
 
   it('falls back to the raw id when a theme is unknown', () => {
-    const orphan: QCMQuestion = { ...qcm, id: 'q3', theme: 'unknown' }
+    const orphan: QCMQuestion = { ...qcm, id: 'q3', category: 'unknown' }
     const payload = buildTimedResultPayload([{ question: orphan, answer: undefined }], 0, 60, themes, 'Culture générale', null, true)
     expect(payload.themes).toEqual(['unknown'])
     expect(payload.correct_count).toBe(0)

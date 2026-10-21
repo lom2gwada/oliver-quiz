@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type {
   AnswerOption, BooleanContent, CodeContent, MatchingContent, NumericContent, OrderingContent,
-  QCMContent, Question, QuestionTable as QuestionTableData, QuestionType, TextContent, Theme,
+  QCMContent, Question, QuestionTable as QuestionTableData, QuestionType, TextContent, Category,
 } from '../types/quiz'
 import { useTranslation } from '../i18n'
 
@@ -33,7 +33,7 @@ function blankContent(type: QuestionType): Question['content'] {
 
 export function createBlankQuestion(type: QuestionType, themeId: string, clozeSeedText = 'Complète : ___'): Question {
   return {
-    id: crypto.randomUUID(), type, theme: themeId, difficulty: 'easy', question: type === 'cloze' ? clozeSeedText : '',
+    id: crypto.randomUUID(), type, category: themeId, difficulty: 'easy', question: type === 'cloze' ? clozeSeedText : '',
     tags: [], explanation: '', points: 10, content: blankContent(type),
   } as Question
 }
@@ -240,7 +240,7 @@ function TableFieldEditor({ table, onChange }: { table: QuestionTableData | unde
 
 interface QuestionEditFormProps {
   question: Question
-  themes: Theme[]
+  themes: Category[]
   error: string
   onSave: (updated: Question) => Promise<void>
   onCancel: () => void
@@ -282,7 +282,7 @@ export function QuestionEditForm({ question, themes, error, onSave, onCancel }: 
     <label>{t('admin.promptLabel')}<textarea value={draft.question} onChange={(event) => setDraft({ ...draft, question: event.target.value })} /></label>
     <label>{t('admin.explanationLabel')}<textarea value={draft.explanation} onChange={(event) => setDraft({ ...draft, explanation: event.target.value })} /></label>
     <label>{t('admin.quizThemeLabel')}
-      <select value={draft.theme} onChange={(event) => setDraft({ ...draft, theme: event.target.value })}>
+      <select value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })}>
         {themes.map((theme) => <option key={theme.id} value={theme.id}>{theme.label}</option>)}
       </select>
     </label>

@@ -1,4 +1,4 @@
-import type { AnswersByQuestion, Question, QuestionAttempt, Theme } from '../types/quiz'
+import type { AnswersByQuestion, Question, QuestionAttempt, Category } from '../types/quiz'
 import type { ChartGroup, QuestionResultPayload, QuizRecords, QuizResultPayload, QuizResultRow, RadarAxis, StatBucket, StreakResultPayload, StreakResultRow, ThemeWeekHeatmap, TimedResultPayload, TimedResultRow } from '../types/history'
 import { isCorrect } from '../components/ResultPage'
 import { supabase } from './supabase'
@@ -16,7 +16,7 @@ function aggregate(questions: Question[], answers: AnswersByQuestion, keyOf: (qu
 }
 
 /** Construit le résumé d'une partie terminée, prêt à être enregistré. Les thèmes sont figés en libellés (pas des ids) pour rester lisibles même si le quiz importé change ensuite. */
-export function buildQuizResultPayload(questions: Question[], answers: AnswersByQuestion, themes: Theme[], elapsedSeconds: number, quizTitle: string, quizId: string | null, unfiltered: boolean): QuizResultPayload {
+export function buildQuizResultPayload(questions: Question[], answers: AnswersByQuestion, themes: Category[], elapsedSeconds: number, quizTitle: string, quizId: string | null, unfiltered: boolean): QuizResultPayload {
   const correctQuestions = questions.filter((question) => isCorrect(question, answers[question.id]))
   const earnedPoints = correctQuestions.reduce((sum, question) => sum + question.points, 0)
   const totalPoints = questions.reduce((sum, question) => sum + question.points, 0)
@@ -31,8 +31,8 @@ export function buildQuizResultPayload(questions: Question[], answers: AnswersBy
     elapsed_seconds: elapsedSeconds,
     question_count: questions.length,
     correct_count: correctQuestions.length,
-    themes: Array.from(new Set(questions.map((question) => themeLabel(question.theme)))),
-    by_theme: aggregate(questions, answers, (question) => themeLabel(question.theme)),
+    themes: Array.from(new Set(questions.map((question) => themeLabel(question.category)))),
+    by_theme: aggregate(questions, answers, (question) => themeLabel(question.category)),
     by_type: aggregate(questions, answers, (question) => question.type),
     by_difficulty: aggregate(questions, answers, (question) => question.difficulty),
     unfiltered,
@@ -98,7 +98,7 @@ export function sumBuckets(rows: QuizResultRow[], pick: (row: QuizResultRow) => 
 /** Construit le résumé d'une partie "sans-faute" terminée, à partir des questions réellement jouées. Seule la
  * dernière question de `playedQuestions` peut être une erreur (celle qui a stoppé la série, sauf victoire) —
  * inutile de connaître le détail des réponses pour calculer les points gagnés. */
-export function buildStreakResultPayload(streakCount: number, elapsedSeconds: number, victory: boolean, playedQuestions: Question[], themes: Theme[], quizTitle: string, quizId: string | null, unfiltered: boolean): StreakResultPayload {
+export function buildStreakResultPayload(streakCount: number, elapsedSeconds: number, victory: boolean, playedQuestions: Question[], themes: Category[], quizTitle: string, quizId: string | null, unfiltered: boolean): StreakResultPayload {
   const themeLabel = (id: string) => themes.find((theme) => theme.id === id)?.label ?? id
   const totalPoints = playedQuestions.reduce((sum, question) => sum + question.points, 0)
   const missedPoints = victory || !playedQuestions.length ? 0 : playedQuestions[playedQuestions.length - 1].points
@@ -108,7 +108,7 @@ export function buildStreakResultPayload(streakCount: number, elapsedSeconds: nu
     streak_count: streakCount,
     elapsed_seconds: elapsedSeconds,
     victory,
-    themes: Array.from(new Set(playedQuestions.map((question) => themeLabel(question.theme)))),
+    themes: Array.from(new Set(playedQuestions.map((question) => themeLabel(question.category)))),
     earned_points: totalPoints - missedPoints,
     total_points: totalPoints,
     unfiltered,
@@ -130,7 +130,7 @@ export async function fetchStreakHistory(): Promise<StreakResultRow[]> {
 
 /** Construit le résumé d'une partie "contre-la-montre" terminée, à partir des tentatives réellement jouées
  * (un tableau plutôt qu'un Record par question, car une même question peut revenir plusieurs fois). */
-export function buildTimedResultPayload(attempts: QuestionAttempt[], elapsedSeconds: number, durationSeconds: number, themes: Theme[], quizTitle: string, quizId: string | null, unfiltered: boolean): TimedResultPayload {
+export function buildTimedResultPayload(attempts: QuestionAttempt[], elapsedSeconds: number, durationSeconds: number, themes: Category[], quizTitle: string, quizId: string | null, unfiltered: boolean): TimedResultPayload {
   const themeLabel = (id: string) => themes.find((theme) => theme.id === id)?.label ?? id
   const correctAttempts = attempts.filter((attempt) => isCorrect(attempt.question, attempt.answer))
   return {
@@ -140,7 +140,7 @@ export function buildTimedResultPayload(attempts: QuestionAttempt[], elapsedSeco
     question_count: attempts.length,
     duration_seconds: durationSeconds,
     elapsed_seconds: elapsedSeconds,
-    themes: Array.from(new Set(attempts.map((attempt) => themeLabel(attempt.question.theme)))),
+    themes: Array.from(new Set(attempts.map((attempt) => themeLabel(attempt.question.category)))),
     earned_points: correctAttempts.reduce((sum, attempt) => sum + attempt.question.points, 0),
     total_points: attempts.reduce((sum, attempt) => sum + attempt.question.points, 0),
     unfiltered,

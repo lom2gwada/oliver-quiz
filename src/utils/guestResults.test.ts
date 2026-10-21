@@ -6,11 +6,11 @@ import { computeQuestionCorrectness, summarizeGuestResults, tallyAnswers } from 
 const t = (key: string) => key as never
 
 const qcm: QCMQuestion = {
-  id: 'q1', theme: 'x', difficulty: 'easy', tags: [], explanation: '', points: 1, type: 'qcm', question: 'Q ?',
+  id: 'q1', category: 'x', difficulty: 'easy', tags: [], explanation: '', points: 1, type: 'qcm', question: 'Q ?',
   content: { multiple: false, answers: [{ id: 'a', label: 'A', isCorrect: true }, { id: 'b', label: 'B', isCorrect: false }, { id: 'c', label: 'C', isCorrect: false }] },
 }
-const bool: BooleanQuestion = { id: 'q2', theme: 'x', difficulty: 'easy', tags: [], explanation: '', points: 1, type: 'boolean', question: 'V/F ?', content: { isTrue: true } }
-const text: TextQuestion = { id: 'q3', theme: 'x', difficulty: 'easy', tags: [], explanation: '', points: 1, type: 'text', question: 'Nom ?', content: { expectedAnswers: ['paris'], caseSensitive: false } }
+const bool: BooleanQuestion = { id: 'q2', category: 'x', difficulty: 'easy', tags: [], explanation: '', points: 1, type: 'boolean', question: 'V/F ?', content: { isTrue: true } }
+const text: TextQuestion = { id: 'q3', category: 'x', difficulty: 'easy', tags: [], explanation: '', points: 1, type: 'text', question: 'Nom ?', content: { expectedAnswers: ['paris'], caseSensitive: false } }
 
 const result = (overrides: Partial<GuestResultRow>): GuestResultRow => ({
   id: '1', respondent_name: 'X', created_at: '2026-09-19T10:00:00Z', answers: {}, score: null, elapsed_seconds: 60, ...overrides,
