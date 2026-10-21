@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { cleanTranscript, dictationLanguageTag, speechLanguageTag } from './dictation'
+import { cleanTranscript } from '@engine/utils/dictation'
+import { dictationLanguageTag, speechLanguageTag } from './dictation'
 
 describe('cleanTranscript', () => {
   it('trims surrounding whitespace', () => {

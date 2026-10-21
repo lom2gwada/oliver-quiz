@@ -1,5 +1,7 @@
 import type { Language } from '../i18n/types'
 
+// `cleanTranscript` (ponctuation finale ajoutée par le moteur de dictée) est partagé : `@engine/utils/dictation`.
+
 /** Sous-ensemble minimal de l'API Web Speech utilisé ici : `lib.dom` de TypeScript ne déclare pas le
  * constructeur `SpeechRecognition` (ni son préfixe `webkit`), seulement les types de résultats. */
 export interface SpeechRecognitionLike {
@@ -37,10 +39,4 @@ export function dictationLanguageTag(quizLanguage: string | undefined, uiLanguag
   const code = (quizLanguage ?? '').trim().toLowerCase()
   if (code === 'fr' || code === 'en') return speechLanguageTag(code)
   return LANGUAGE_CODE.test(code) ? code : speechLanguageTag(uiLanguage)
-}
-
-/** Le moteur de dictée ajoute volontiers une ponctuation finale ("Paris."), qui ferait rater la comparaison
- * avec la réponse attendue — l'utilisateur peut de toute façon retoucher le champ ensuite. */
-export function cleanTranscript(transcript: string): string {
-  return transcript.trim().replace(/[.!?…]+$/u, '').trim()
 }
