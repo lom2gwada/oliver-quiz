@@ -4,7 +4,7 @@ import type {
 } from '../types/quiz'
 import { correctAnswer, isCorrect, userAnswer } from './ResultPage'
 
-const shared = { id: 'q1', theme: 'general', difficulty: 'easy' as const, tags: [], explanation: 'Explication.' }
+const shared = { id: 'q1', category: 'general', difficulty: 'easy' as const, tags: [], explanation: 'Explication.' }
 
 describe('qcm', () => {
   const single: QCMQuestion = {

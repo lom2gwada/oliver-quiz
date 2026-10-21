@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CodeQuestion, MatchingQuestion, OrderingQuestion, QCMQuestion, Question } from '../types/quiz'
 import { withShuffledAnswers } from './QuizPage'
 
-const shared = { id: 'q1', theme: 'general', difficulty: 'easy' as const, tags: [], explanation: '', points: 1 }
+const shared = { id: 'q1', category: 'general', difficulty: 'easy' as const, tags: [], explanation: '', points: 1 }
 
 describe('withShuffledAnswers — ordering', () => {
   const ordering: OrderingQuestion = {

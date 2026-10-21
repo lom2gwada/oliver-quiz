@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseQuiz } from './quizValidation'
+import { parseQuiz, serializeQuiz } from './quizValidation'
 
 function quiz(questions: unknown[]) {
   return {
@@ -296,5 +296,44 @@ describe('parseQuiz — unknown type', () => {
   it('rejects a question with an unrecognized type', () => {
     const bad = quiz([{ ...base, type: 'unknown', question: 'Q ?', content: {} }])
     expect(() => parseQuiz(bad)).toThrow()
+  })
+})
+
+describe('vocabulaire interne (category) et format stocké (theme)', () => {
+  const stored = quiz([
+    { ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true } },
+    { ...base, id: 'q2', type: 'qcm', question: 'Choisir', imageUrl: 'https://example.com/a.png', timeLimitSeconds: 20, table: { headers: ['a', 'b'], rows: [['1', '2']] },
+      content: { multiple: false, answers: [{ id: 'a', label: 'A', isCorrect: true }, { id: 'b', label: 'B', isCorrect: false }] } },
+  ])
+
+  it('lit le format stocké (themes / theme) et expose categories / category', () => {
+    const result = parseQuiz(stored)
+    expect(result.categories).toEqual([{ id: 'general', label: 'Général' }])
+    expect(result.questions.map((question) => question.category)).toEqual(['general', 'general'])
+    expect(result).not.toHaveProperty('themes')
+    expect(result.questions[0]).not.toHaveProperty('theme')
+  })
+
+  it('accepte aussi le vocabulaire interne : un quiz converti repasse par parseQuiz sans rien perdre', () => {
+    const once = parseQuiz(stored)
+    expect(parseQuiz({ ...once, questions: once.questions.slice(0, 1) }).questions).toHaveLength(1)
+    expect(parseQuiz(once)).toEqual(once)
+  })
+
+  it('refuse une question qui référence une catégorie absente, quel que soit le vocabulaire', () => {
+    const once = parseQuiz(stored)
+    expect(() => parseQuiz({ ...once, categories: [{ id: 'autre', label: 'Autre' }] })).toThrow()
+  })
+
+  it('serializeQuiz restitue exactement le format stocké (aller-retour), sans fuite de category', () => {
+    const wire = JSON.parse(JSON.stringify(stored))
+    const out = JSON.parse(JSON.stringify(serializeQuiz(parseQuiz(wire))))
+    expect(out).toEqual(wire)
+    expect(JSON.stringify(out)).not.toContain('categor')
+  })
+
+  it('serializeQuiz garde l’ordre des clés (export lisible) : id, theme, difficulty…', () => {
+    const question = (serializeQuiz(parseQuiz(stored)).questions as Record<string, unknown>[])[0]
+    expect(Object.keys(question).slice(0, 3)).toEqual(['id', 'theme', 'difficulty'])
   })
 })

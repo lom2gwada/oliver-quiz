@@ -3,12 +3,12 @@ import type { BooleanQuestion, QCMQuestion } from '../types/quiz'
 import { computeDueQuestions, MAX_BOX, nextBox, selectReviewQuestions } from './leitner'
 
 const qcm: QCMQuestion = {
-  id: 'q1', theme: 'histoire', difficulty: 'easy', tags: [], explanation: '', points: 1,
+  id: 'q1', category: 'histoire', difficulty: 'easy', tags: [], explanation: '', points: 1,
   type: 'qcm', question: 'Q ?',
   content: { multiple: false, answers: [{ id: 'a', label: 'A', isCorrect: true }, { id: 'b', label: 'B', isCorrect: false }] },
 }
 const bool: BooleanQuestion = {
-  id: 'q2', theme: 'geo', difficulty: 'medium', tags: [], explanation: '', points: 2,
+  id: 'q2', category: 'geo', difficulty: 'medium', tags: [], explanation: '', points: 2,
   type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true },
 }
 

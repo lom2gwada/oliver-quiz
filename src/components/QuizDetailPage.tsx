@@ -49,11 +49,11 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
   const [previewingIds, setPreviewingIds] = useState<string[]>([])
   const setPreview = (id: string, on: boolean) => setPreviewingIds((current) => (on ? [...current, id] : current.filter((existing) => existing !== id)))
   const [creatingType, setCreatingType] = useState<Question['type']>('qcm')
-  const [creatingTheme, setCreatingTheme] = useState(quiz.themes[0]?.id ?? '')
+  const [creatingTheme, setCreatingTheme] = useState(quiz.categories[0]?.id ?? '')
   // `creatingTheme` peut devenir obsolète (thème d'un quiz précédent, ou d'avant l'ajout d'un thème) sans que ce
   // composant ne se démonte — on retombe alors sur le premier thème du quiz actif plutôt que de fabriquer une
   // question référençant un thème qui n'existe plus (ce que `parseQuiz` rejetterait à l'enregistrement).
-  const effectiveCreatingTheme = quiz.themes.some((theme) => theme.id === creatingTheme) ? creatingTheme : (quiz.themes[0]?.id ?? '')
+  const effectiveCreatingTheme = quiz.categories.some((theme) => theme.id === creatingTheme) ? creatingTheme : (quiz.categories[0]?.id ?? '')
   const [draftQuestion, setDraftQuestion] = useState<Question | null>(null)
   const [newThemeLabel, setNewThemeLabel] = useState('')
   const [addingTheme, setAddingTheme] = useState(false)
@@ -61,10 +61,10 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
     setAddingTheme(true)
     try { await onAddTheme(newThemeLabel.trim()); setNewThemeLabel('') } catch { /* editError affiché ci-dessous */ } finally { setAddingTheme(false) }
   }
-  const byTheme = quiz.themes
+  const byTheme = quiz.categories
     .map((theme, index) => ({
       label: theme.label,
-      value: quiz.questions.filter((question) => question.theme === theme.id).length,
+      value: quiz.questions.filter((question) => question.category === theme.id).length,
       color: THEME_COLORS[index % THEME_COLORS.length],
     }))
     .filter((slice) => slice.value > 0)
@@ -107,8 +107,8 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
     <div className="stats-grid">
       <PieChart title={t('admin.byThemesChartTitle', quiz.questions.length)} data={byTheme} />
       <PieChart title={t('admin.byTypesChartTitle', quiz.questions.length)} data={byType} />
-      {quiz.themes.map((theme) => {
-        const themeQuestions = quiz.questions.filter((question) => question.theme === theme.id)
+      {quiz.categories.map((theme) => {
+        const themeQuestions = quiz.questions.filter((question) => question.category === theme.id)
         if (!themeQuestions.length) return null
         const byDifficulty = DIFFICULTIES
           .map((difficulty) => ({
@@ -135,7 +135,7 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
       {canEditQuiz && editError && !draftQuestion && !editingQuestionId && <p className="alert" role="alert">{editError}</p>}
       {canEditQuiz && (draftQuestion ? <QuestionEditForm
         question={draftQuestion}
-        themes={quiz.themes}
+        themes={quiz.categories}
         error={editError}
         onCancel={() => setDraftQuestion(null)}
         onSave={async (created) => { try { await onAddQuestion(created); setDraftQuestion(null) } catch { /* editError affiché dans le formulaire */ } }}
@@ -144,12 +144,12 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
           {QUESTION_TYPES.map((type) => <option key={type} value={type}>{TYPE_ICONS[type]} {typeLabel(t, type)}</option>)}
         </select>
         <select value={effectiveCreatingTheme} onChange={(event) => setCreatingTheme(event.target.value)}>
-          {quiz.themes.map((theme) => <option key={theme.id} value={theme.id}>{theme.label}</option>)}
+          {quiz.categories.map((theme) => <option key={theme.id} value={theme.id}>{theme.label}</option>)}
         </select>
         <button type="button" onClick={() => setDraftQuestion(createBlankQuestion(creatingType, effectiveCreatingTheme, t('admin.clozeSeedText')))} disabled={!effectiveCreatingTheme}>{t('admin.addQuestionButton')}</button>
       </div>)}
-      {quiz.themes.map((theme) => {
-        const themeQuestions = quiz.questions.filter((question) => question.theme === theme.id)
+      {quiz.categories.map((theme) => {
+        const themeQuestions = quiz.questions.filter((question) => question.category === theme.id)
         if (!themeQuestions.length) return null
         return <details key={theme.id} className="question-list-group">
           <summary>{t('admin.themeCount', theme.label, themeQuestions.length)}</summary>
@@ -158,7 +158,7 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
               <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{t('admin.pointsLabel', question.points)}</span></div>
               {editingQuestionId === question.id ? <QuestionEditForm
                 question={question}
-                themes={quiz.themes}
+                themes={quiz.categories}
                 error={editError}
                 onCancel={() => setEditingQuestionId('')}
                 onSave={async (updated) => { try { await onSaveQuestion(updated); setEditingQuestionId('') } catch { /* editError affiché par le parent, formulaire laissé ouvert */ } }}

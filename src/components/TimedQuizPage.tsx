@@ -70,7 +70,7 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish
   }
 
   if (!question) return <section className="empty"><h2>{t('quiz.emptyTitle')}</h2><p>{t('quiz.emptyHintRun')}</p><button type="button" className="secondary" onClick={onCancel}>{t('common.back')}</button></section>
-  const theme = quiz.themes.find((item) => item.id === question.theme)?.label ?? question.theme
+  const theme = quiz.categories.find((item) => item.id === question.category)?.label ?? question.category
   const remaining = durationSeconds > 0 ? Math.max(0, durationSeconds - elapsed) : null
 
   return <section className="quiz-card">

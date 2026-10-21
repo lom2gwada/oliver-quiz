@@ -20,7 +20,10 @@ export function parseQuiz(value: unknown): Quiz {
   if (!isRecord(value) || typeof value.version !== 'string' || !isRecord(value.metadata)) {
     throw new Error('Racine invalide : version et metadata sont requises.')
   }
-  const { metadata, themes, questions } = value
+  // Format stocké : `themes` ; on accepte aussi le vocabulaire interne (`categories`), pour qu'un quiz déjà converti
+  // puisse repasser par `parseQuiz` (ex. `parseQuiz({ ...quiz, questions })`).
+  const { metadata, questions } = value
+  const themes = value.categories ?? value.themes
   if (
     typeof metadata.title !== 'string' ||
     typeof metadata.author !== 'string' ||
@@ -40,18 +43,32 @@ export function parseQuiz(value: unknown): Quiz {
   }
 
   const parsedQuestions = questions.map(parseQuestion)
-  const themeIds = new Set(themes.map((theme) => (theme as { id: string }).id))
-  if (parsedQuestions.some((question) => !themeIds.has(question.theme))) {
+  const categoryIds = new Set(themes.map((theme) => (theme as { id: string }).id))
+  if (parsedQuestions.some((question) => !categoryIds.has(question.category))) {
     throw new Error('Chaque question doit référencer un thème existant.')
   }
-  return { version: value.version, metadata: metadata as Quiz['metadata'], themes: themes as Quiz['themes'], questions: parsedQuestions }
+  return { version: value.version, metadata: metadata as Quiz['metadata'], categories: themes as Quiz['categories'], questions: parsedQuestions }
+}
+
+/** Format stocké / échangé d'un quiz (fichiers JSON, `quizzes.content`) : `themes` et, par question, `theme`.
+ * Inverse de `parseQuiz` ; l'ordre des clés est conservé pour que l'export reste lisible. */
+export function serializeQuiz(quiz: Quiz): Record<string, unknown> {
+  const rename = (record: object, from: string, to: string) => Object.fromEntries(Object.entries(record).map(([key, value]) => [key === from ? to : key, value]))
+  return {
+    version: quiz.version,
+    metadata: quiz.metadata,
+    themes: quiz.categories,
+    questions: quiz.questions.map((question) => rename(question, 'category', 'theme')),
+  }
 }
 
 function parseQuestion(value: unknown): Question {
   if (!isRecord(value) || !isRecord(value.content)) throw new Error('Question ou contenu invalide.')
-  const { id, type, theme, difficulty, question, tags, explanation, points, content, imageUrl, imageAlt, timeLimitSeconds, diagram, table } = value
+  // Même tolérance que pour le quiz : `theme` (format stocké) ou `category` (vocabulaire interne).
+  const category = value.category ?? value.theme
+  const { id, type, difficulty, question, tags, explanation, points, content, imageUrl, imageAlt, timeLimitSeconds, diagram, table } = value
   if (
-    typeof id !== 'string' || typeof theme !== 'string' || typeof question !== 'string' ||
+    typeof id !== 'string' || typeof category !== 'string' || typeof question !== 'string' ||
     typeof explanation !== 'string' || typeof points !== 'number' || points < 0 || !hasStrings(tags) ||
     !['easy', 'medium', 'hard'].includes(String(difficulty)) ||
     (imageUrl !== undefined && (typeof imageUrl !== 'string' || !imageUrl)) ||
@@ -62,7 +79,7 @@ function parseQuestion(value: unknown): Question {
   ) throw new Error(`Question « ${String(id ?? '?')} » invalide.`)
 
   const base = {
-    id, theme, difficulty: difficulty as Question['difficulty'], question, tags, explanation, points,
+    id, category, difficulty: difficulty as Question['difficulty'], question, tags, explanation, points,
     imageUrl: imageUrl as string | undefined, imageAlt: imageAlt as string | undefined,
     timeLimitSeconds: timeLimitSeconds as number | undefined,
     diagram: diagram as string | undefined,

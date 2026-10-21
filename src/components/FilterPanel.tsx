@@ -1,9 +1,9 @@
-import type { Difficulty, Theme } from '../types/quiz'
+import type { Difficulty, Category } from '../types/quiz'
 import { useTranslation } from '../i18n'
 import { playClick } from '@engine/utils/sound'
 
 interface FilterPanelProps {
-  themes: Theme[]
+  themes: Category[]
   selectedThemes: string[]
   difficulty: Difficulty | ''
   onThemeToggle: (themeId: string) => void
