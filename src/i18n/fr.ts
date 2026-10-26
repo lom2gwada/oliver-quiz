@@ -16,6 +16,8 @@ export const fr = {
 
   'nav.profile': '👤 Profil',
   'nav.quiz': '⚙️ Quiz',
+  'nav.menu': 'Menu',
+  'filter.summary': (active: number) => (active > 0 ? `Filtres (${active})` : 'Filtres'),
   'nav.goHome': "Retour à l'accueil",
   'nav.home': 'Accueil',
   'nav.admin': 'Administration',
