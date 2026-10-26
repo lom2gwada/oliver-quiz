@@ -13,6 +13,8 @@ import { PieChart } from '@engine/components/PieChart'
 import { QuestionImage } from '@engine/components/QuestionImage'
 import { FurtherReading } from './FurtherReading'
 import { ResultActions } from './ResultActions'
+import { ReviewSummary } from './ReviewSummary'
+import { reviewOutcomes } from '../utils/leitner'
 import { difficultyLabel } from './QuizPage'
 
 type TFunction = (key: TranslationKey, ...args: unknown[]) => string
@@ -98,6 +100,8 @@ interface ResultPageProps {
   elapsedSeconds: number
   /** Liens « Pour aller plus loin » du quiz (`metadata.links`). */
   links?: QuizLink[]
+  /** Présent après une révision : la boîte Leitner de chaque question avant la session, pour montrer ses mouvements. */
+  reviewBoxes?: Record<string, number>
   /** Absent après une partie « reprendre mes erreurs » : relancer avec les mêmes paramètres n'a alors pas de sens. */
   onRestartSame?: () => void
   onBackToSettings: () => void
@@ -105,7 +109,7 @@ interface ResultPageProps {
   onViewLeaderboard: () => void
 }
 
-export function ResultPage({ links, questions, answers, themes, elapsedSeconds, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard }: ResultPageProps) {
+export function ResultPage({ links, reviewBoxes, questions, answers, themes, elapsedSeconds, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard }: ResultPageProps) {
   const { t, language } = useTranslation()
   const earned = questions.filter((question) => isCorrect(question, answers[question.id])).reduce((total, question) => total + question.points, 0)
   const total = questions.reduce((sum, question) => sum + question.points, 0)
@@ -124,6 +128,7 @@ export function ResultPage({ links, questions, answers, themes, elapsedSeconds, 
       <p className="mention">{emoji} {label}</p>
       <p className="duration">{t('result.duration', formatDuration(elapsedSeconds))}</p>
     </div>
+    {reviewBoxes && <ReviewSummary outcomes={reviewOutcomes(questions, answers, reviewBoxes)} />}
     <ResultActions onRestartSame={onRestartSame} onBackToSettings={onBackToSettings} />
     <div className="nav-links">
       <button type="button" className="secondary" onClick={onViewHistory}>{t('common.viewHistory')}</button>
