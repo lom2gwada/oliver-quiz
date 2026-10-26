@@ -18,6 +18,20 @@ export const fr = {
   'nav.quiz': '⚙️ Quiz',
   'nav.menu': 'Menu',
   'filter.summary': (active: number) => (active > 0 ? `Filtres (${active})` : 'Filtres'),
+  'metric.paceValue': (value: string) => `${value} bonnes réponses/min`,
+  'metric.pointsShare': (percent: string) => `${percent} des points`,
+  'metric.pointsShareHint': "Part des points obtenus : les questions difficiles en rapportent plus, ce n'est donc pas le nombre de bonnes réponses.",
+  'metric.successRateHint': 'Part des questions tentées qui ont reçu une bonne réponse.',
+  'metric.discovered': (percent: string) => `${percent} du quiz découvert`,
+  'metric.discoveredShort': 'découvert',
+  'metric.discoveredHint': 'Part des questions du quiz déjà rencontrées au moins une fois, en partie classique ou en révision.',
+  'topScore.hint': 'Voir le classement',
+  'topScore.classic': (who: string, count: number) => `Meilleur score classique : ${who} — ${count} bonne${count > 1 ? 's' : ''} réponse${count > 1 ? 's' : ''}`,
+  'topScore.streak': (who: string, count: number, victory: boolean) => `Meilleure série sans-faute : ${who} — ${victory ? '🏆 ' : '🔥 '}${count} de suite`,
+  'topScore.timed': (who: string, pace: string) => `Meilleur rythme contre-la-montre : ${who} — ${pace === '' ? '—' : `${pace} bonnes réponses/min`}`,
+  'leaderboard.scoreCorrect': 'bonnes réponses',
+  'leaderboard.scoreStreak': 'de suite',
+  'leaderboard.scorePace': 'bonnes rép./min',
   'nav.goHome': "Retour à l'accueil",
   'nav.home': 'Accueil',
   'nav.admin': 'Administration',
@@ -117,7 +131,7 @@ export const fr = {
   'admin.guestResultsAverageScore': 'Score moyen',
   'admin.guestResultsAverageTime': 'Durée moyenne',
   'admin.guestResultsPerQuestion': 'Détail par question',
-  'admin.guestResultsCorrectRate': (correct: number, total: number, rate: number) => `${correct} / ${total} bonnes réponses (${rate}%)`,
+  'admin.guestResultsCorrectRate': (correct: number, total: number, rate: string) => `${correct} / ${total} bonnes réponses (${rate})`,
   'admin.guestResultsReceived': 'Réponses reçues',
   'admin.publicQuizLabel': 'Visible par tous par défaut',
   'admin.publicQuizHint': "Ce quiz est visible par tous les utilisateurs connectés, sans octroi d'accès individuel. La gestion des accès ci-dessous n'a alors aucun effet.",
@@ -322,8 +336,9 @@ export const fr = {
   'history.errorLoad': "Impossible de charger l'historique.",
   'history.emptyState': "Aucune partie enregistrée pour l'instant.",
   'history.gamesPlayed': 'Parties jouées',
-  'history.bestScore': 'Meilleur score',
-  'history.averageScore': 'Score moyen',
+  'history.bestPointsShare': 'Meilleur score (% des points)',
+  'history.bestCorrect': 'Meilleur score (bonnes réponses)',
+  'history.averagePointsShare': 'Score moyen (% des points)',
   'history.totalPlaytime': 'Temps de jeu cumulé',
   'history.radarTitle': 'Taux de réussite par thème',
   'history.radarNote': (count: number) => `Les ${count} thèmes les plus joués sont affichés.`,
@@ -364,12 +379,12 @@ export const fr = {
   'leaderboard.modeOverall': '🏅 Général',
   'leaderboard.errorLoad': 'Impossible de charger le classement.',
   'leaderboard.emptyState': "Aucune partie classée pour ce quiz dans ce mode. Seules comptent les parties jouées sans filtre de thème ni de difficulté, hors révision.",
-  'leaderboard.detailsClassic': (correct: number, total: number, rate: number, pace: string, points: string, duration: string) =>
-    `${correct}/${total} (${rate}%) · ${pace} · ${points} · ⏱ ${duration}`,
-  'leaderboard.detailsStreak': (themes: string, pace: string, rate: string, points: string, duration: string) =>
-    `${themes} · ${pace} · ${rate} · ${points} · ⏱ ${duration}`,
-  'leaderboard.detailsTimed': (correct: number, total: number, rate: string, points: string, durationLabel: string, elapsed: string) =>
-    `${correct}/${total} · ${rate} · ${points} · ${durationLabel} · ⏱ ${elapsed}`,
-  'leaderboard.detailsOverall': (attempted: number, games: number, rate: number, points: string) =>
-    `${attempted} tentées · ${games} partie${games > 1 ? 's' : ''} · ${rate}% de réussite · ${points}`,
+  'leaderboard.detailsClassic': (correct: number, total: number, points: string, pace: string, duration: string) =>
+    `${correct}/${total} bonnes réponses · ${points} · ${pace} · ⏱ ${duration}`,
+  'leaderboard.detailsStreak': (themes: string, pace: string, points: string, duration: string) =>
+    `${themes} · ${pace} · ${points} · ⏱ ${duration}`,
+  'leaderboard.detailsTimed': (correct: number, total: number, points: string, durationLabel: string, elapsed: string) =>
+    `${correct}/${total} bonnes réponses · ${points} · ${durationLabel} · ⏱ ${elapsed}`,
+  'leaderboard.detailsOverall': (attempted: number, games: number, rate: string, points: string) =>
+    `${attempted} questions tentées · ${games} partie${games > 1 ? 's' : ''} · ${rate} de bonnes réponses · ${points}`,
 }

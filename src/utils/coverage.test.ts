@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { coveragePercent, coverageTotals, splitCoverage, type QuizCoverage } from './coverage'
+import { coveragePercent, coveragePercentTenths, coverageTotals, splitCoverage, type QuizCoverage } from './coverage'
 
 const row = (title: string, seen: number, total: number, games: number, last: string | null): QuizCoverage =>
   ({ quiz_id: title, quiz_title: title, question_count: total, seen_count: seen, games_played: games, last_played_at: last, due_count: 0 })
@@ -30,6 +30,25 @@ describe('splitCoverage', () => {
   it('considère comme commencé un quiz joué uniquement en sans-faute (aucune question journalisée)', () => {
     const { started } = splitCoverage([row('Série', 0, 10, 3, '2026-10-01T00:00:00Z')])
     expect(started).toHaveLength(1)
+  })
+})
+
+describe('coveragePercentTenths', () => {
+  it('shows tenths of a percent, rounded down', () => {
+    expect(coveragePercentTenths(69, 74)).toBe(93.2)
+    expect(coveragePercentTenths(1, 1290)).toBe(0.0)
+    expect(coveragePercentTenths(749, 1290)).toBe(58)
+    expect(coveragePercentTenths(57, 100)).toBe(57)
+  })
+
+  it('never reaches 100 until everything has been seen', () => {
+    expect(coveragePercentTenths(1289, 1290)).toBe(99.9)
+    expect(coveragePercentTenths(1290, 1290)).toBe(100)
+  })
+
+  it('handles an empty quiz and caps at 100', () => {
+    expect(coveragePercentTenths(0, 0)).toBe(0)
+    expect(coveragePercentTenths(12, 10)).toBe(100)
   })
 })
 

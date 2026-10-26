@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import type { GameMode, Quiz } from '../types/quiz'
 import type { LeaderboardRow, OverallLeaderboardRow, StreakLeaderboardRow, TimedLeaderboardRow } from '../types/leaderboard'
 import { useTranslation } from '../i18n'
+import type { Language, TranslationKey } from '../i18n'
 import { fetchLeaderboard, fetchOverallLeaderboard, fetchStreakLeaderboard, fetchTimedLeaderboard } from '../utils/leaderboard'
 import { supabase } from '../utils/supabase'
 import { longDate } from '../utils/dateFormat'
+import { formatNumber, formatPercent } from '../utils/format'
 import { formatDuration } from '@engine/utils/time'
 
 const RANK_MEDALS: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
@@ -19,7 +21,11 @@ interface DisplayRow {
   details: string
   /** Date de la partie retenue (ou de la dernière partie, pour « Général »), déjà formatée. */
   date: string
+  /** Valeur mise en avant à droite, et ce qu'elle mesure — le sens change selon le mode (bonnes réponses, série, rythme). */
   score: string
+  scoreLabel: string
+  /** Infobulle de la ligne de détails. */
+  detailsHint: string
 }
 
 interface LeaderboardPageProps {
@@ -39,11 +45,13 @@ interface LeaderboardPageProps {
 const quizKeyOf = (row: { quiz_id: string | null; quiz_title: string }) => row.quiz_id ?? row.quiz_title
 
 /** Rythme et points ne sont pas connus pour les parties jouées avant l'introduction de ces colonnes
- * (`025_points_and_pace_everywhere.sql`) — un tiret plutôt qu'un 0 trompeur. Pas de traduction : "/min" et
- * "pts" restent tels quels dans les deux langues, comme `{points} pts` déjà affiché pendant une partie. */
-const paceLabel = (pace: number | null) => (pace !== null ? `${pace}/min` : '—')
+ * (`025_points_and_pace_everywhere.sql`) — un tiret plutôt qu'un 0 trompeur. */
+type Translate = (key: TranslationKey, ...args: unknown[]) => string
+const paceLabel = (pace: number | null, t: Translate, language: Language) => (pace !== null ? t('metric.paceValue', formatNumber(pace, language)) : '—')
 const pointsLabel = (points: number | null) => (points !== null ? `${points} pts` : '—')
-const percentLabel = (earned: number | null, total: number | null) => (total ? `${Math.round(((earned ?? 0) / total) * 100)}%` : '—')
+/** « 52 pts (74 % des points) » : le pourcentage est la part des points, pas celle des bonnes réponses. */
+const pointsSummary = (earned: number | null, total: number | null, t: Translate, language: Language) =>
+  earned === null ? '—' : total ? `${earned} pts (${t('metric.pointsShare', formatPercent(Math.round((earned / total) * 100), language))})` : `${earned} pts`
 
 export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', focusQuiz = null, onViewOverview, onBack }: LeaderboardPageProps) {
   const { t, language } = useTranslation()
@@ -92,8 +100,8 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', f
         .map((row) => ({
           userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
           date: longDate(row.played_at, language),
-          details: t('leaderboard.detailsClassic', row.correct_count, row.question_count, row.best_score, paceLabel(row.pace_per_minute), pointsLabel(row.earned_points), formatDuration(row.elapsed_seconds)),
-          score: `✓ ${row.correct_count}`,
+          details: t('leaderboard.detailsClassic', row.correct_count, row.question_count, pointsSummary(row.earned_points, row.total_points, t, language), paceLabel(row.pace_per_minute, t, language), formatDuration(row.elapsed_seconds)),
+          score: `✓ ${row.correct_count}`, scoreLabel: t('leaderboard.scoreCorrect'), detailsHint: t('metric.pointsShareHint'),
         }))
       : mode === 'streak'
         ? (streakRows ?? []).filter((row) => quizKeyOf(row) === activeQuiz)
@@ -102,8 +110,8 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', f
           .map((row) => ({
             userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
             date: longDate(row.played_at, language),
-            details: t('leaderboard.detailsStreak', row.themes.join(', ') || t('common.allThemes'), paceLabel(row.pace_per_minute), percentLabel(row.earned_points, row.total_points), pointsLabel(row.earned_points), formatDuration(row.elapsed_seconds)),
-            score: `${row.victory ? '🏆' : '🔥'} ${row.best_streak}`,
+            details: t('leaderboard.detailsStreak', row.themes.join(', ') || t('common.allThemes'), paceLabel(row.pace_per_minute, t, language), pointsSummary(row.earned_points, row.total_points, t, language), formatDuration(row.elapsed_seconds)),
+            score: `${row.victory ? '🏆' : '🔥'} ${row.best_streak}`, scoreLabel: t('leaderboard.scoreStreak'), detailsHint: t('metric.pointsShareHint'),
           }))
         : mode === 'timed'
           ? (timedRows ?? []).filter((row) => quizKeyOf(row) === activeQuiz)
@@ -112,8 +120,8 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', f
             .map((row) => ({
               userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
               date: longDate(row.played_at, language),
-              details: t('leaderboard.detailsTimed', row.correct_count, row.question_count, percentLabel(row.earned_points, row.total_points), pointsLabel(row.earned_points), row.duration_seconds === 0 ? t('common.unlimited') : t('common.minutesShort', Math.round(row.duration_seconds / 60)), formatDuration(row.elapsed_seconds)),
-              score: row.pace_per_minute !== null ? `${row.pace_per_minute}/min` : '—',
+              details: t('leaderboard.detailsTimed', row.correct_count, row.question_count, pointsSummary(row.earned_points, row.total_points, t, language), row.duration_seconds === 0 ? t('common.unlimited') : t('common.minutesShort', Math.round(row.duration_seconds / 60)), formatDuration(row.elapsed_seconds)),
+              score: row.pace_per_minute !== null ? formatNumber(row.pace_per_minute, language) : '—', scoreLabel: t('leaderboard.scorePace'), detailsHint: t('metric.pointsShareHint'),
             }))
           : (overallRows ?? []).filter((row) => quizKeyOf(row) === activeQuiz)
             .sort((a, b) => b.total_correct - a.total_correct || (b.success_rate ?? -1) - (a.success_rate ?? -1))
@@ -121,8 +129,8 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', f
             .map((row) => ({
               userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
               date: t('leaderboard.lastGame', longDate(row.last_played_at, language)),
-              details: t('leaderboard.detailsOverall', row.total_attempted, row.games_played, row.success_rate ?? 0, pointsLabel(row.total_earned_points)),
-              score: `✓ ${row.total_correct}`,
+              details: t('leaderboard.detailsOverall', row.total_attempted, row.games_played, formatPercent(row.success_rate ?? 0, language), pointsLabel(row.total_earned_points)),
+              score: `✓ ${row.total_correct}`, scoreLabel: t('leaderboard.scoreCorrect'), detailsHint: t('metric.successRateHint'),
             }))
 
   return <section className="stats-page">
@@ -153,9 +161,9 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', f
         <span className="leaderboard-avatar">{row.avatar}</span>
         <div className="leaderboard-main">
           <span className="leaderboard-pseudo">{row.pseudo} <span className="leaderboard-date">· {row.date}</span></span>
-          <span className="leaderboard-details">{row.details}</span>
+          <span className="leaderboard-details" title={row.detailsHint}>{row.details}</span>
         </div>
-        <span className="leaderboard-score">{row.score}</span>
+        <span className="leaderboard-score"><span>{row.score}</span><span className="leaderboard-score-label">{row.scoreLabel}</span></span>
       </li>)}
     </ol>}
   </section>

@@ -12,6 +12,7 @@ import { QuizLanguageProvider } from './utils/quizLanguageContext'
 import { confirmWithBlur } from './utils/confirmWithBlur'
 import { hashToRoute, isEphemeralView, routeToHash, type View } from './utils/routes'
 import { breadcrumbFor, isPlayingView, isQuizPage } from './utils/pageContext'
+import { formatNumber, formatPercent } from './utils/format'
 import { storeLanguage, takePendingLanguage } from './utils/languagePreference'
 import { isKnownQuizLanguage, normalizeQuizLanguage, quizInterfaceLanguage, quizLanguageLabel } from './utils/quizLanguage'
 import { OverviewPage } from './components/OverviewPage'
@@ -32,7 +33,7 @@ import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchStreakTopScore, fetchTimedTopScore, fetchTopScore } from './utils/leaderboard'
 import { computeDueQuestions, createQuestionProgressJob, fetchQuestionProgress, selectReviewQuestions } from './utils/leitner'
 import { runSaveJobs, type SaveJob, type SaveStatus } from './utils/gameSave'
-import { coveragePercent, fetchQuizCoverage, REVIEW_BATCH_SIZE, type QuizCoverage } from './utils/coverage'
+import { coveragePercentTenths, fetchQuizCoverage, REVIEW_BATCH_SIZE, type QuizCoverage } from './utils/coverage'
 import { deleteQuiz, fetchAccessibleQuizzes, fetchAccessibleQuizzesWithRetry, fetchQuizContent, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
 import { applyTheme } from './utils/theme'
 import { LanguageProvider, translate } from './i18n'
@@ -206,18 +207,18 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   // toujours le classique — sinon le record affiché n'a aucun rapport avec le mode que l'utilisateur s'apprête
   // à lancer. Un seul badge affiché à la fois : `avatar`/`pseudo`/`scoreText` déjà mis en forme pour rester
   // agnostique du mode d'origine (classement classique, sans-faute ou contre-la-montre).
-  const [topScore, setTopScore] = useState<{ avatar: string; pseudo: string; scoreText: string } | null>(null)
+  const [topScore, setTopScore] = useState<{ avatar: string; pseudo: string; mode: GameMode; value: number | null; victory: boolean } | null>(null)
   useEffect(() => {
     if (view !== 'start') return
     setTopScore(null)
     const title = quiz.metadata.title
     const quizId = selectedHostedQuizId || null
     if (gameMode === 'classic') {
-      fetchTopScore(title, quizId).then((row) => setTopScore(row && { avatar: row.avatar, pseudo: row.pseudo, scoreText: `✓ ${row.correct_count}` })).catch(() => setTopScore(null))
+      fetchTopScore(title, quizId).then((row) => setTopScore(row && { avatar: row.avatar, pseudo: row.pseudo, mode: 'classic', value: row.correct_count, victory: false })).catch(() => setTopScore(null))
     } else if (gameMode === 'streak') {
-      fetchStreakTopScore(title, quizId).then((row) => setTopScore(row && { avatar: row.avatar, pseudo: row.pseudo, scoreText: `${row.victory ? '🏆' : '🔥'} ${row.best_streak}` })).catch(() => setTopScore(null))
+      fetchStreakTopScore(title, quizId).then((row) => setTopScore(row && { avatar: row.avatar, pseudo: row.pseudo, mode: 'streak', value: row.best_streak, victory: row.victory })).catch(() => setTopScore(null))
     } else {
-      fetchTimedTopScore(title, quizId).then((row) => setTopScore(row && { avatar: row.avatar, pseudo: row.pseudo, scoreText: row.pace_per_minute !== null ? `${row.pace_per_minute}/min` : '—' })).catch(() => setTopScore(null))
+      fetchTimedTopScore(title, quizId).then((row) => setTopScore(row && { avatar: row.avatar, pseudo: row.pseudo, mode: 'timed', value: row.pace_per_minute, victory: false })).catch(() => setTopScore(null))
     }
   }, [view, gameMode, quiz.metadata.title, selectedHostedQuizId])
   const [leaderboardBack, setLeaderboardBack] = useState<View>('start')
@@ -642,6 +643,14 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     setMuted(!muted)
   }
 
+  /** « Meilleur score classique : 🚀 Olivier — 9 bonnes réponses » : le mode et l'unité sont dits, la valeur seule (« ✓ 9 », « 8.2/min ») ne l'était pas. */
+  const topScoreText = (top: NonNullable<typeof topScore>) => {
+    const who = `${top.avatar} ${top.pseudo}`
+    if (top.mode === 'classic') return t('topScore.classic', who, top.value ?? 0)
+    if (top.mode === 'streak') return t('topScore.streak', who, top.value ?? 0, top.victory)
+    return t('topScore.timed', who, top.value === null ? '' : formatNumber(top.value, language))
+  }
+
   const breadcrumb = breadcrumbFor(view, {
     home: t('nav.home'), overview: t('crumb.overview'), profile: t('crumb.profile'), admin: t('nav.admin'),
     history: t('crumb.history'), leaderboard: t('crumb.leaderboard'), quizTitle: quiz.metadata.title,
@@ -656,11 +665,11 @@ export default function App({ onLogout }: { onLogout: () => void }) {
         <h1>{quiz.metadata.title}</h1>
         <p>{t('nav.by', quiz.metadata.author)}{quiz.metadata.language && <> · {quizLanguageLabel(quiz.metadata.language, language, t)}</>}</p>
         {view === 'start' && quiz.metadata.description && <p className="quiz-description-preview">{quiz.metadata.description}</p>}
-        {view === 'start' && topScore && <button type="button" className="top-score" onClick={() => viewLeaderboard('start', gameMode)}>🏆 {topScore.avatar} {topScore.pseudo} — {topScore.scoreText}</button>}
+        {view === 'start' && topScore && <button type="button" className="top-score" title={t('topScore.hint')} onClick={() => viewLeaderboard('start', gameMode)}>🏆 {topScoreText(topScore)} <span aria-hidden="true">›</span></button>}
         {view === 'start' && hostedQuizzes.length > 0 && <div className="active-quiz">
   {activeCoverage?.quiz_id === selectedHostedQuizId && <>
-    <CoverageBar percent={coveragePercent(activeCoverage.seen_count, activeCoverage.question_count)} label={t('start.quizLabel')} />
-    <span className="mode-hint">{t('overview.seen', activeCoverage.seen_count, activeCoverage.question_count)} · {coveragePercent(activeCoverage.seen_count, activeCoverage.question_count)}%</span>
+    <CoverageBar percent={coveragePercentTenths(activeCoverage.seen_count, activeCoverage.question_count)} label={t('metric.discovered', formatPercent(coveragePercentTenths(activeCoverage.seen_count, activeCoverage.question_count), language, 1))} />
+    <span className="mode-hint" title={t('metric.discoveredHint')}>{t('overview.seen', activeCoverage.seen_count, activeCoverage.question_count)} · {t('metric.discovered', formatPercent(coveragePercentTenths(activeCoverage.seen_count, activeCoverage.question_count), language, 1))}</span>
   </>}
   <div className="active-quiz-actions">
     {activeCoverage?.quiz_id === selectedHostedQuizId && activeCoverage.due_count > 0 && <button type="button" className="secondary" disabled={reviewing} onClick={reviewActiveQuiz}>{reviewing ? t('common.loading') : t('overview.review', Math.min(activeCoverage.due_count, REVIEW_BATCH_SIZE))}</button>}

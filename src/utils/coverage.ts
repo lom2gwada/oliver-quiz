@@ -30,6 +30,12 @@ export function coveragePercent(seen: number, total: number): number {
   return total > 0 ? Math.floor((Math.min(seen, total) / total) * 100) : 0
 }
 
+/** Part du quiz découverte au dixième inférieur (93,2) : sert à l'affichage — un quiz de plus de mille questions
+ * progresse de quelques dixièmes par partie — et ne dépasse « 100 » que si tout a été vu. */
+export function coveragePercentTenths(seen: number, total: number): number {
+  return total > 0 ? Math.floor((Math.min(seen, total) * 1000) / total) / 10 : 0
+}
+
 /** Un quiz est « commencé » dès qu'une partie a été jouée dessus (tous modes), même si seul le mode sans-faute
  * ou contre-la-montre — qui ne journalisent pas les questions — a été utilisé. */
 export const isStarted = (row: QuizCoverage) => row.games_played > 0 || row.seen_count > 0
@@ -44,5 +50,5 @@ export function splitCoverage(rows: QuizCoverage[]): { started: QuizCoverage[]; 
 export function coverageTotals(started: QuizCoverage[]): { seen: number; total: number; percent: number } {
   const seen = started.reduce((sum, row) => sum + Math.min(row.seen_count, row.question_count), 0)
   const total = started.reduce((sum, row) => sum + row.question_count, 0)
-  return { seen, total, percent: coveragePercent(seen, total) }
+  return { seen, total, percent: coveragePercentTenths(seen, total) }
 }

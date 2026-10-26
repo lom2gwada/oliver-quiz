@@ -5,6 +5,7 @@ import { useTranslation } from '../i18n'
 import { bucketsToChartGroups, bucketsToRadarAxes, computeRecords, computeThemeWeekHeatmap, fetchQuizHistory, fetchStreakHistory, fetchTimedHistory, sumBuckets } from '../utils/quizHistory'
 import { computeDueQuestions, fetchQuestionProgress, selectReviewQuestions, type QuestionProgressRow } from '../utils/leitner'
 import { longDate, shortDate } from '../utils/dateFormat'
+import { formatPercent } from '../utils/format'
 import { formatDuration } from '@engine/utils/time'
 import { PieChart } from '@engine/components/PieChart'
 import { RadarChart } from './RadarChart'
@@ -117,8 +118,8 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue, onViewLea
     {records && records.gamesPlayed > 0 && <>
       <div className="records-grid">
         <div className="record-tile"><span className="record-value">{records.gamesPlayed}</span><span className="record-label">{t('history.gamesPlayed')}</span></div>
-        <div className="record-tile"><span className="record-value">{records.bestScore}%</span><span className="record-label">{t('history.bestScore')}</span></div>
-        <div className="record-tile"><span className="record-value">{records.averageScore}%</span><span className="record-label">{t('history.averageScore')}</span></div>
+        <div className="record-tile"><span className="record-value">{formatPercent(records.bestScore, language)}</span><span className="record-label" title={t('metric.pointsShareHint')}>{t('history.bestPointsShare')}</span></div>
+        <div className="record-tile"><span className="record-value">{formatPercent(records.averageScore, language)}</span><span className="record-label" title={t('metric.pointsShareHint')}>{t('history.averagePointsShare')}</span></div>
         <div className="record-tile"><span className="record-value">{formatDuration(records.totalPlaytimeSeconds)}</span><span className="record-label">{t('history.totalPlaytime')}</span></div>
       </div>
       <ScoreChart points={chartPoints} />
@@ -161,7 +162,7 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue, onViewLea
     {quizTimedRows.length > 0 && <div className="stats-group">
       <h3 className="stats-group-title profile-section-title">{t('history.timedSectionTitle')}</h3>
       <div className="records-grid">
-        <div className="record-tile"><span className="record-value">✅ {bestTimedCount}</span><span className="record-label">{t('history.bestScore')}</span></div>
+        <div className="record-tile"><span className="record-value">✅ {bestTimedCount}</span><span className="record-label">{t('history.bestCorrect')}</span></div>
         <div className="record-tile"><span className="record-value">{quizTimedRows.length}</span><span className="record-label">{t('history.gamesPlayed')}</span></div>
       </div>
       <ul className="history-list">
@@ -193,7 +194,7 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue, onViewLea
     </div>}
     {quizRows && quizRows.length > 0 && <ul className="history-list">
       {quizRows.map((row) => <li className="history-item" key={row.id}>
-        <span className="history-score">{row.score}%</span>
+        <span className="history-score" title={t('metric.pointsShareHint')}>{formatPercent(row.score, language)}</span>
         <span className="history-date">{longDate(row.created_at, language)}</span>
         <span className="history-themes">{row.themes.join(', ')}</span>
         <span>{t('result.pointsEarned', row.earned_points, row.total_points)}</span>
