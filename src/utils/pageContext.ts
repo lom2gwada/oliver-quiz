@@ -19,6 +19,7 @@ export interface CrumbLabels {
   home: string
   overview: string
   profile: string
+  about: string
   admin: string
   history: string
   leaderboard: string
@@ -34,6 +35,7 @@ export function breadcrumbFor(view: View, labels: CrumbLabels, quizId: string | 
   switch (view) {
     case 'overview': return [home, { label: labels.overview }]
     case 'profile': return [home, { label: labels.profile }]
+    case 'about': return [home, { label: labels.about }]
     case 'quizzes': return [home, { label: labels.admin }]
     case 'quizDetail': return [home, { label: labels.admin, href: routeToHash('quizzes', null) }, { label: labels.quizTitle }]
     case 'history': return [home, { label: labels.history }]

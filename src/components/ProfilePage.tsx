@@ -113,5 +113,6 @@ export function ProfilePage({ profile, onBack, onSave, onViewOverview }: Profile
       {passwordSaved && !passwordError && <p className="profile-saved">{t('profile.passwordSaved')}</p>}
       <button type="submit" disabled={passwordSaving}>{passwordSaving ? t('profile.changingPassword') : t('profile.changePassword')}</button>
     </form>
+    <p className="profile-about-link"><a href="#/a-propos">{t('about.link')}</a></p>
   </section>
 }

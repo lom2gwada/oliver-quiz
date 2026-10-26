@@ -7,6 +7,8 @@ import { readStoredLanguage, storeLanguage } from '../utils/languagePreference'
 import { hasAuthLinkError, needsPasswordSetup } from '../utils/authLink'
 import App from '../App'
 import { GuestQuizPage } from './GuestQuizPage'
+import { AboutPage } from './AboutPage'
+import { AppFooter } from './AppFooter'
 import { LanguageSwitch } from './LanguageSwitch'
 import { Login } from './Login'
 import { SetPassword } from './SetPassword'
@@ -27,6 +29,15 @@ function SessionGate() {
   // Langue des écrans d'avant connexion (pas de profil à ce stade) : la dernière utilisée sur cet appareil.
   const [preLoginLanguage, setPreLoginLanguage] = useState<Language>(() => readStoredLanguage() ?? 'fr')
   const chooseLanguage = (next: Language) => { setPreLoginLanguage(next); storeLanguage(next, true) }
+  // « À propos » s'ouvre sans compte : même URL (`#/a-propos`) qu'une fois connecté.
+  const [aboutOpen, setAboutOpen] = useState(() => window.location.hash === '#/a-propos')
+  useEffect(() => {
+    const sync = () => setAboutOpen(window.location.hash === '#/a-propos')
+    window.addEventListener('hashchange', sync)
+    return () => window.removeEventListener('hashchange', sync)
+  }, [])
+  const openAbout = () => { window.location.hash = '#/a-propos' }
+  const closeAbout = () => { window.history.replaceState(null, '', window.location.pathname + window.location.search); setAboutOpen(false) }
 
   useEffect(() => {
     if (/access_token=|error=/.test(window.location.hash)) window.history.replaceState(null, '', window.location.pathname)
@@ -46,7 +57,8 @@ function SessionGate() {
 
   const preLogin = (screen: React.ReactNode) => <LanguageProvider language={preLoginLanguage}>
     <div className="prelogin-language"><LanguageSwitch value={preLoginLanguage} onChange={chooseLanguage} /></div>
-    {screen}
+    {aboutOpen ? <main className="app-shell prelogin-about"><AboutPage onBack={closeAbout} /></main> : screen}
+    <AppFooter onAbout={openAbout} />
   </LanguageProvider>
 
   if (loading) return <main className="app-shell"><p>{translate(preLoginLanguage, 'common.loading')}</p></main>
