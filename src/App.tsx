@@ -13,6 +13,7 @@ import { confirmWithBlur } from './utils/confirmWithBlur'
 import { hashToRoute, isEphemeralView, routeToHash, type View } from './utils/routes'
 import { breadcrumbFor, isPlayingView, isQuizPage } from './utils/pageContext'
 import { formatNumber, formatPercent } from './utils/format'
+import { shouldSaveLanguage } from './utils/languageChoice'
 import { storeLanguage, takePendingLanguage } from './utils/languagePreference'
 import { isKnownQuizLanguage, normalizeQuizLanguage, quizInterfaceLanguage, quizLanguageLabel } from './utils/quizLanguage'
 import { OverviewPage } from './components/OverviewPage'
@@ -136,7 +137,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     setQuizLanguage(null)
     setLanguage(next)
     storeLanguage(next)
-    if (!profile) return
+    // On compare à la langue du profil, pas à celle affichée (qui peut venir du quiz) : voir `shouldSaveLanguage`.
+    if (!profile || !shouldSaveLanguage(profile.language, next)) return
     const previous = profile
     setProfile({ ...profile, language: next })
     try {
