@@ -367,6 +367,7 @@ export const en = {
   'history.errorLoad': 'Could not load the history.',
   'history.emptyState': 'No games recorded yet.',
   'history.gamesPlayed': 'Games played',
+  'history.modeGames': 'Games in this mode',
   'history.bestPointsShare': 'Best score (% of points)',
   'history.bestCorrect': 'Best score (correct answers)',
   'history.averagePointsShare': 'Average score (% of points)',
@@ -409,7 +410,7 @@ export const en = {
   'overview.questionCount': (count: number) => `${count} questions`,
 
   'leaderboard.title': 'Leaderboard',
-  'leaderboard.lastGame': (date: string) => `last game on ${date}`,
+  'leaderboard.lastGame': (date: string) => `last ranked game on ${date}`,
   'leaderboard.modeOverall': '🏅 Overall',
   'leaderboard.errorLoad': 'Could not load the leaderboard.',
   'leaderboard.emptyState': 'No ranked games for this quiz in this mode. Only games played without theme or difficulty filters, and outside review sessions, count.',
@@ -417,8 +418,10 @@ export const en = {
     `${correct}/${total} correct answers · ${points} · ${pace} · ⏱ ${duration}`,
   'leaderboard.detailsStreak': (themes: string, pace: string, points: string, duration: string) =>
     `${themes} · ${pace} · ${points} · ⏱ ${duration}`,
-  'leaderboard.detailsTimed': (correct: number, total: number, points: string, durationLabel: string, elapsed: string) =>
-    `${correct}/${total} correct answers · ${points} · ${durationLabel} · ⏱ ${elapsed}`,
+  'leaderboard.detailsTimed': (correct: number, total: number, points: string, duration: string) =>
+    `${correct}/${total} correct answers · ${points} · ${duration}`,
+  'timedDuration.early': (elapsed: string, planned: string) => `⏱ ${elapsed} of ${planned}`,
+  'timedDuration.unlimited': (elapsed: string) => `⏱ ${elapsed} · no limit`,
   'leaderboard.detailsOverall': (attempted: number, games: number, rate: string, points: string) =>
-    `${attempted} questions attempted · ${games} game${games !== 1 ? 's' : ''} · ${rate} correct answers · ${points}`,
+    `${attempted} questions attempted · ${games} ranked game${games !== 1 ? 's' : ''} · ${rate} correct answers · ${points}`,
 } satisfies Record<TranslationKey, string | ((...args: never[]) => string)>

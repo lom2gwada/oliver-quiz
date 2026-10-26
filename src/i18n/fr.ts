@@ -365,6 +365,7 @@ export const fr = {
   'history.errorLoad': "Impossible de charger l'historique.",
   'history.emptyState': "Aucune partie enregistrée pour l'instant.",
   'history.gamesPlayed': 'Parties jouées',
+  'history.modeGames': 'Parties dans ce mode',
   'history.bestPointsShare': 'Meilleur score (% des points)',
   'history.bestCorrect': 'Meilleur score (bonnes réponses)',
   'history.averagePointsShare': 'Score moyen (% des points)',
@@ -407,7 +408,7 @@ export const fr = {
   'overview.questionCount': (count: number) => `${count} questions`,
 
   'leaderboard.title': 'Classement',
-  'leaderboard.lastGame': (date: string) => `dernière partie le ${date}`,
+  'leaderboard.lastGame': (date: string) => `dernière partie classée le ${date}`,
   'leaderboard.modeOverall': '🏅 Général',
   'leaderboard.errorLoad': 'Impossible de charger le classement.',
   'leaderboard.emptyState': "Aucune partie classée pour ce quiz dans ce mode. Seules comptent les parties jouées sans filtre de thème ni de difficulté, hors révision.",
@@ -415,8 +416,10 @@ export const fr = {
     `${correct}/${total} bonnes réponses · ${points} · ${pace} · ⏱ ${duration}`,
   'leaderboard.detailsStreak': (themes: string, pace: string, points: string, duration: string) =>
     `${themes} · ${pace} · ${points} · ⏱ ${duration}`,
-  'leaderboard.detailsTimed': (correct: number, total: number, points: string, durationLabel: string, elapsed: string) =>
-    `${correct}/${total} bonnes réponses · ${points} · ${durationLabel} · ⏱ ${elapsed}`,
+  'leaderboard.detailsTimed': (correct: number, total: number, points: string, duration: string) =>
+    `${correct}/${total} bonnes réponses · ${points} · ${duration}`,
+  'timedDuration.early': (elapsed: string, planned: string) => `⏱ ${elapsed} sur ${planned}`,
+  'timedDuration.unlimited': (elapsed: string) => `⏱ ${elapsed} · sans limite`,
   'leaderboard.detailsOverall': (attempted: number, games: number, rate: string, points: string) =>
-    `${attempted} questions tentées · ${games} partie${games > 1 ? 's' : ''} · ${rate} de bonnes réponses · ${points}`,
+    `${attempted} questions tentées · ${games} partie${games > 1 ? 's' : ''} classée${games > 1 ? 's' : ''} · ${rate} de bonnes réponses · ${points}`,
 }
