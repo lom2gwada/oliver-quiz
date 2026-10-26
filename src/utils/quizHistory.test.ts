@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { BooleanQuestion, QCMQuestion, Category } from '../types/quiz'
+import type { BooleanQuestion, QCMQuestion, Category, Question } from '../types/quiz'
 import type { QuizResultRow } from '../types/history'
-import { bucketsToChartGroups, bucketsToRadarAxes, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, computeRecords, computeThemeWeekHeatmap, sumBuckets, weekStartKey } from './quizHistory'
+import { bucketsToChartGroups, bucketsToRadarAxes, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, computeRecords, computeThemeWeekHeatmap, sumBuckets, weekKeysBetween, weekStartKey } from './quizHistory'
 
 const themes: Category[] = [{ id: 'histoire', label: 'Histoire' }, { id: 'geo', label: 'Géographie' }]
 
@@ -231,6 +231,20 @@ describe('computeThemeWeekHeatmap', () => {
     ])
   })
 
+  it('shows every week of the period, empty ones included', () => {
+    const heatmap = computeThemeWeekHeatmap([
+      at('2026-09-08T10:00:00', { A: { correct: 1, total: 1 } }),
+      at('2026-09-29T10:00:00', { A: { correct: 0, total: 1 } }),
+    ])
+    expect(heatmap.weeks).toEqual(['2026-09-07', '2026-09-14', '2026-09-21', '2026-09-28'])
+    expect(heatmap.themes[0].cells).toEqual([{ correct: 1, total: 1 }, null, null, { correct: 0, total: 1 }])
+  })
+
+  it('counts the empty weeks in the cap of most recent weeks', () => {
+    const rows = [at('2026-09-01T10:00:00', { A: { correct: 1, total: 1 } }), at('2026-09-29T10:00:00', { A: { correct: 1, total: 1 } })]
+    expect(computeThemeWeekHeatmap(rows, 3).weeks).toEqual(['2026-09-14', '2026-09-21', '2026-09-28'])
+  })
+
   it('keeps only the most recent weeks', () => {
     const rows = ['2026-09-01', '2026-09-08', '2026-09-15'].map((day) => at(`${day}T10:00:00`, { A: { correct: 1, total: 1 } }))
     expect(computeThemeWeekHeatmap(rows, 2).weeks).toEqual(['2026-09-07', '2026-09-14'])
@@ -288,8 +302,8 @@ describe('buildQuestionResultPayloads', () => {
   it('tags each question with its own correctness', () => {
     const payloads = buildQuestionResultPayloads([qcm, bool], { q1: ['a'], q2: ['false'] }, 'Culture générale', null)
     expect(payloads).toEqual([
-      { id: expect.any(String), quiz_title: 'Culture générale', quiz_id: null, question_id: 'q1', question_text: 'Q ?', correct: true },
-      { id: expect.any(String), quiz_title: 'Culture générale', quiz_id: null, question_id: 'q2', question_text: 'Vrai ou faux ?', correct: false },
+      { id: expect.any(String), quiz_title: 'Culture générale', quiz_id: null, question_id: 'q1', question_text: 'Q ?', correct: true, quiz_result_id: null, position: 0, answer: ['a'] },
+      { id: expect.any(String), quiz_title: 'Culture générale', quiz_id: null, question_id: 'q2', question_text: 'Vrai ou faux ?', correct: false, quiz_result_id: null, position: 1, answer: ['false'] },
     ])
   })
 
@@ -300,5 +314,29 @@ describe('buildQuestionResultPayloads', () => {
 
   it('returns an empty array for no questions', () => {
     expect(buildQuestionResultPayloads([], {}, 'Culture générale', null)).toEqual([])
+  })
+})
+
+describe('weekKeysBetween', () => {
+  it('lists each Monday from the first to the last, bounds included', () => {
+    expect(weekKeysBetween('2026-09-14', '2026-10-05')).toEqual(['2026-09-14', '2026-09-21', '2026-09-28', '2026-10-05'])
+    expect(weekKeysBetween('2026-09-14', '2026-09-14')).toEqual(['2026-09-14'])
+  })
+
+  it('crosses a year boundary', () => {
+    expect(weekKeysBetween('2025-12-22', '2026-01-05')).toEqual(['2025-12-22', '2025-12-29', '2026-01-05'])
+  })
+})
+
+describe('buildQuestionResultPayloads — game detail', () => {
+  const q = (id: string): Question => ({ id, category: 'c', difficulty: 'easy', question: id, tags: [], explanation: '', points: 1, type: 'boolean', content: { isTrue: true } })
+
+  it('links each question to its game, with its rank and the answer given', () => {
+    const payloads = buildQuestionResultPayloads([q('a'), q('b')], { a: ['true'] }, 'Quiz', 'quiz-1', 'game-1')
+    expect(payloads.map((p) => [p.quiz_result_id, p.position, p.answer])).toEqual([['game-1', 0, ['true']], ['game-1', 1, null]])
+  })
+
+  it('leaves the game empty when none is given', () => {
+    expect(buildQuestionResultPayloads([q('a')], {}, 'Quiz', null)[0].quiz_result_id).toBeNull()
   })
 })

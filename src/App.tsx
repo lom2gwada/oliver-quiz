@@ -712,7 +712,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} timeboxed={timeboxed} onFinish={(nextAnswers, duration, played) => {
       setAnswers(nextAnswers); setElapsedSeconds(duration); setSessionQuestions(played); replace('results')
       const resultPayload = buildQuizResultPayload(played, nextAnswers, quiz.categories, duration, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered && !isReplay)
-      const detailPayloads = buildQuestionResultPayloads(played, nextAnswers, quiz.metadata.title, selectedHostedQuizId || null)
+      const detailPayloads = buildQuestionResultPayloads(played, nextAnswers, quiz.metadata.title, selectedHostedQuizId || null, resultPayload.id)
       saveGame([
         () => saveQuizResult(resultPayload),
         () => saveQuestionResults(detailPayloads),
