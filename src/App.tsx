@@ -17,6 +17,7 @@ import { shouldSaveLanguage } from './utils/languageChoice'
 import { storeLanguage, takePendingLanguage } from './utils/languagePreference'
 import { isKnownQuizLanguage, normalizeQuizLanguage, quizInterfaceLanguage, quizLanguageLabel } from './utils/quizLanguage'
 import { OverviewPage } from './components/OverviewPage'
+import { ExpandableText } from './components/ExpandableText'
 import { ProfilePage } from './components/ProfilePage'
 import { QuizDetailPage } from './components/QuizDetailPage'
 import { QuizListPage } from './components/QuizListPage'
@@ -673,7 +674,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
             <p>{t('nav.by', quiz.metadata.author)}{quiz.metadata.language && <> · {quizLanguageLabel(quiz.metadata.language, language, t)}</>}</p>
           </div>
         </div>
-        {view === 'start' && quiz.metadata.description && <p className="quiz-description-preview">{quiz.metadata.description}</p>}
+        {view === 'start' && quiz.metadata.description && <ExpandableText key={quiz.metadata.description} className="quiz-description-preview" text={quiz.metadata.description} />}
         {view === 'start' && topScore && <button type="button" className="top-score" title={t('topScore.hint')} onClick={() => viewLeaderboard('start', gameMode)}>🏆 {topScoreText(topScore)} <span aria-hidden="true">›</span></button>}
         {view === 'start' && hostedQuizzes.length > 0 && <div className="active-quiz">
   {activeCoverage?.quiz_id === selectedHostedQuizId && <>

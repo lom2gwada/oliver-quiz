@@ -28,6 +28,8 @@ export const en = {
   'metric.discoveredShort': 'discovered',
   'metric.discoveredHint': 'Share of the quiz questions already met at least once, in a classic game or a review.',
   'topScore.hint': 'See the leaderboard',
+  'description.readMore': 'Read more',
+  'description.readLess': 'Show less',
   'topScore.classic': (who: string, count: number) => `Best classic score: ${who} — ${count} correct answer${count !== 1 ? 's' : ''}`,
   'topScore.streak': (who: string, count: number, victory: boolean) => `Best no-mistake streak: ${who} — ${victory ? '🏆 ' : '🔥 '}${count} in a row`,
   'topScore.timed': (who: string, pace: string) => `Best time-attack pace: ${who} — ${pace === '' ? '—' : `${pace} correct answers/min`}`,
