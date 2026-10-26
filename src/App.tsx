@@ -8,6 +8,7 @@ import { SaveStatusNotice } from './components/SaveStatusNotice'
 import { LanguageSwitch } from './components/LanguageSwitch'
 import { QuizLanguageProvider } from './utils/quizLanguageContext'
 import { confirmWithBlur } from './utils/confirmWithBlur'
+import { hashToRoute, isEphemeralView, routeToHash, type View } from './utils/routes'
 import { storeLanguage, takePendingLanguage } from './utils/languagePreference'
 import { isKnownQuizLanguage, normalizeQuizLanguage, quizInterfaceLanguage, quizLanguageLabel } from './utils/quizLanguage'
 import { OverviewPage } from './components/OverviewPage'
@@ -40,7 +41,6 @@ import { pickFreshQuestions } from './utils/pickFreshQuestions'
 import { shuffle } from './utils/shuffle'
 import { formatDuration } from '@engine/utils/time'
 
-type View = 'start' | 'quiz' | 'results' | 'streak' | 'streakResults' | 'timed' | 'timedResults' | 'quizzes' | 'quizDetail' | 'overview' | 'history' | 'leaderboard' | 'profile'
 
 /** Premier affichage seulement, le temps de charger la liste des quiz hébergés — le quiz "Culture générale"
  * vit désormais en base (`020_public_quizzes.sql`, `is_public`) et devient le quiz actif réel dès que ce
@@ -69,7 +69,10 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const [selectedThemes, setSelectedThemes] = useState<string[]>([])
   const [difficulty, setDifficulty] = useState<Difficulty | ''>('')
   const [gameMode, setGameMode] = useState<GameMode>('classic')
-  const [view, setView] = useState<View>('start')
+  // Page demandée par l'URL au chargement (rechargement, favori, lien partagé). Une partie en cours ou un écran de
+  // résultat ne peut pas être rouvert : on retombe alors sur l'accueil du quiz demandé.
+  const initialRoute = useRef(hashToRoute(window.location.hash))
+  const [view, setView] = useState<View>(() => (initialRoute.current && !isEphemeralView(initialRoute.current.view) ? initialRoute.current.view : 'start'))
   const [answers, setAnswers] = useState<AnswersByQuestion>({})
   const [publishError, setPublishError] = useState('')
   const [publishSuccess, setPublishSuccess] = useState(false)
@@ -163,17 +166,25 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const [quizListState, setQuizListState] = useState<'loading' | 'ready' | 'error'>('loading')
   const selectedIdRef = useRef('')
   selectedIdRef.current = selectedHostedQuizId
+  // Met l'identifiant à jour immédiatement (et pas seulement au prochain rendu) : la navigation qui suit une sélection
+  // construit son URL avec cet identifiant.
+  const selectId = (id: string) => { selectedIdRef.current = id; setSelectedHostedQuizId(id) }
+  const hostedQuizzesRef = useRef<HostedQuizSummary[]>([])
+  hostedQuizzesRef.current = hostedQuizzes
   const loadQuizzes = () => {
     setQuizListState('loading')
     fetchAccessibleQuizzesWithRetry().then((quizzes) => {
       setHostedQuizzes(quizzes)
       setQuizListState('ready')
       if (!selectedIdRef.current) {
-        const defaultQuiz = quizzes.find((hosted) => hosted.is_public)
-        if (defaultQuiz) {
-          selectHostedQuiz(defaultQuiz.id, keepChosenLanguage.current)
+        // Un lien vers un quiz précis l'ouvre directement ; s'il est inconnu ou inaccessible, on retombe sur le quiz par défaut.
+        const requestedId = initialRoute.current?.quizId ?? null
+        const chosen = (requestedId && quizzes.find((hosted) => hosted.id === requestedId)) || quizzes.find((hosted) => hosted.is_public)
+        if (chosen) {
+          selectHostedQuiz(chosen.id, keepChosenLanguage.current)
           keepChosenLanguage.current = false
         }
+        if (requestedId && chosen?.id !== requestedId) window.history.replaceState({ view: viewRef.current }, '', urlForView(viewRef.current))
       }
     }).catch((error) => {
       console.error('Impossible de charger la liste des quiz.', error)
@@ -206,7 +217,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       fetchTimedTopScore(title, quizId).then((row) => setTopScore(row && { avatar: row.avatar, pseudo: row.pseudo, scoreText: row.pace_per_minute !== null ? `${row.pace_per_minute}/min` : '—' })).catch(() => setTopScore(null))
     }
   }, [view, gameMode, quiz.metadata.title, selectedHostedQuizId])
-  const [leaderboardBack, setLeaderboardBack] = useState<View>('profile')
+  const [leaderboardBack, setLeaderboardBack] = useState<View>('start')
   const [leaderboardMode, setLeaderboardMode] = useState<GameMode>('classic')
   const [leaderboardFocus, setLeaderboardFocus] = useState<{ key: string; label: string } | null>(null)
   const viewLeaderboard = (from: View, mode: GameMode = 'classic', focus: { key: string; label: string } | null = null) => { setLeaderboardBack(from); setLeaderboardMode(mode); setLeaderboardFocus(focus); navigate('leaderboard') }
@@ -221,35 +232,72 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   }, [view, selectedHostedQuizId])
   const [overviewBack, setOverviewBack] = useState<View>('start')
   const viewOverview = (from: View) => { setOverviewBack(from); navigate('overview') }
-  const [historyBack, setHistoryBack] = useState<View>('profile')
+  const [historyBack, setHistoryBack] = useState<View>('start')
   const viewHistory = (from: View) => { setHistoryBack(from); navigate('history') }
 
-  // Le back/swipe-back du navigateur doit se comporter comme le bouton "Retour" de l'appli plutôt que la quitter :
-  // chaque navigation interne pousse une entrée d'historique, et on resynchronise `view` sur popstate.
+  // Chaque page a son URL (`#/…`, voir utils/routes.ts) : un rechargement la réaffiche, un favori ou un lien y mène, et
+  // le back/swipe-back du navigateur se comporte comme le bouton « Retour » de l'appli plutôt que de la quitter.
+  // Chaque navigation interne pousse une entrée d'historique, et on resynchronise `view` sur popstate à partir de l'URL.
   const viewRef = useRef(view)
   useEffect(() => { viewRef.current = view }, [view])
+  const sessionQuestionsRef = useRef(sessionQuestions)
+  sessionQuestionsRef.current = sessionQuestions
+  const streakResultRef = useRef(streakResult)
+  streakResultRef.current = streakResult
+  const timedResultRef = useRef(timedResult)
+  timedResultRef.current = timedResult
+  // Le gestionnaire de popstate est posé une seule fois : il lit ces références pour toujours utiliser les versions à jour.
+  const selectHostedQuizRef = useRef<(id: string) => Promise<void>>(async () => {})
+  const tRef = useRef(t)
+  tRef.current = t
+  const urlForView = (target: View, quizId: string | null = selectedIdRef.current || null) => `${window.location.pathname}${window.location.search}${routeToHash(target, quizId)}`
   useEffect(() => {
-    window.history.replaceState({ view: 'start' }, '')
-    const onPopState = (event: PopStateEvent) => {
-      const nextView = (event.state?.view as View | undefined) ?? 'start'
+    // Une URL de partie ou de résultats, qu'on ne peut pas rouvrir, est ramenée à l'accueil du quiz demandé.
+    const route = initialRoute.current
+    const restoredView: View = route && !isEphemeralView(route.view) ? route.view : 'start'
+    window.history.replaceState({ view: restoredView }, '', route && isEphemeralView(route.view) ? urlForView('start', route.quizId) : undefined)
+    const onPopState = () => {
+      const target = hashToRoute(window.location.hash)
+      let nextView: View = target?.view ?? 'start'
+      // Une partie ou un écran de résultat n'est rouvrable que si ses données sont encore en mémoire (retour de
+      // l'historique vers les résultats qu'on venait de voir, par exemple).
+      if (isEphemeralView(nextView) && nextView !== viewRef.current) {
+        const inMemory = (nextView === 'results' && sessionQuestionsRef.current.length > 0)
+          || (nextView === 'streakResults' && streakResultRef.current !== null)
+          || (nextView === 'timedResults' && timedResultRef.current !== null)
+        if (!inMemory) {
+          nextView = 'start'
+          window.history.replaceState({ view: 'start' }, '', urlForView('start', target?.quizId ?? (selectedIdRef.current || null)))
+        }
+      }
+      // Précédent / Suivant d'une page d'un autre quiz : le quiz de l'URL redevient le quiz actif.
+      const syncQuiz = () => {
+        if (!target?.quizId || isEphemeralView(nextView) || target.quizId === selectedIdRef.current) return
+        if (hostedQuizzesRef.current.some((hosted) => hosted.id === target.quizId)) selectHostedQuizRef.current(target.quizId)
+      }
       if ((viewRef.current === 'quiz' || viewRef.current === 'streak' || viewRef.current === 'timed') && nextView !== viewRef.current) {
         const playingView = viewRef.current
-        confirmWithBlur(t('start.confirmAbandon')).then((leave) => {
-          if (!leave) { window.history.pushState({ view: playingView }, ''); return }
+        confirmWithBlur(tRef.current('start.confirmAbandon')).then((leave) => {
+          if (!leave) { window.history.pushState({ view: playingView }, '', urlForView(playingView)); return }
           setAnswers({}); setSessionQuestions([]); setElapsedSeconds(0)
           setView(nextView)
+          syncQuiz()
         })
         return
       }
       setView(nextView)
+      syncQuiz()
     }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
-  const navigate = (next: View) => { setView(next); window.history.pushState({ view: next }, '') }
+  const navigate = (next: View) => { setView(next); window.history.pushState({ view: next }, '', urlForView(next)) }
   // Remplace l'entrée d'historique courante plutôt que d'en empiler une nouvelle : utilisé pour quitter
   // "quiz" (fin de partie ou abandon), qui n'est pas un état vers lequel on veut pouvoir revenir en arrière.
-  const replace = (next: View) => { setView(next); window.history.replaceState({ view: next }, '') }
+  const replace = (next: View) => { setView(next); window.history.replaceState({ view: next }, '', urlForView(next)) }
+  // Les pages d'administration ne sont pas pour les autres comptes (leur bouton est déjà masqué) : une URL tapée à la main
+  // les ramène à l'accueil dès que le profil est chargé.
+  useEffect(() => { if (profile && !profile.isAdmin && (view === 'quizzes' || view === 'quizDetail')) replace('start') }, [profile, view])
   const filteredQuestions = useMemo(() => quiz.questions.filter((question) =>
     (!selectedThemes.length || selectedThemes.includes(question.category)) && (!difficulty || question.difficulty === difficulty)), [quiz, selectedThemes, difficulty])
   // Seules les parties jouées sans filtre comptent pour le classement : sinon un thème/une difficulté
@@ -273,7 +321,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     previous.includes(themeId) ? previous.filter((id) => id !== themeId) : [...previous, themeId])
 
   const selectHostedQuiz = async (id: string, keepLanguage = false) => {
-    setSelectedHostedQuizId(id)
+    selectId(id)
     if (!id) { setQuiz(initialQuiz); setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setQuizLoadError(''); return }
     try {
       const loaded = parseQuiz(await fetchQuizContent(id))
@@ -312,7 +360,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       const id = await upsertQuiz(newQuiz.metadata.title, serializeQuiz(newQuiz))
       setQuiz(newQuiz)
       applyQuizLanguage(newQuiz)
-      setSelectedHostedQuizId(id)
+      selectId(id)
       setSelectedThemes([]); setDifficulty(''); setSessionQuestions([])
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
@@ -441,7 +489,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     try {
       await deleteQuiz(id)
       setHostedQuizzes((current) => current.filter((existing) => existing.id !== id))
-      if (selectedHostedQuizId === id) { setQuiz(initialQuiz); setSelectedHostedQuizId('') }
+      if (selectedHostedQuizId === id) { setQuiz(initialQuiz); selectId('') }
       if (deleteHistoryToo) {
         try { await deleteQuizHistory(title) } catch { setDeleteQuizError(t('admin.errorDeleteQuizHistory')); return }
       }
@@ -500,7 +548,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     const content = parseQuiz(await fetchQuizContent(id))
     const due = selectReviewQuestions(computeDueQuestions(await fetchQuestionProgress(id), content.questions), REVIEW_BATCH_SIZE)
     if (!due.length) throw new Error('no due question')
-    setSelectedHostedQuizId(id); setQuiz(content); applyQuizLanguage(content); setSelectedThemes([]); setDifficulty(''); setQuizLoadError('')
+    selectId(id); setQuiz(content); applyQuizLanguage(content); setSelectedThemes([]); setDifficulty(''); setQuizLoadError('')
     reviewDue(due)
   }
 
@@ -566,6 +614,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     const payload = buildTimedResultPayload(result.attempts, result.elapsedSeconds, result.durationSeconds, quiz.categories, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered)
     saveGame([() => saveTimedResult(payload)])
   }
+
+  selectHostedQuizRef.current = selectHostedQuiz
 
   const backToStart = () => {
     setAnswers({})
