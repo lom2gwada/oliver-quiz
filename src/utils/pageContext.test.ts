@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { breadcrumbFor, isPlayingView, isQuizPage, type CrumbLabels } from './pageContext'
 import type { View } from './routes'
 
-const labels: CrumbLabels = { home: 'Accueil', overview: 'Mes quiz', profile: 'Profil', admin: 'Administration', history: 'Historique', leaderboard: 'Classement', quizTitle: 'Java — Niveau Expert' }
+const labels: CrumbLabels = { home: 'Accueil', overview: 'Mes quiz', profile: 'Profil', about: 'À propos', admin: 'Administration', history: 'Historique', leaderboard: 'Classement', quizTitle: 'Java — Niveau Expert' }
 const ALL_VIEWS: View[] = ['start', 'quiz', 'results', 'streak', 'streakResults', 'timed', 'timedResults', 'quizzes', 'quizDetail', 'overview', 'history', 'leaderboard', 'profile']
 
 describe('isQuizPage', () => {
@@ -29,6 +29,7 @@ describe('breadcrumbFor', () => {
   it('names the page after the home link', () => {
     expect(breadcrumbFor('overview', labels, 'q1')).toEqual([{ label: 'Accueil', href: '#/quiz/q1' }, { label: 'Mes quiz' }])
     expect(breadcrumbFor('profile', labels, null)).toEqual([{ label: 'Accueil', href: '#/' }, { label: 'Profil' }])
+    expect(breadcrumbFor('about', labels, null)).toEqual([{ label: 'Accueil', href: '#/' }, { label: 'À propos' }])
     expect(breadcrumbFor('history', labels, 'q1').map((crumb) => crumb.label)).toEqual(['Accueil', 'Historique'])
     expect(breadcrumbFor('leaderboard', labels, 'q1').map((crumb) => crumb.label)).toEqual(['Accueil', 'Classement'])
   })

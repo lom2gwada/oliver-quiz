@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { EPHEMERAL_VIEWS, hashToRoute, isEphemeralView, routeToHash, type View } from './routes'
 
-const ALL_VIEWS: View[] = ['start', 'quiz', 'results', 'streak', 'streakResults', 'timed', 'timedResults', 'quizzes', 'quizDetail', 'overview', 'history', 'leaderboard', 'profile']
+const ALL_VIEWS: View[] = ['start', 'quiz', 'results', 'streak', 'streakResults', 'timed', 'timedResults', 'quizzes', 'quizDetail', 'overview', 'history', 'leaderboard', 'profile', 'about']
 const QUIZ_ID = '6f1c1c2a-3b2e-4d57-9d38-0a1b2c3d4e5f'
 
 describe('routeToHash', () => {
@@ -13,6 +13,7 @@ describe('routeToHash', () => {
     expect(routeToHash('leaderboard', null)).toBe('#/classement')
     expect(routeToHash('overview', null)).toBe('#/mes-quiz')
     expect(routeToHash('profile', null)).toBe('#/profil')
+    expect(routeToHash('about', null)).toBe('#/a-propos')
     expect(routeToHash('quizzes', null)).toBe('#/admin')
     expect(routeToHash('quizDetail', QUIZ_ID)).toBe(`#/admin/${QUIZ_ID}`)
   })
@@ -36,7 +37,7 @@ describe('routeToHash', () => {
 describe('hashToRoute', () => {
   it.each(ALL_VIEWS)('reads back the URL of the %s page', (view) => {
     const withQuiz = hashToRoute(routeToHash(view, QUIZ_ID))
-    const expectedQuiz = ['overview', 'profile', 'quizzes'].includes(view) ? null : QUIZ_ID
+    const expectedQuiz = ['overview', 'profile', 'about', 'quizzes'].includes(view) ? null : QUIZ_ID
     expect(withQuiz).toEqual({ view, quizId: expectedQuiz })
     const withoutQuiz = hashToRoute(routeToHash(view, null))
     expect(withoutQuiz?.view).toBe(view === 'quizDetail' ? 'quizzes' : view)

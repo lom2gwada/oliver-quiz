@@ -1,6 +1,6 @@
 /** Pages de l'appli. Chacune a une URL (`#/…`, compatible GitHub Pages : seul le fragment change, le serveur ne voit
  * jamais le chemin) — voir `routeToHash` / `hashToRoute`. */
-export type View = 'start' | 'quiz' | 'results' | 'streak' | 'streakResults' | 'timed' | 'timedResults' | 'quizzes' | 'quizDetail' | 'overview' | 'history' | 'leaderboard' | 'profile'
+export type View = 'start' | 'quiz' | 'results' | 'streak' | 'streakResults' | 'timed' | 'timedResults' | 'quizzes' | 'quizDetail' | 'overview' | 'history' | 'leaderboard' | 'profile' | 'about'
 
 export interface Route {
   view: View
@@ -31,10 +31,11 @@ const VIEW_BY_SEGMENT = new Map<string, View>(Object.entries(QUIZ_SEGMENTS).map(
 const encode = (id: string) => encodeURIComponent(id)
 
 /** L'URL d'une page : `#/` (accueil), `#/quiz/<id>` (accueil d'un quiz), `#/quiz/<id>/historique`, `#/classement`,
- * `#/mes-quiz`, `#/profil`, `#/admin` et `#/admin/<id>`. `quizId` est ignoré pour les pages qui n'en ont pas. */
+ * `#/mes-quiz`, `#/profil`, `#/a-propos`, `#/admin` et `#/admin/<id>`. `quizId` est ignoré pour les pages qui n'en ont pas. */
 export function routeToHash(view: View, quizId: string | null): string {
   if (view === 'overview') return '#/mes-quiz'
   if (view === 'profile') return '#/profil'
+  if (view === 'about') return '#/a-propos'
   if (view === 'quizzes') return '#/admin'
   if (view === 'quizDetail') return quizId ? `#/admin/${encode(quizId)}` : '#/admin'
   if (view === 'start') return quizId ? `#/quiz/${encode(quizId)}` : '#/'
@@ -56,6 +57,7 @@ export function hashToRoute(hash: string): Route | null {
   if (parts.length === 1) {
     if (first === 'mes-quiz') return { view: 'overview', quizId: null }
     if (first === 'profil') return { view: 'profile', quizId: null }
+    if (first === 'a-propos') return { view: 'about', quizId: null }
     if (first === 'admin') return { view: 'quizzes', quizId: null }
     const view = VIEW_BY_SEGMENT.get(first)
     return view ? { view, quizId: null } : null

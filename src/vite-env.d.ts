@@ -8,3 +8,7 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+/** Posés à la construction par `vite.config.ts`. */
+declare const __COMMIT_HASH__: string
+declare const __BUILD_DATE__: string

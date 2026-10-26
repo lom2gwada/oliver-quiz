@@ -17,6 +17,8 @@ import { shouldSaveLanguage } from './utils/languageChoice'
 import { storeLanguage, takePendingLanguage } from './utils/languagePreference'
 import { isKnownQuizLanguage, normalizeQuizLanguage, quizInterfaceLanguage, quizLanguageLabel } from './utils/quizLanguage'
 import { OverviewPage } from './components/OverviewPage'
+import { AboutPage } from './components/AboutPage'
+import { AppFooter } from './components/AppFooter'
 import { ExpandableText } from './components/ExpandableText'
 import { ModePicker } from './components/ModePicker'
 import { ProfilePage } from './components/ProfilePage'
@@ -662,7 +664,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   }
 
   const breadcrumb = breadcrumbFor(view, {
-    home: t('nav.home'), overview: t('crumb.overview'), profile: t('crumb.profile'), admin: t('nav.admin'),
+    home: t('nav.home'), overview: t('crumb.overview'), profile: t('crumb.profile'), about: t('crumb.about'), admin: t('nav.admin'),
     history: t('crumb.history'), leaderboard: t('crumb.leaderboard'), quizTitle: quiz.metadata.title,
   }, selectedHostedQuizId || null)
 
@@ -733,6 +735,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'overview' && <OverviewPage activeQuizId={selectedHostedQuizId} onReviewQuiz={reviewQuizDue} onViewHistory={async (id) => { playClick(); await selectHostedQuiz(id); viewHistory('overview') }} onViewLeaderboard={async (id) => { playClick(); await selectHostedQuiz(id); viewLeaderboard('overview') }} onBack={() => navigate(overviewBack)} onSelectQuiz={async (id) => { playClick(); await selectHostedQuiz(id); navigate('start') }} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} hostedQuizId={selectedHostedQuizId} hostedQuizzes={hostedQuizzes} onReviewDue={reviewDue} onViewLeaderboard={(key, label) => { playClick(); viewLeaderboard('history', 'classic', { key, label }) }} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} hostedQuizId={selectedHostedQuizId} hostedQuizzes={hostedQuizzes} initialMode={leaderboardMode} focusQuiz={leaderboardFocus} onViewOverview={() => viewOverview('leaderboard')} onBack={() => navigate(leaderboardBack)} />}
+    {view === 'about' && <AboutPage onBack={() => navigate('start')} />}
     {view === 'profile' && <ProfilePage profile={profile} onBack={() => navigate('start')} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} onViewOverview={() => viewOverview('profile')} />}
+    <AppFooter onAbout={() => goTo('about')} />
   </main></QuizLanguageProvider></LanguageProvider>
 }
