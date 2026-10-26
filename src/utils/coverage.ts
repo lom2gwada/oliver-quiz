@@ -1,3 +1,5 @@
+import type { QuizImage } from '../types/quiz'
+import { isHttpsUrl } from './quizMeta'
 import { retryWithBackoff } from './retry'
 import { supabase } from './supabase'
 
@@ -14,6 +16,14 @@ export interface QuizCoverage {
   /** `metadata.description` / `metadata.language` du quiz, `null` s'ils ne sont pas précisés (présentation dans « À découvrir »). */
   description: string | null
   language: string | null
+  /** `metadata.image` du quiz (`null` sans image) ; absents tant que la migration 032 n'est pas appliquée. */
+  image_url?: string | null
+  image_alt?: string | null
+}
+
+/** Couverture à afficher pour cette ligne : seule une URL `https://` est reprise (la ligne vient de la base, pas de `parseQuiz`). */
+export function coverageImage(row: Pick<QuizCoverage, 'image_url' | 'image_alt'>): QuizImage | undefined {
+  return row.image_url && isHttpsUrl(row.image_url) ? { url: row.image_url, alt: row.image_alt ?? '' } : undefined
 }
 
 /** Taille d'une session de révision lancée depuis « Mes quiz » (les plus fragiles d'abord) — la page

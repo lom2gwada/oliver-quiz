@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { coveragePercent, coveragePercentTenths, coverageTotals, splitCoverage, type QuizCoverage } from './coverage'
+import { coveragePercent, coveragePercentTenths, coverageTotals, splitCoverage, type QuizCoverage, coverageImage } from './coverage'
 
 const row = (title: string, seen: number, total: number, games: number, last: string | null): QuizCoverage =>
   ({ quiz_id: title, quiz_title: title, question_count: total, seen_count: seen, games_played: games, last_played_at: last, due_count: 0, description: null, language: null })
@@ -55,5 +55,21 @@ describe('coveragePercentTenths', () => {
 describe('coverageTotals', () => {
   it('cumule les questions vues et le total sur les quiz commencés', () => {
     expect(coverageTotals([row('A', 5, 10, 1, 'x'), row('B', 15, 30, 1, 'y')])).toEqual({ seen: 20, total: 40, percent: 50 })
+  })
+})
+
+describe('coverageImage', () => {
+  it('returns the cover of a quiz that has one', () => {
+    expect(coverageImage({ image_url: 'https://x.org/a.png', image_alt: 'Couverture' })).toEqual({ url: 'https://x.org/a.png', alt: 'Couverture' })
+  })
+
+  it('returns nothing without image, or before the migration adds the columns', () => {
+    expect(coverageImage({ image_url: null, image_alt: null })).toBeUndefined()
+    expect(coverageImage({})).toBeUndefined()
+  })
+
+  it('ignores a URL that is not https, since the row comes straight from the database', () => {
+    expect(coverageImage({ image_url: 'http://x.org/a.png', image_alt: 'Couverture' })).toBeUndefined()
+    expect(coverageImage({ image_url: 'javascript:alert(1)', image_alt: 'x' })).toBeUndefined()
   })
 })

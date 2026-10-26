@@ -2,7 +2,9 @@ import { useState } from 'react'
 import type { Difficulty, Question, Quiz } from '../types/quiz'
 import { useTranslation } from '../i18n'
 import { DangerZone } from './DangerZone'
-import { EditQuizMetaForm } from './EditQuizMetaForm'
+import { EditQuizMetaForm, type QuizMetaExtras } from './EditQuizMetaForm'
+import { FurtherReading } from './FurtherReading'
+import { QuizCover } from './QuizCover'
 import { GuestLinksManager } from './GuestLinksManager'
 import { MermaidDiagram } from './MermaidDiagram'
 import { PieChart } from '@engine/components/PieChart'
@@ -36,7 +38,7 @@ interface QuizDetailPageProps {
   editError: string
   onAddTheme: (label: string) => Promise<void>
   quizLoadError: string
-  onUpdateQuizMeta: (title: string, author: string, description: string, language: string) => Promise<void>
+  onUpdateQuizMeta: (title: string, author: string, description: string, language: string, extras: QuizMetaExtras) => Promise<void>
   onDeleteQuiz: (id: string, title: string, deleteHistoryToo: boolean) => Promise<void>
   deleteQuizError: string
 }
@@ -83,13 +85,19 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
       <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
     </div>
     {quizLoadError && <p className="alert" role="alert">{quizLoadError}</p>}
-    {quiz.metadata.description && <p className="quiz-description">{quiz.metadata.description}</p>}
+    {(quiz.metadata.image || quiz.metadata.description) && <div className="quiz-detail-intro">
+      <QuizCover image={quiz.metadata.image} size="large" />
+      {quiz.metadata.description && <p className="quiz-description">{quiz.metadata.description}</p>}
+    </div>}
+    <FurtherReading links={quiz.metadata.links} />
     <div className="quiz-detail-actions">
       {canEditQuiz && <EditQuizMetaForm
         title={quiz.metadata.title}
         author={quiz.metadata.author}
         description={quiz.metadata.description ?? ''}
         language={quiz.metadata.language ?? ''}
+        image={quiz.metadata.image}
+        links={quiz.metadata.links}
         error={editError}
         onSave={onUpdateQuizMeta}
       />}

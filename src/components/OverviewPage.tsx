@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from '../i18n'
 import { CoverageBar } from './CoverageBar'
-import { coveragePercentTenths, coverageTotals, fetchQuizCoverage, REVIEW_BATCH_SIZE, splitCoverage, type QuizCoverage } from '../utils/coverage'
+import { QuizCover } from './QuizCover'
+import { coverageImage, coveragePercentTenths, coverageTotals, fetchQuizCoverage, REVIEW_BATCH_SIZE, splitCoverage, type QuizCoverage } from '../utils/coverage'
 import { longDate } from '../utils/dateFormat'
 import { formatPercent } from '../utils/format'
 import { normalizeQuizLanguage, quizLanguageLabel } from '../utils/quizLanguage'
@@ -68,7 +69,7 @@ export function OverviewPage({ activeQuizId, onSelectQuiz, onReviewQuiz, onViewH
           return <li key={row.quiz_id} className={row.quiz_id === activeQuizId ? 'overview-card overview-card-active' : 'overview-card'}>
             <button type="button" className="overview-item" onClick={() => onSelectQuiz(row.quiz_id)}>
               <span className="overview-item-head">
-                <span className="overview-item-title">{row.quiz_title}{row.quiz_id === activeQuizId && <span className="overview-badge">{t('overview.activeBadge')}</span>}</span>
+                <span className="overview-item-id"><QuizCover image={coverageImage(row)} /><span className="overview-item-title">{row.quiz_title}{row.quiz_id === activeQuizId && <span className="overview-badge">{t('overview.activeBadge')}</span>}</span></span>
                 <span className="overview-item-percent" title={t('metric.discoveredHint')}>{formatPercent(percent, language, 1)} <small className="overview-item-percent-label">{t('metric.discoveredShort')}</small></span>
               </span>
               <CoverageBar percent={percent} label={`${row.quiz_title} — ${t('metric.discovered', formatPercent(percent, language, 1))}`} />
@@ -95,7 +96,7 @@ export function OverviewPage({ activeQuizId, onSelectQuiz, onReviewQuiz, onViewH
         {untouched.map((row) => <li key={row.quiz_id} className={row.quiz_id === activeQuizId ? 'overview-card overview-card-active' : 'overview-card'}>
           <button type="button" className="overview-item overview-item-untouched" onClick={() => onSelectQuiz(row.quiz_id)}>
             <span className="overview-item-head">
-              <span className="overview-item-title">{row.quiz_title}{row.quiz_id === activeQuizId && <span className="overview-badge">{t('overview.activeBadge')}</span>}</span>
+              <span className="overview-item-id"><QuizCover image={coverageImage(row)} /><span className="overview-item-title">{row.quiz_title}{row.quiz_id === activeQuizId && <span className="overview-badge">{t('overview.activeBadge')}</span>}</span></span>
               <span className="overview-item-percent">{t('overview.questionCount', row.question_count)}</span>
             </span>
             {row.description && <span className="overview-item-description">{row.description}</span>}

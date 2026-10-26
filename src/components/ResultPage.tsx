@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { AnswersByQuestion, Question, Category } from '../types/quiz'
+import type { AnswersByQuestion, Question, Category, QuizLink } from '../types/quiz'
 import type { TranslationKey } from '../i18n'
 import { translate, useTranslation } from '../i18n'
 import { formatPercent } from '../utils/format'
@@ -11,6 +11,7 @@ import { QuestionReplay } from './QuestionReplay'
 import { QuestionTable } from './QuestionTable'
 import { PieChart } from '@engine/components/PieChart'
 import { QuestionImage } from '@engine/components/QuestionImage'
+import { FurtherReading } from './FurtherReading'
 import { ResultActions } from './ResultActions'
 import { difficultyLabel } from './QuizPage'
 
@@ -95,6 +96,8 @@ interface ResultPageProps {
   answers: AnswersByQuestion
   themes: Category[]
   elapsedSeconds: number
+  /** Liens « Pour aller plus loin » du quiz (`metadata.links`). */
+  links?: QuizLink[]
   /** Absent après une partie « reprendre mes erreurs » : relancer avec les mêmes paramètres n'a alors pas de sens. */
   onRestartSame?: () => void
   onBackToSettings: () => void
@@ -102,7 +105,7 @@ interface ResultPageProps {
   onViewLeaderboard: () => void
 }
 
-export function ResultPage({ questions, answers, themes, elapsedSeconds, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard }: ResultPageProps) {
+export function ResultPage({ links, questions, answers, themes, elapsedSeconds, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard }: ResultPageProps) {
   const { t, language } = useTranslation()
   const earned = questions.filter((question) => isCorrect(question, answers[question.id])).reduce((total, question) => total + question.points, 0)
   const total = questions.reduce((sum, question) => sum + question.points, 0)
@@ -126,6 +129,7 @@ export function ResultPage({ questions, answers, themes, elapsedSeconds, onResta
       <button type="button" className="secondary" onClick={onViewHistory}>{t('common.viewHistory')}</button>
       <button type="button" className="secondary" onClick={onViewLeaderboard}>{t('common.viewLeaderboard')}</button>
     </div>
+    <FurtherReading links={links} />
     <div className="stats-groups">
       <div className="stats-group">
         <h3 className="stats-group-title">{t('result.byTheme')}</h3>

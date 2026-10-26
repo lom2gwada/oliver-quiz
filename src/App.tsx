@@ -22,6 +22,8 @@ import { QuizDetailPage } from './components/QuizDetailPage'
 import { QuizListPage } from './components/QuizListPage'
 import { QuizPage } from './components/QuizPage'
 import { ResultPage } from './components/ResultPage'
+import { QuizCover } from './components/QuizCover'
+import type { QuizMetaExtras } from './components/EditQuizMetaForm'
 import { StreakQuizPage, type StreakResult } from './components/StreakQuizPage'
 import { StreakResultPage } from './components/StreakResultPage'
 import { TimedQuizPage, type TimedResult } from './components/TimedQuizPage'
@@ -478,14 +480,14 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   /** Admin uniquement, sur un quiz hébergé actif : modifie titre/auteur/description. Passe par `updateQuiz`
    * (mise à jour par id) plutôt que `upsertQuiz` (par titre) — un simple upsert avec le nouveau titre créerait
    * une ligne en double au lieu de renommer, ou fusionnerait silencieusement avec un autre quiz du même titre. */
-  const updateQuizMeta = async (title: string, author: string, description: string, quizLanguage: string) => {
+  const updateQuizMeta = async (title: string, author: string, description: string, quizLanguage: string, extras: QuizMetaExtras) => {
     setEditError('')
     if (hostedQuizzes.some((existing) => existing.id !== selectedHostedQuizId && existing.title === title)) {
       setEditError(t('admin.errorDuplicateTitleOther'))
       throw new Error('duplicate title')
     }
     try {
-      const updatedQuiz = parseQuiz({ ...quiz, metadata: { ...quiz.metadata, title, author, description: description || undefined, language: normalizeQuizLanguage(quizLanguage) || undefined } })
+      const updatedQuiz = parseQuiz({ ...quiz, metadata: { ...quiz.metadata, title, author, description: description || undefined, language: normalizeQuizLanguage(quizLanguage) || undefined, image: extras.image, links: extras.links } })
       await updateQuiz(selectedHostedQuizId, updatedQuiz.metadata.title, serializeQuiz(updatedQuiz))
       setQuiz(updatedQuiz)
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
@@ -664,8 +666,13 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       {breadcrumb.length > 0 && <Breadcrumb items={breadcrumb} label={t('nav.breadcrumb')} />}
       {/* Le quiz actif (titre, auteur, langue) n'est présenté que sur les pages qui le concernent. */}
       {isQuizPage(view) && <div className="quiz-context">
-        <h1>{quiz.metadata.title}</h1>
-        <p>{t('nav.by', quiz.metadata.author)}{quiz.metadata.language && <> · {quizLanguageLabel(quiz.metadata.language, language, t)}</>}</p>
+        <div className="quiz-context-head">
+          {view === 'start' && <QuizCover image={quiz.metadata.image} />}
+          <div>
+            <h1>{quiz.metadata.title}</h1>
+            <p>{t('nav.by', quiz.metadata.author)}{quiz.metadata.language && <> · {quizLanguageLabel(quiz.metadata.language, language, t)}</>}</p>
+          </div>
+        </div>
         {view === 'start' && quiz.metadata.description && <p className="quiz-description-preview">{quiz.metadata.description}</p>}
         {view === 'start' && topScore && <button type="button" className="top-score" title={t('topScore.hint')} onClick={() => viewLeaderboard('start', gameMode)}>🏆 {topScoreText(topScore)} <span aria-hidden="true">›</span></button>}
         {view === 'start' && hostedQuizzes.length > 0 && <div className="active-quiz">
@@ -714,11 +721,11 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       ])
     }} onCancel={backToStart} />}
     {(view === 'results' || view === 'streakResults' || view === 'timedResults') && <SaveStatusNotice status={saveStatus} onRetry={retrySave} />}
-    {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.categories} elapsedSeconds={elapsedSeconds} onRestartSame={isReplay ? undefined : restartQuiz} onBackToSettings={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} />}
+    {view === 'results' && <ResultPage links={quiz.metadata.links} questions={sessionQuestions} answers={answers} themes={quiz.categories} elapsedSeconds={elapsedSeconds} onRestartSame={isReplay ? undefined : restartQuiz} onBackToSettings={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} />}
     {view === 'streak' && <StreakQuizPage quiz={quiz} pool={filteredQuestions} timeboxed={timeboxed} onFinish={finishStreak} onCancel={backToStart} />}
-    {view === 'streakResults' && streakResult && <StreakResultPage {...streakResult} onRestartSame={restartStreak} onBackToSettings={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} />}
+    {view === 'streakResults' && streakResult && <StreakResultPage links={quiz.metadata.links} {...streakResult} onRestartSame={restartStreak} onBackToSettings={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} />}
     {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
-    {view === 'timedResults' && timedResult && <TimedResultPage {...timedResult} onRestartSame={restartTimed} onBackToSettings={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} />}
+    {view === 'timedResults' && timedResult && <TimedResultPage links={quiz.metadata.links} {...timedResult} onRestartSame={restartTimed} onBackToSettings={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} />}
     {view === 'quizzes' && <QuizListPage hostedQuizzes={hostedQuizzes} isAdmin={profile?.isAdmin ?? false} onBack={() => navigate('start')} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} publishWarning={publishWarning} />}
     {view === 'quizDetail' && <QuizDetailPage quiz={quiz} hostedQuizId={selectedHostedQuizId} isPublic={hostedQuizzes.find((hosted) => hosted.id === selectedHostedQuizId)?.is_public ?? false} onTogglePublic={(isPublic) => togglePublicLocally(selectedHostedQuizId, isPublic)} onBack={() => navigate('quizzes')} onExport={exportQuiz} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onAddTheme={addTheme} quizLoadError={quizLoadError} onUpdateQuizMeta={updateQuizMeta} onDeleteQuiz={deleteHostedQuiz} deleteQuizError={deleteQuizError} />}
     {view === 'overview' && <OverviewPage activeQuizId={selectedHostedQuizId} onReviewQuiz={reviewQuizDue} onViewHistory={async (id) => { playClick(); await selectHostedQuiz(id); viewHistory('overview') }} onViewLeaderboard={async (id) => { playClick(); await selectHostedQuiz(id); viewLeaderboard('overview') }} onBack={() => navigate(overviewBack)} onSelectQuiz={async (id) => { playClick(); await selectHostedQuiz(id); navigate('start') }} />}

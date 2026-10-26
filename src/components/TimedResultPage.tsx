@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import type { QuestionAttempt } from '../types/quiz'
+import type { QuestionAttempt, QuizLink } from '../types/quiz'
 import { useTranslation } from '../i18n'
 import { formatDuration } from '@engine/utils/time'
 import { playFinish, playVictory } from '@engine/utils/sound'
@@ -8,6 +8,7 @@ import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionReplay } from './QuestionReplay'
 import { QuestionTable } from './QuestionTable'
 import { QuestionImage } from '@engine/components/QuestionImage'
+import { FurtherReading } from './FurtherReading'
 import { ResultActions } from './ResultActions'
 import { correctAnswer, isCorrect, userAnswer } from './ResultPage'
 
@@ -15,13 +16,15 @@ interface TimedResultPageProps {
   attempts: QuestionAttempt[]
   elapsedSeconds: number
   durationSeconds: number
+  /** Liens « Pour aller plus loin » du quiz (`metadata.links`). */
+  links?: QuizLink[]
   onRestartSame: () => void
   onBackToSettings: () => void
   onViewHistory: () => void
   onViewLeaderboard: () => void
 }
 
-export function TimedResultPage({ attempts, elapsedSeconds, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard }: TimedResultPageProps) {
+export function TimedResultPage({ links, attempts, elapsedSeconds, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard }: TimedResultPageProps) {
   const { t } = useTranslation()
   const correctCount = attempts.filter((attempt) => isCorrect(attempt.question, attempt.answer)).length
   const perfect = attempts.length > 0 && correctCount === attempts.length
@@ -39,6 +42,7 @@ export function TimedResultPage({ attempts, elapsedSeconds, onRestartSame, onBac
       <button type="button" className="secondary" onClick={onViewHistory}>{t('common.viewHistory')}</button>
       <button type="button" className="secondary" onClick={onViewLeaderboard}>{t('common.viewLeaderboard')}</button>
     </div>
+    <FurtherReading links={links} />
     <div className="corrections">{attempts.map(({ question, answer }, index) => {
       const correct = isCorrect(question, answer)
       return <article className={`correction ${correct ? 'correct' : 'incorrect'}`} key={`${question.id}-${index}`}>

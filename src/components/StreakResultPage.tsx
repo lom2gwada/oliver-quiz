@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import type { AnswersByQuestion, Question } from '../types/quiz'
+import type { AnswersByQuestion, Question, QuizLink } from '../types/quiz'
 import { useTranslation } from '../i18n'
 import { formatDuration } from '@engine/utils/time'
 import { playFinish, playVictory } from '@engine/utils/sound'
@@ -8,6 +8,7 @@ import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionReplay } from './QuestionReplay'
 import { QuestionTable } from './QuestionTable'
 import { QuestionImage } from '@engine/components/QuestionImage'
+import { FurtherReading } from './FurtherReading'
 import { ResultActions } from './ResultActions'
 import { correctAnswer, isCorrect, userAnswer } from './ResultPage'
 
@@ -15,6 +16,8 @@ interface StreakResultPageProps {
   streakCount: number
   elapsedSeconds: number
   victory: boolean
+  /** Liens « Pour aller plus loin » du quiz (`metadata.links`). */
+  links?: QuizLink[]
   playedQuestions: Question[]
   answers: AnswersByQuestion
   onRestartSame: () => void
@@ -23,7 +26,7 @@ interface StreakResultPageProps {
   onViewLeaderboard: () => void
 }
 
-export function StreakResultPage({ streakCount, elapsedSeconds, victory, playedQuestions, answers, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard }: StreakResultPageProps) {
+export function StreakResultPage({ links, streakCount, elapsedSeconds, victory, playedQuestions, answers, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard }: StreakResultPageProps) {
   const { t } = useTranslation()
   useEffect(() => { victory ? playVictory() : playFinish() }, [])
   return <section className="results">
@@ -40,6 +43,7 @@ export function StreakResultPage({ streakCount, elapsedSeconds, victory, playedQ
       <button type="button" className="secondary" onClick={onViewHistory}>{t('common.viewHistory')}</button>
       <button type="button" className="secondary" onClick={onViewLeaderboard}>{t('common.viewLeaderboard')}</button>
     </div>
+    <FurtherReading links={links} />
     <div className="corrections">{playedQuestions.map((question) => {
       const correct = isCorrect(question, answers[question.id])
       return <article className={`correction ${correct ? 'correct' : 'incorrect'}`} key={question.id}>

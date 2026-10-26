@@ -146,9 +146,29 @@ export interface NumericQuestion extends BaseQuestion {
 
 export type Question = QCMQuestion | TextQuestion | CodeQuestion | OrderingQuestion | BooleanQuestion | ClozeQuestion | MatchingQuestion | NumericQuestion
 
+/** Image de couverture d'un quiz : URL `https://` hotlinkée, avec son texte alternatif (obligatoire). */
+export interface QuizImage {
+  url: string
+  alt: string
+}
+
+/** Lien « Pour aller plus loin » d'un quiz (le livre, le site officiel d'une certification…). `commercial` : lien
+ * marchand (achat), signalé comme tel à l'affichage. */
+export interface QuizLink {
+  label: string
+  url: string
+  commercial?: boolean
+}
+
 export interface Quiz {
   version: string
-  metadata: { title: string; author: string; createdAt: string; description?: string; /** Code de langue du contenu du quiz (ex. 'fr', 'en' — pas celle de l'interface) ; tout code est toléré. */ language?: string }
+  metadata: {
+    title: string; author: string; createdAt: string; description?: string
+    /** Code de langue du contenu du quiz (ex. 'fr', 'en' — pas celle de l'interface) ; tout code est toléré. */
+    language?: string
+    image?: QuizImage
+    links?: QuizLink[]
+  }
   categories: Category[]
   questions: Question[]
 }

@@ -1,4 +1,5 @@
 import type { Quiz, Question } from '../types/quiz'
+import { parseQuizImage, parseQuizLinks } from './quizMeta'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -42,12 +43,17 @@ export function parseQuiz(value: unknown): Quiz {
     throw new Error('metadata.language doit être une chaîne de caractères.')
   }
 
+  // Image et liens sont optionnels (les quiz déjà stockés n'en ont pas) mais, une fois présents, strictement validés.
+  const { image: rawImage, links: rawLinks, ...otherMetadata } = metadata
+  const image = parseQuizImage(rawImage)
+  const links = parseQuizLinks(rawLinks)
+
   const parsedQuestions = questions.map(parseQuestion)
   const categoryIds = new Set(themes.map((theme) => (theme as { id: string }).id))
   if (parsedQuestions.some((question) => !categoryIds.has(question.category))) {
     throw new Error('Chaque question doit référencer un thème existant.')
   }
-  return { version: value.version, metadata: metadata as Quiz['metadata'], categories: themes as Quiz['categories'], questions: parsedQuestions }
+  return { version: value.version, metadata: { ...otherMetadata, ...(image && { image }), ...(links && { links }) } as Quiz['metadata'], categories: themes as Quiz['categories'], questions: parsedQuestions }
 }
 
 /** Format stocké / échangé d'un quiz (fichiers JSON, `quizzes.content`) : `themes` et, par question, `theme`.
