@@ -744,7 +744,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} hostedQuizId={selectedHostedQuizId} hostedQuizzes={hostedQuizzes} onReviewDue={reviewDue} onViewLeaderboard={(key, label) => { playClick(); viewLeaderboard('history', 'classic', { key, label }) }} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} hostedQuizId={selectedHostedQuizId} hostedQuizzes={hostedQuizzes} initialMode={leaderboardMode} focusQuiz={leaderboardFocus} onViewOverview={() => viewOverview('leaderboard')} onBack={() => navigate(leaderboardBack)} />}
     {view === 'about' && <AboutPage onBack={() => navigate('start')} />}
-    {view === 'profile' && <ProfilePage key={profile ? 'loaded' : 'loading'} profile={profile} onDirtyChange={(dirty) => { profileDirtyRef.current = dirty }} onBack={() => { if (confirmLeaveProfile()) navigate('start') }} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} onViewOverview={() => { if (confirmLeaveProfile()) viewOverview('profile') }} />}
+    {view === 'profile' && <ProfilePage key={profile ? 'loaded' : 'loading'} profile={profile} onDirtyChange={(dirty) => { profileDirtyRef.current = dirty }} onBack={() => { if (confirmLeaveProfile()) navigate('start') }} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} />}
     <AppFooter onAbout={() => goTo('about')} />
   </main></QuizLanguageProvider></LanguageProvider>
 }

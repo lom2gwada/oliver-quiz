@@ -333,3 +333,5 @@ header.app-header { display: block; padding-bottom: 1.4rem; margin-bottom: 2rem;
 
 .profile-unsaved { margin: 0; color: var(--accent-text); font-weight: 600; }
 .profile-autosave-hint { margin: 0; font-size: .85rem; }
+
+.profile-email { margin: 0 0 1.2rem; color: var(--text-soft); overflow-wrap: anywhere; }
