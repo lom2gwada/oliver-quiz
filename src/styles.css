@@ -348,3 +348,7 @@ header.app-header { display: block; padding-bottom: 1.4rem; margin-bottom: 2rem;
 .confirm-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .6rem; margin-top: .4rem; }
 .confirm-actions button { width: auto; }
 .confirm-actions button.danger { background: #b91c1c; color: #fff; }
+
+.question-search { display: grid; gap: .3rem; margin: 1rem 0 .4rem; color: var(--text-soft); }
+.question-search input { width: 100%; background: var(--surface-solid); color: var(--text); border: 1px solid var(--border-input); border-radius: .45rem; padding: .6rem .8rem; }
+.question-search-count { margin: 0 0 .8rem; }
