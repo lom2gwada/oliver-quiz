@@ -26,6 +26,8 @@ export const fr = {
   'metric.discoveredShort': 'découvert',
   'metric.discoveredHint': 'Part des questions du quiz déjà rencontrées au moins une fois, en partie classique ou en révision.',
   'topScore.hint': 'Voir le classement',
+  'description.readMore': 'Lire la suite',
+  'description.readLess': 'Réduire',
   'topScore.classic': (who: string, count: number) => `Meilleur score classique : ${who} — ${count} bonne${count > 1 ? 's' : ''} réponse${count > 1 ? 's' : ''}`,
   'topScore.streak': (who: string, count: number, victory: boolean) => `Meilleure série sans-faute : ${who} — ${victory ? '🏆 ' : '🔥 '}${count} de suite`,
   'topScore.timed': (who: string, pace: string) => `Meilleur rythme contre-la-montre : ${who} — ${pace === '' ? '—' : `${pace} bonnes réponses/min`}`,

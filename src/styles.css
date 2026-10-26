@@ -126,7 +126,10 @@ pre { padding: 1rem; overflow: auto; background: var(--code-bg); border: 1px sol
 .guest-results-tally-count { text-align: right; font-weight: 700; }
 .quiz-detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; margin-bottom: 1.2rem; }
 .quiz-import { margin-bottom: 2rem; }.quiz-import .alert { margin-top: .8rem; }
-.quiz-description-preview { max-width: 60ch; margin: .4rem 0 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.quiz-description-preview { max-width: 60ch; margin: .4rem 0 0; }
+.expandable-text { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.expandable-text.is-expanded { display: block; overflow: visible; }
+.text-toggle { justify-self: start; width: auto; padding: .15rem 0; background: none; color: var(--accent-text); font-size: .85rem; font-weight: 700; text-decoration: underline; }
 .quiz-description { max-width: 65ch; margin: 0 0 2rem; color: var(--text-soft); }
 .quiz-cover { flex: none; display: grid; place-items: center; overflow: hidden; border: 1px solid var(--border); border-radius: .4rem; background: var(--surface-alt); }
 .quiz-cover-small { width: 3rem; height: 4rem; }
