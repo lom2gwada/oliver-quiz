@@ -31,7 +31,6 @@ export const fr = {
   'nav.by': (author: string) => `par ${author}`,
 
   'start.quizLabel': 'Quiz',
-  'start.changeQuiz': '📊 Changer de quiz',
   'start.quizListLoading': 'Chargement des quiz…',
   'start.quizListError': 'Impossible de charger la liste des quiz.',
   'start.retry': 'Réessayer',
@@ -337,7 +336,7 @@ export const fr = {
   'history.dueBox': (box: number) => `Boîte ${box}/5`,
 
   'overview.title': 'Mes quiz',
-  'overview.errorLoad': "Impossible de charger la vue d'ensemble.",
+  'overview.errorLoad': 'Impossible de charger « Mes quiz ».',
   'overview.emptyState': "Tu n'as encore joué aucun quiz.",
   'overview.summary': (quizCount: number, seen: number, total: number) =>
     `${quizCount} quiz en cours · ${seen} questions vues sur ${total}`,
