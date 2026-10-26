@@ -52,6 +52,50 @@ La clé `anon` est prévue pour être publique (elle finit de toute façon dans 
 
 Un fichier de quiz doit respecter le contrat défini dans [`src/types/quiz.ts`](src/types/quiz.ts) et validé par [`parseQuiz`](src/utils/quizValidation.ts). Voir [`src/data/sample-quiz.json`](src/data/sample-quiz.json) pour un exemple complet.
 
+Le plus simple pour démarrer : dans l'administration (page « Quiz »), le bouton **Télécharger un modèle** donne un quiz minimal et valide avec un exemple de chaque type de question ; il sert aussi de référence pour les exemples ci-dessous.
+
+### Structure
+
+```json
+{
+  "version": "1.0",
+  "metadata": { "title": "…", "author": "…", "createdAt": "2026-10-27", "description": "…", "language": "fr" },
+  "themes": [{ "id": "histoire", "label": "Histoire" }],
+  "questions": [ { "id": "q1", "type": "qcm", "theme": "histoire", "difficulty": "easy", "question": "…", "tags": [], "explanation": "…", "points": 1, "content": { } } ]
+}
+```
+
+- **Racine** : `version` (texte, ex. `"1.0"`), `metadata`, `themes`, `questions`.
+- **`metadata`** : `title`, `author`, `createdAt` (textes obligatoires) ; `description`, `language` (code `fr`, `en`…) facultatifs ; `image` et `links` facultatifs (voir plus bas). Le titre identifie le quiz : republier un fichier de même titre le met à jour.
+- **`themes`** : liste de `{ id, label }`. Chaque question référence un `id` de cette liste.
+- **Champs communs d'une question** : `id` (texte, unique dans le quiz), `type`, `theme`, `difficulty` (`easy`, `medium` ou `hard`), `question` (l'énoncé), `explanation` (la correction affichée), `points` (nombre ≥ 0), `tags` (liste de textes, peut être vide), `content` (selon le type).
+- **Champs facultatifs d'une question** : `imageUrl` + `imageAlt` (image sous l'énoncé), `diagram` (diagramme [Mermaid](https://mermaid.js.org)), `table` (`{ headers?, rows }`, toutes les lignes ayant autant de colonnes que l'en-tête), `timeLimitSeconds` (temps limite propre à la question, nombre > 0).
+
+### Les huit types de questions (`content`)
+
+| `type` | `content` |
+| --- | --- |
+| `qcm` | `{ "multiple": false, "answers": [{ "id": "a", "label": "Paris", "isCorrect": true }, …] }` — `multiple: true` pour plusieurs bonnes réponses |
+| `code` | `{ "language": "javascript", "snippet": "…", "multiple": false, "answers": […] }` — un extrait de code et des réponses comme un QCM (`multiple` facultatif) |
+| `text` | `{ "expectedAnswers": ["Pacifique", "Océan Pacifique"], "caseSensitive": false }` — réponse libre, toute valeur de la liste est acceptée |
+| `ordering` | `{ "items": [{ "id": "p1", "label": "Mercure" }, …], "correctOrder": ["p1", "p2", "p3"] }` — `correctOrder` contient chaque `id` d'`items` une fois |
+| `boolean` | `{ "isTrue": true }` |
+| `cloze` | `{ "expectedAnswers": ["Rome"], "caseSensitive": false }` — l'énoncé (`question`) doit contenir le trou `___` |
+| `matching` | `{ "left": [{ "id": "l1", "label": "France" }, …], "right": [{ "id": "r1", "label": "Paris" }, …], "correctPairs": { "l1": "r1", … } }` — une correspondance par élément de `left` |
+| `numeric` | `{ "min": 1700, "max": 1900, "step": 1, "target": 1789, "tolerance": 0, "unit": "ans" }` — `min` < `max`, `target` entre les deux, `tolerance` ≥ 0, `unit` facultatif |
+
+### Erreurs de validation
+
+Un fichier refusé affiche l'erreur avec le **chemin du champ fautif**, par exemple :
+
+- `metadata.title : texte attendu.`
+- `themes[1].label : texte attendu.`
+- `questions[3].points : nombre positif ou nul attendu. (question « q4 »)`
+- `questions[0].content.answers[2].isCorrect : true ou false attendu. (question « qcm-1 »)`
+- `questions[5].theme : thème « inconnu » inconnu (question « q6 ») : chaque question doit référencer un thème existant de la liste « themes ».`
+
+`questions[3]` est la quatrième question du fichier (la numérotation part de 0).
+
 ### Métadonnées facultatives : image et liens
 
 Outre `title`, `author`, `createdAt`, `description` et `language`, `metadata` accepte deux champs optionnels (un quiz qui n'en a pas reste valide) :

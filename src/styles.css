@@ -352,3 +352,7 @@ header.app-header { display: block; padding-bottom: 1.4rem; margin-bottom: 2rem;
 .question-search { display: grid; gap: .3rem; margin: 1rem 0 .4rem; color: var(--text-soft); }
 .question-search input { width: 100%; background: var(--surface-solid); color: var(--text); border: 1px solid var(--border-input); border-radius: .45rem; padding: .6rem .8rem; }
 .question-search-count { margin: 0 0 .8rem; }
+
+.quiz-import-help { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem 1.2rem; margin-top: .8rem; }
+.quiz-import-help a { color: var(--accent-text); font-weight: 600; }
+.quiz-import-help button { width: auto; }

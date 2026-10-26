@@ -173,6 +173,8 @@ export const en = {
   'admin.createQuizButton': '➕ Create a quiz',
   'admin.publishQuizTitle': 'Publish a quiz',
   'admin.importLabel': 'Import / update a quiz (JSON)',
+  'admin.formatLink': 'File format',
+  'admin.templateButton': '⬇️ Download a template',
   'admin.exportButton': 'Export this quiz (JSON)',
   'admin.publishSuccess': 'Quiz published — no access is granted automatically.',
   'admin.manageAccessTitle': 'Manage access',

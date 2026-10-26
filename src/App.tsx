@@ -422,7 +422,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     setPublishSuccess(false)
     setPublishWarning('')
     try {
-      const content = JSON.parse(await file.text())
+      let content: unknown
+      try { content = JSON.parse(await file.text()) } catch { throw new Error(t('admin.errorInvalidJson')) }
       const parsed = parseQuiz(content)
       await upsertQuiz(parsed.metadata.title, content)
       setPublishError('')
