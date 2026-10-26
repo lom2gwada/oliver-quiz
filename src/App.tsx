@@ -3,12 +3,15 @@ import sampleQuiz from './data/sample-quiz.json'
 import { FilterPanel } from './components/FilterPanel'
 import { HistoryPage } from './components/HistoryPage'
 import { LeaderboardPage } from './components/LeaderboardPage'
+import { AppBar } from './components/AppBar'
+import { Breadcrumb } from './components/Breadcrumb'
 import { CoverageBar } from './components/CoverageBar'
 import { SaveStatusNotice } from './components/SaveStatusNotice'
 import { LanguageSwitch } from './components/LanguageSwitch'
 import { QuizLanguageProvider } from './utils/quizLanguageContext'
 import { confirmWithBlur } from './utils/confirmWithBlur'
 import { hashToRoute, isEphemeralView, routeToHash, type View } from './utils/routes'
+import { breadcrumbFor, isPlayingView, isQuizPage } from './utils/pageContext'
 import { storeLanguage, takePendingLanguage } from './utils/languagePreference'
 import { isKnownQuizLanguage, normalizeQuizLanguage, quizInterfaceLanguage, quizLanguageLabel } from './utils/quizLanguage'
 import { OverviewPage } from './components/OverviewPage'
@@ -298,6 +301,17 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   // Les pages d'administration ne sont pas pour les autres comptes (leur bouton est déjà masqué) : une URL tapée à la main
   // les ramène à l'accueil dès que le profil est chargé.
   useEffect(() => { if (profile && !profile.isAdmin && (view === 'quizzes' || view === 'quizDetail')) replace('start') }, [profile, view])
+  // Navigation depuis la barre supérieure, présente sur toutes les pages : quitter une partie en cours en abandonne la
+  // progression, comme le bouton « Annuler » et le retour du navigateur, et demande donc confirmation.
+  const goTo = async (next: View) => {
+    if (viewRef.current === next) return
+    playClick()
+    if (isPlayingView(viewRef.current)) {
+      if (!(await confirmWithBlur(t('start.confirmAbandon')))) return
+      setAnswers({}); setSessionQuestions([]); setElapsedSeconds(0)
+    }
+    navigate(next)
+  }
   const filteredQuestions = useMemo(() => quiz.questions.filter((question) =>
     (!selectedThemes.length || selectedThemes.includes(question.category)) && (!difficulty || question.difficulty === difficulty)), [quiz, selectedThemes, difficulty])
   // Seules les parties jouées sans filtre comptent pour le classement : sinon un thème/une difficulté
@@ -629,9 +643,22 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     setMuted(!muted)
   }
 
+  const breadcrumb = breadcrumbFor(view, {
+    home: t('nav.home'), overview: t('crumb.overview'), profile: t('crumb.profile'), admin: t('nav.admin'),
+    history: t('crumb.history'), leaderboard: t('crumb.leaderboard'), quizTitle: quiz.metadata.title,
+  }, selectedHostedQuizId || null)
+
   return <LanguageProvider language={language}><QuizLanguageProvider language={quiz.metadata.language}><main className="app-shell">
-    <header className={view === 'start' && hostedQuizzes.length > 0 ? 'header-with-quick-actions' : undefined}><div className="header-main"><p className="eyebrow">OLIVER QUIZ</p><h1>{quiz.metadata.title}</h1><p>{t('nav.by', quiz.metadata.author)}{quiz.metadata.language && <> · {quizLanguageLabel(quiz.metadata.language, language, t)}</>}</p>{view === 'start' && quiz.metadata.description && <p className="quiz-description-preview">{quiz.metadata.description}</p>}{view === 'start' && topScore && <button type="button" className="top-score" onClick={() => viewLeaderboard('start', gameMode)}>🏆 {topScore.avatar} {topScore.pseudo} — {topScore.scoreText}</button>}
-</div><div className="header-actions"><LanguageSwitch value={language} onChange={changeLanguage} /><button type="button" className="secondary" onClick={toggleSound} aria-label={muted ? t('nav.unmuteSound') : t('nav.muteSound')}>{muted ? '🔇' : '🔊'}</button>{view === 'start' && <button type="button" className="secondary" onClick={() => navigate('profile')}>{profile ? `${profile.avatar} ${profile.pseudo}` : t('nav.profile')}</button>}{view === 'start' && profile?.isAdmin && <button type="button" className="secondary" onClick={() => navigate('quizzes')}>{t('nav.quiz')}</button>}<button type="button" className="secondary" onClick={onLogout}>{t('common.logout')}</button></div>{view === 'start' && hostedQuizzes.length > 0 && <div className="active-quiz">
+    <header className="app-header">
+      <AppBar view={view} muted={muted} profile={profile} onLanguageChange={changeLanguage} onToggleSound={toggleSound} onHome={() => goTo('start')} onProfile={() => goTo('profile')} onAdmin={() => goTo('quizzes')} onLogout={onLogout} />
+      {breadcrumb.length > 0 && <Breadcrumb items={breadcrumb} label={t('nav.breadcrumb')} />}
+      {/* Le quiz actif (titre, auteur, langue) n'est présenté que sur les pages qui le concernent. */}
+      {isQuizPage(view) && <div className="quiz-context">
+        <h1>{quiz.metadata.title}</h1>
+        <p>{t('nav.by', quiz.metadata.author)}{quiz.metadata.language && <> · {quizLanguageLabel(quiz.metadata.language, language, t)}</>}</p>
+        {view === 'start' && quiz.metadata.description && <p className="quiz-description-preview">{quiz.metadata.description}</p>}
+        {view === 'start' && topScore && <button type="button" className="top-score" onClick={() => viewLeaderboard('start', gameMode)}>🏆 {topScore.avatar} {topScore.pseudo} — {topScore.scoreText}</button>}
+        {view === 'start' && hostedQuizzes.length > 0 && <div className="active-quiz">
   {activeCoverage?.quiz_id === selectedHostedQuizId && <>
     <CoverageBar percent={coveragePercent(activeCoverage.seen_count, activeCoverage.question_count)} label={t('start.quizLabel')} />
     <span className="mode-hint">{t('overview.seen', activeCoverage.seen_count, activeCoverage.question_count)} · {coveragePercent(activeCoverage.seen_count, activeCoverage.question_count)}%</span>
@@ -644,7 +671,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   </div>
   {reviewError && <p className="alert" role="alert">{t('overview.errorReview')}</p>}
 </div>}
-</header>
+      </div>}
+    </header>
     {view === 'start' && <section className="start-page">
       {quizListState === 'loading' && <p className="mode-hint">{t('start.quizListLoading')}</p>}
       {(quizListState === 'error' || quizLoadError) && <p className="alert" role="alert">{quizListState === 'error' ? t('start.quizListError') : quizLoadError} <button type="button" className="secondary alert-retry" onClick={retryQuizLoad}>{t('start.retry')}</button></p>}

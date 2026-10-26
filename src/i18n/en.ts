@@ -18,6 +18,14 @@ export const en = {
 
   'nav.profile': '👤 Profile',
   'nav.quiz': '⚙️ Quiz',
+  'nav.goHome': 'Back to the home page',
+  'nav.home': 'Home',
+  'nav.admin': 'Administration',
+  'nav.breadcrumb': 'Breadcrumb',
+  'crumb.overview': 'My quizzes',
+  'crumb.profile': 'Profile',
+  'crumb.history': 'History',
+  'crumb.leaderboard': 'Leaderboard',
   'nav.languageGroupLabel': 'Interface language',
   'nav.overview': '📊 My quizzes',
   'nav.muteSound': 'Mute sound',
@@ -330,7 +338,7 @@ export const en = {
   'history.reviewButton': 'Review these questions',
   'history.dueBox': (box: number) => `Box ${box}/5`,
 
-  'overview.title': 'Overview',
+  'overview.title': 'My quizzes',
   'overview.errorLoad': 'Could not load the overview.',
   'overview.emptyState': "You haven't played any quiz yet.",
   'overview.summary': (quizCount: number, seen: number, total: number) =>

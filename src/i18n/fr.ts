@@ -16,6 +16,14 @@ export const fr = {
 
   'nav.profile': '👤 Profil',
   'nav.quiz': '⚙️ Quiz',
+  'nav.goHome': "Retour à l'accueil",
+  'nav.home': 'Accueil',
+  'nav.admin': 'Administration',
+  'nav.breadcrumb': "Fil d'Ariane",
+  'crumb.overview': 'Mes quiz',
+  'crumb.profile': 'Profil',
+  'crumb.history': 'Historique',
+  'crumb.leaderboard': 'Classement',
   'nav.languageGroupLabel': "Langue de l'interface",
   'nav.overview': '📊 Mes quiz',
   'nav.muteSound': 'Couper le son',
@@ -328,7 +336,7 @@ export const fr = {
   'history.reviewButton': 'Réviser ces questions',
   'history.dueBox': (box: number) => `Boîte ${box}/5`,
 
-  'overview.title': "Vue d'ensemble",
+  'overview.title': 'Mes quiz',
   'overview.errorLoad': "Impossible de charger la vue d'ensemble.",
   'overview.emptyState': "Tu n'as encore joué aucun quiz.",
   'overview.summary': (quizCount: number, seen: number, total: number) =>

@@ -22,7 +22,7 @@ export function QuizListPage({ hostedQuizzes, isAdmin, onBack, onSelectQuiz, onC
   const { t } = useTranslation()
   return <section className="stats-page">
     <div className="stats-header">
-      <h2>{t('start.quizLabel')}</h2>
+      <h2>{t('nav.admin')}</h2>
       <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
     </div>
     <h3 className="stats-group-title">{t('admin.hostedQuizzesTitle')}</h3>
