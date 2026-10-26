@@ -246,6 +246,10 @@ header.app-header { display: block; padding-bottom: 1.4rem; margin-bottom: 2rem;
 .overview-item-percent { font-weight: 800; color: var(--ink); white-space: nowrap; }.overview-item-percent-label { font-weight: 400; font-size: .7rem; color: var(--text-muted); }
 .overview-item-untouched .overview-item-percent { font-weight: 400; font-size: .8rem; color: var(--text-muted); }
 .overview-item-meta { color: var(--text-muted); font-size: .78rem; }
+.overview-card-active { border-color: var(--accent); background: var(--surface-selected); }
+.overview-badge { margin-left: .6rem; padding: .1rem .55rem; border-radius: 999px; background: var(--accent); color: var(--text-on-accent); font-size: .7rem; font-weight: 800; vertical-align: middle; }
+.overview-item-action { justify-self: start; color: var(--accent-text); font-size: .85rem; font-weight: 700; }
+.overview-item-description { color: var(--text-soft); font-size: .85rem; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .overview-subtitle { margin: 1.5rem 0 .8rem; color: var(--text-soft); font-size: 1rem; }
 .leaderboard-date { font-weight: 400; font-size: .8rem; color: var(--text-muted); white-space: nowrap; }
 .leaderboard-list { display: grid; gap: .6rem; list-style: none; margin: 0; padding: 0; }.leaderboard-item { display: flex; align-items: center; gap: 1rem; padding: .8rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: .6rem; color: var(--text); }.leaderboard-item-self { border-color: var(--accent); background: var(--surface-selected); }.leaderboard-rank { min-width: 1.8rem; font-weight: 800; color: var(--text-muted); text-align: center; }.leaderboard-avatar { font-size: 1.3rem; }.leaderboard-main { flex: 1; min-width: 0; display: grid; gap: .15rem; }.leaderboard-pseudo { font-weight: 700; }.leaderboard-details { color: var(--text-muted); font-size: .78rem; }.leaderboard-score { display: grid; justify-items: end; font-size: 1.1rem; font-weight: 800; color: var(--ink); white-space: nowrap; }.leaderboard-score-label { font-size: .65rem; font-weight: 400; color: var(--text-muted); }

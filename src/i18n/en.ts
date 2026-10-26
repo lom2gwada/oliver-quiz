@@ -373,7 +373,10 @@ export const en = {
   'overview.dueNote': (count: number) => `${count} due in total`,
   'overview.nothingDue': 'Nothing to review right now',
   'overview.errorReview': 'Could not start the review.',
-  'overview.untouchedTitle': (count: number) => `Not started yet (${count})`,
+  'overview.discoverTitle': (count: number) => `To discover (${count})`,
+  'overview.discoverEmpty': 'No other quiz available for now.',
+  'overview.choose': 'Choose',
+  'overview.activeBadge': 'Active',
   'overview.questionCount': (count: number) => `${count} questions`,
 
   'leaderboard.title': 'Leaderboard',
