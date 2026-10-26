@@ -57,9 +57,18 @@ export const fr = {
   'start.questionCountOption': (count: number, unavailable: boolean) =>
     `${count} ${count === 1 ? 'question' : 'questions'}${unavailable ? ' (indisponible)' : ''}`,
   'start.allQuestionsOption': (count: number) => `Toutes les questions (${count})`,
-  'start.streakHint': "Répondez correctement à la chaîne, sans limite de temps : la partie s'arrête à la première erreur.",
+  'start.modeDescription': (mode: GameMode) => {
+    if (mode === 'streak') return "Répondez correctement à la chaîne : la partie s'arrête à la première erreur. La correction détaillée est donnée à la fin."
+    if (mode === 'timed') return "Répondez à un maximum de questions avant la fin du temps imparti ; la correction détaillée est donnée à la fin."
+    return 'Un nombre fixé de questions tirées au hasard ; la correction détaillée est donnée à la fin.'
+  },
+  'start.timerHint': (mode: GameMode) => {
+    if (mode === 'streak') return "Chaque question a son propre temps limite : sans réponse à temps, elle compte comme une erreur et la série s'arrête."
+    if (mode === 'timed') return "S'ajoute à la durée globale : chaque question a son propre temps limite, et sans réponse à temps elle compte comme fausse."
+    return 'Chaque question a son propre temps limite : sans réponse à temps, elle compte comme fausse.'
+  },
   'start.durationLabel': 'Durée',
-  'start.durationOption': (minutes: number) => minutes === 0 ? 'Infini' : `${minutes} minutes`,
+  'start.durationOption': (minutes: number) => minutes === 0 ? 'Sans limite (entraînement)' : `${minutes} minutes`,
   'start.timerToggle': '⏳ Chrono par question',
   'start.timedEstimate': (duration: string) => `Durée estimée du quiz : ~${duration}`,
   'start.availability': (count: number, mode: GameMode, drawn: number) => {
@@ -348,7 +357,7 @@ export const fr = {
 
   'common.loading': 'Chargement…',
   'common.allThemes': 'Tous les thèmes',
-  'common.unlimited': 'Infini',
+  'common.unlimited': 'Sans limite',
   'common.minutesShort': (minutes: number) => `${minutes} min`,
   'common.durationIcon': (formatted: string) => `⏱ ${formatted}`,
 
