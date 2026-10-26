@@ -171,6 +171,8 @@ export const fr = {
   'admin.createQuizButton': '➕ Créer un quiz',
   'admin.publishQuizTitle': 'Publier un quiz',
   'admin.importLabel': 'Importer / mettre à jour un quiz (JSON)',
+  'admin.formatLink': 'Format du fichier',
+  'admin.templateButton': '⬇️ Télécharger un modèle',
   'admin.exportButton': 'Exporter ce quiz (JSON)',
   'admin.publishSuccess': "Quiz publié — aucun accès n'est accordé automatiquement.",
   'admin.manageAccessTitle': 'Gérer les accès',

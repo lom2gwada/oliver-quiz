@@ -337,3 +337,59 @@ describe('vocabulaire interne (category) et format stocké (theme)', () => {
     expect(Object.keys(question).slice(0, 3)).toEqual(['id', 'theme', 'difficulty'])
   })
 })
+
+describe('parseQuiz — error messages name the faulty field', () => {
+  const message = (value: unknown): string => {
+    try { parseQuiz(value); return '' } catch (error) { return (error as Error).message }
+  }
+  const boolQuestion = { ...base, type: 'boolean', question: 'Vrai ou faux ?', content: { isTrue: true } }
+
+  it('points at a missing root or metadata field', () => {
+    expect(message('texte')).toMatch(/^Racine :/)
+    expect(message({ ...quiz([]), version: undefined })).toMatch(/^version :/)
+    expect(message({ ...quiz([]), metadata: { author: 'A', createdAt: 'x' } })).toMatch(/^metadata\.title :/)
+  })
+
+  it('points at the faulty theme', () => {
+    expect(message({ ...quiz([]), themes: [{ id: 'a', label: 'A' }, { id: 'b' }] })).toMatch(/^themes\[1\]\.label :/)
+  })
+
+  it('gives the position and the id of the faulty question', () => {
+    const text = message(quiz([boolQuestion, { ...boolQuestion, id: 'q2', points: -1 }]))
+    expect(text).toMatch(/^questions\[1\]\.points :/)
+    expect(text).toContain('« q2 »')
+  })
+
+  it('points at an unknown theme of a question', () => {
+    const text = message(quiz([{ ...boolQuestion, theme: 'inconnu' }]))
+    expect(text).toMatch(/^questions\[0\]\.theme :/)
+    expect(text).toContain('« inconnu »')
+  })
+
+  it('points at the faulty answer of a choice question', () => {
+    const bad = quiz([{ ...base, type: 'qcm', question: 'Q ?', content: { multiple: false, answers: [{ id: 'a', label: 'A', isCorrect: true }, { id: 'b', label: 'B', isCorrect: false }, { id: 'c', label: 'C', isCorrect: 'non' }] } }])
+    expect(message(bad)).toMatch(/^questions\[0\]\.content\.answers\[2\]\.isCorrect :/)
+  })
+
+  it('points at the faulty id of an ordering, matching or numeric question', () => {
+    const ordering = quiz([{ ...base, type: 'ordering', question: 'Q ?', content: { items: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }], correctOrder: ['a', 'zzz'] } }])
+    expect(message(ordering)).toMatch(/^questions\[0\]\.content\.correctOrder\[1\] :/)
+    const matching = quiz([{ ...base, type: 'matching', question: 'Q ?', content: { left: [{ id: 'l1', label: 'L1' }, { id: 'l2', label: 'L2' }], right: [{ id: 'r1', label: 'R1' }, { id: 'r2', label: 'R2' }], correctPairs: { l1: 'r1' } } }])
+    expect(message(matching)).toMatch(/^questions\[0\]\.content\.correctPairs :/)
+    const numeric = quiz([{ ...base, type: 'numeric', question: 'Q ?', content: { min: 0, max: 10, step: 1, target: 20, tolerance: 1 } }])
+    expect(message(numeric)).toMatch(/^questions\[0\]\.content\.target :/)
+  })
+
+  it('points at the question text of a cloze without a blank, and at the ragged row of a table', () => {
+    const cloze = quiz([{ ...base, type: 'cloze', question: 'Sans trou', content: { expectedAnswers: ['x'], caseSensitive: false } }])
+    expect(message(cloze)).toMatch(/^questions\[0\]\.question :/)
+    const table = quiz([{ ...boolQuestion, table: { headers: ['A', 'B'], rows: [['1', '2'], ['3']] } }])
+    expect(message(table)).toMatch(/table\.rows\[1\] :/)
+  })
+
+  it('names the accepted types when the type is unknown', () => {
+    const text = message(quiz([{ ...base, type: 'inconnu', question: 'Q ?', content: {} }]))
+    expect(text).toMatch(/^questions\[0\]\.type :/)
+    expect(text).toContain('qcm')
+  })
+})
