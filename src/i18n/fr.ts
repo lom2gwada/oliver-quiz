@@ -67,10 +67,14 @@ export const fr = {
   'admin.errorAddTheme': "Impossible d'ajouter ce thème.",
   'admin.errorDuplicateTitleOther': 'Un autre quiz porte déjà ce titre.',
   'admin.errorUpdateQuiz': 'Impossible de mettre à jour ce quiz.',
-  'admin.deleteQuizButton': '🗑️ Supprimer ce quiz',
+  'admin.deleteQuizButton': '🗑️ Supprimer définitivement ce quiz',
+  'admin.dangerZoneTitle': 'Zone de danger',
+  'admin.dangerZoneIntro': "La suppression d'un quiz est définitive : ses questions, les accès accordés, ses liens invités et la progression de révision de tous les joueurs disparaissent. L'historique des parties est conservé, sauf s'il est purgé aussi. Mieux vaut exporter le quiz d'abord.",
+  'admin.exportBeforeDeleteButton': 'Exporter ce quiz (JSON) avant de le supprimer',
+  'admin.exportedNotice': 'Export téléchargé ✓',
+  'admin.dangerConfirmPrompt': 'Pour confirmer, saisir le titre du quiz :',
+  'admin.dangerConfirmPlaceholder': 'Titre du quiz',
   'admin.deleteHistoryTooLabel': "Supprimer aussi l'historique de ce quiz (parties et classement, tous joueurs confondus)",
-  'admin.confirmDeleteQuiz': (title: string, includeHistory: boolean) =>
-    `Supprimer définitivement "${title}" ? Toutes ses questions et tous les accès accordés seront perdus.${includeHistory ? " L'historique et le classement de ce quiz seront également supprimés pour tous les joueurs." : " L'historique et le classement resteront visibles."} Cette action est irréversible.`,
   'admin.errorDeleteQuiz': 'Impossible de supprimer ce quiz.',
   'admin.errorDeleteQuizHistory': "Le quiz a été supprimé, mais son historique n'a pas pu être purgé.",
 

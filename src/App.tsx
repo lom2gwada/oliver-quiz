@@ -498,7 +498,6 @@ export default function App({ onLogout }: { onLogout: () => void }) {
    * n'est pas affecté, `deleteHistoryToo` permet de le purger explicitement en plus. Si le quiz supprimé était
    * le quiz actif, retombe sur le placeholder de premier affichage le temps qu'un autre quiz soit sélectionné. */
   const deleteHostedQuiz = async (id: string, title: string, deleteHistoryToo: boolean) => {
-    if (!window.confirm(t('admin.confirmDeleteQuiz', title, deleteHistoryToo))) return
     setDeleteQuizError('')
     try {
       await deleteQuiz(id)
