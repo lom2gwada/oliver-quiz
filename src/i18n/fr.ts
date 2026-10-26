@@ -371,7 +371,10 @@ export const fr = {
   'overview.dueNote': (count: number) => `${count} à revoir au total`,
   'overview.nothingDue': 'Rien à réviser pour le moment',
   'overview.errorReview': 'Impossible de lancer la révision.',
-  'overview.untouchedTitle': (count: number) => `Pas encore commencés (${count})`,
+  'overview.discoverTitle': (count: number) => `À découvrir (${count})`,
+  'overview.discoverEmpty': 'Aucun autre quiz disponible pour le moment.',
+  'overview.choose': 'Choisir',
+  'overview.activeBadge': 'Actif',
   'overview.questionCount': (count: number) => `${count} questions`,
 
   'leaderboard.title': 'Classement',

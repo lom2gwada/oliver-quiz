@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { coveragePercent, coveragePercentTenths, coverageTotals, splitCoverage, type QuizCoverage } from './coverage'
 
 const row = (title: string, seen: number, total: number, games: number, last: string | null): QuizCoverage =>
-  ({ quiz_id: title, quiz_title: title, question_count: total, seen_count: seen, games_played: games, last_played_at: last, due_count: 0 })
+  ({ quiz_id: title, quiz_title: title, question_count: total, seen_count: seen, games_played: games, last_played_at: last, due_count: 0, description: null, language: null })
 
 describe('coveragePercent', () => {
   it('arrondit à l’entier inférieur pour ne jamais afficher 100 % trop tôt', () => {

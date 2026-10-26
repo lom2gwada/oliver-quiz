@@ -11,6 +11,9 @@ export interface QuizCoverage {
   last_played_at: string | null
   /** Cartes Leitner échues dont la question existe encore : ce que « Réviser » proposera. */
   due_count: number
+  /** `metadata.description` / `metadata.language` du quiz, `null` s'ils ne sont pas précisés (présentation dans « À découvrir »). */
+  description: string | null
+  language: string | null
 }
 
 /** Taille d'une session de révision lancée depuis « Mes quiz » (les plus fragiles d'abord) — la page
