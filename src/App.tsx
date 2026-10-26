@@ -4,6 +4,7 @@ import { FilterPanel } from './components/FilterPanel'
 import { HistoryPage } from './components/HistoryPage'
 import { LeaderboardPage } from './components/LeaderboardPage'
 import { CoverageBar } from './components/CoverageBar'
+import { SaveStatusNotice } from './components/SaveStatusNotice'
 import { LanguageSwitch } from './components/LanguageSwitch'
 import { QuizLanguageProvider } from './utils/quizLanguageContext'
 import { confirmWithBlur } from './utils/confirmWithBlur'
@@ -25,7 +26,8 @@ import type { HostedQuizSummary } from './types/hostedQuiz'
 import { buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, deleteQuizHistory, saveQuestionResults, saveQuizResult, saveStreakResult, saveTimedResult } from './utils/quizHistory'
 import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchStreakTopScore, fetchTimedTopScore, fetchTopScore } from './utils/leaderboard'
-import { computeDueQuestions, fetchQuestionProgress, recordQuestionProgress, selectReviewQuestions } from './utils/leitner'
+import { computeDueQuestions, createQuestionProgressJob, fetchQuestionProgress, selectReviewQuestions } from './utils/leitner'
+import { runSaveJobs, type SaveJob, type SaveStatus } from './utils/gameSave'
 import { coveragePercent, fetchQuizCoverage, REVIEW_BATCH_SIZE, type QuizCoverage } from './utils/coverage'
 import { deleteQuiz, fetchAccessibleQuizzes, fetchAccessibleQuizzesWithRetry, fetchQuizContent, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
 import { applyTheme } from './utils/theme'
@@ -522,10 +524,29 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     replace('streak')
   }
 
+  // Enregistrement de la dernière partie : en arrière-plan, avec reprises automatiques ; un échec final est signalé sur
+  // l'écran de résultat avec un bouton « Réessayer ». Le jeton écarte la réponse d'un enregistrement dépassé par une
+  // partie plus récente.
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>({ state: 'idle' })
+  const saveToken = useRef(0)
+  const saveGame = (jobs: SaveJob[]) => {
+    const token = ++saveToken.current
+    setSaveStatus({ state: 'idle' })
+    runSaveJobs(jobs).then((failed) => { if (token === saveToken.current) setSaveStatus(failed.length ? { state: 'failed', jobs: failed } : { state: 'idle' }) })
+  }
+  const retrySave = () => {
+    if (saveStatus.state !== 'failed') return
+    const token = ++saveToken.current
+    const { jobs } = saveStatus
+    setSaveStatus({ state: 'retrying', jobs })
+    runSaveJobs(jobs).then((failed) => { if (token === saveToken.current) setSaveStatus(failed.length ? { state: 'failed', jobs: failed } : { state: 'recovered' }) })
+  }
+
   const finishStreak = (result: StreakResult) => {
     setStreakResult(result)
     replace('streakResults')
-    saveStreakResult(buildStreakResultPayload(result.streakCount, result.elapsedSeconds, result.victory, result.playedQuestions, quiz.categories, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered))
+    const payload = buildStreakResultPayload(result.streakCount, result.elapsedSeconds, result.victory, result.playedQuestions, quiz.categories, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered)
+    saveGame([() => saveStreakResult(payload)])
   }
 
   const startTimed = () => {
@@ -542,7 +563,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const finishTimed = (result: TimedResult) => {
     setTimedResult(result)
     replace('timedResults')
-    saveTimedResult(buildTimedResultPayload(result.attempts, result.elapsedSeconds, result.durationSeconds, quiz.categories, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered))
+    const payload = buildTimedResultPayload(result.attempts, result.elapsedSeconds, result.durationSeconds, quiz.categories, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered)
+    saveGame([() => saveTimedResult(payload)])
   }
 
   const backToStart = () => {
@@ -595,10 +617,15 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     </section>}
     {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} timeboxed={timeboxed} onFinish={(nextAnswers, duration, played) => {
       setAnswers(nextAnswers); setElapsedSeconds(duration); setSessionQuestions(played); replace('results')
-      saveQuizResult(buildQuizResultPayload(played, nextAnswers, quiz.categories, duration, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered && !isReplay))
-      saveQuestionResults(buildQuestionResultPayloads(played, nextAnswers, quiz.metadata.title, selectedHostedQuizId || null))
-      if (selectedHostedQuizId) recordQuestionProgress(selectedHostedQuizId, played, nextAnswers)
+      const resultPayload = buildQuizResultPayload(played, nextAnswers, quiz.categories, duration, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered && !isReplay)
+      const detailPayloads = buildQuestionResultPayloads(played, nextAnswers, quiz.metadata.title, selectedHostedQuizId || null)
+      saveGame([
+        () => saveQuizResult(resultPayload),
+        () => saveQuestionResults(detailPayloads),
+        ...(selectedHostedQuizId ? [createQuestionProgressJob(selectedHostedQuizId, played, nextAnswers)] : []),
+      ])
     }} onCancel={backToStart} />}
+    {(view === 'results' || view === 'streakResults' || view === 'timedResults') && <SaveStatusNotice status={saveStatus} onRetry={retrySave} />}
     {view === 'results' && <ResultPage questions={sessionQuestions} answers={answers} themes={quiz.categories} elapsedSeconds={elapsedSeconds} onRestartSame={isReplay ? undefined : restartQuiz} onBackToSettings={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} />}
     {view === 'streak' && <StreakQuizPage quiz={quiz} pool={filteredQuestions} timeboxed={timeboxed} onFinish={finishStreak} onCancel={backToStart} />}
     {view === 'streakResults' && streakResult && <StreakResultPage {...streakResult} onRestartSame={restartStreak} onBackToSettings={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} />}
