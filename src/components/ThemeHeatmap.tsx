@@ -1,5 +1,6 @@
 import type { ThemeWeekHeatmap } from '../types/history'
 import { useTranslation } from '../i18n'
+import { formatPercent } from '../utils/format'
 
 /** Du rouge (0 %) au vert (100 %) en passant par l'ambre — teinte HSL directe, lisible en thème clair comme sombre. */
 const rateColor = (rate: number) => `hsl(${Math.round(rate * 1.2)} 62% 38%)`
@@ -25,7 +26,7 @@ export function ThemeHeatmap({ heatmap, title, note }: { heatmap: ThemeWeekHeatm
             {theme.cells.map((cell, index) => {
               if (!cell || !cell.total) return <td key={heatmap.weeks[index]} className="theme-heatmap-empty" aria-label={t('history.heatmapNoData')}>·</td>
               const rate = Math.round((cell.correct / cell.total) * 100)
-              return <td key={heatmap.weeks[index]} style={{ background: rateColor(rate) }} title={t('history.heatmapCellTitle', cell.correct, cell.total)}>{rate}%</td>
+              return <td key={heatmap.weeks[index]} style={{ background: rateColor(rate) }} title={t('history.heatmapCellTitle', cell.correct, cell.total)}>{formatPercent(rate, language)}</td>
             })}
           </tr>)}
         </tbody>

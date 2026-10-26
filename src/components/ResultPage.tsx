@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { AnswersByQuestion, Question, Category } from '../types/quiz'
 import type { TranslationKey } from '../i18n'
 import { translate, useTranslation } from '../i18n'
+import { formatPercent } from '../utils/format'
 import { formatDuration } from '@engine/utils/time'
 import { playFinish, playVictory } from '@engine/utils/sound'
 import { Confetti } from '@engine/components/Confetti'
@@ -102,7 +103,7 @@ interface ResultPageProps {
 }
 
 export function ResultPage({ questions, answers, themes, elapsedSeconds, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard }: ResultPageProps) {
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
   const earned = questions.filter((question) => isCorrect(question, answers[question.id])).reduce((total, question) => total + question.points, 0)
   const total = questions.reduce((sum, question) => sum + question.points, 0)
   const score = total ? Math.round((earned / total) * 100) : 0
@@ -115,7 +116,7 @@ export function ResultPage({ questions, answers, themes, elapsedSeconds, onResta
     {score >= 90 && <Confetti />}
     <div className="score">
       <p>{t('result.yourScore')}</p>
-      <strong>{displayScore}%</strong>
+      <strong>{formatPercent(displayScore, language)}</strong>
       <span>{t('result.pointsEarned', earned, total)}</span>
       <p className="mention">{emoji} {label}</p>
       <p className="duration">{t('result.duration', formatDuration(elapsedSeconds))}</p>

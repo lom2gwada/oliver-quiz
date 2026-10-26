@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { GuestLink, GuestResultRow } from '../types/guestLink'
 import type { Quiz } from '../types/quiz'
 import { useTranslation } from '../i18n'
+import { formatPercent } from '../utils/format'
 import { fetchGuestResults } from '../utils/guestLinks'
 import { computeQuestionCorrectness, summarizeGuestResults, tallyAnswers } from '../utils/guestResults'
 import { formatDuration } from '@engine/utils/time'
@@ -35,7 +36,7 @@ export function GuestResultsPanel({ link, quiz }: { link: GuestLink; quiz: Quiz 
   return <div className="guest-results">
     <div className="records-grid">
       <div className="record-tile"><span className="record-value">{summary.count}</span><span className="record-label">{t('admin.guestResultsCount')}</span></div>
-      {isTest && summary.averageScore !== null && <div className="record-tile"><span className="record-value">{summary.averageScore}%</span><span className="record-label">{t('admin.guestResultsAverageScore')}</span></div>}
+      {isTest && summary.averageScore !== null && <div className="record-tile"><span className="record-value">{formatPercent(summary.averageScore, language)}</span><span className="record-label">{t('admin.guestResultsAverageScore')}</span></div>}
       <div className="record-tile"><span className="record-value">{formatDuration(summary.averageSeconds)}</span><span className="record-label">{t('admin.guestResultsAverageTime')}</span></div>
     </div>
     <details className="question-list-group">
@@ -45,7 +46,7 @@ export function GuestResultsPanel({ link, quiz }: { link: GuestLink; quiz: Quiz 
           ? computeQuestionCorrectness(results, quiz.questions).map(({ question, correct, total }) => <article key={question.id} className="guest-results-question">
             <p className="question-list-prompt">{question.question}</p>
             <Bar value={percent(correct, total)} />
-            <p className="mode-hint">{t('admin.guestResultsCorrectRate', correct, total, percent(correct, total))}</p>
+            <p className="mode-hint">{t('admin.guestResultsCorrectRate', correct, total, formatPercent(percent(correct, total), language))}</p>
           </article>)
           : quiz.questions.map((question) => <article key={question.id} className="guest-results-question">
             <p className="question-list-prompt">{question.question}</p>
@@ -60,7 +61,7 @@ export function GuestResultsPanel({ link, quiz }: { link: GuestLink; quiz: Quiz 
     <h4>{t('admin.guestResultsReceived')}</h4>
     <ul className="history-list">
       {results.map((result) => <li className="history-item" key={result.id}>
-        <span className="history-score">{result.score !== null ? `${result.score}%` : '—'}</span>
+        <span className="history-score">{result.score !== null ? formatPercent(result.score, language) : '—'}</span>
         <span>{result.respondent_name}</span>
         <span className="history-date">{dateLabel(result.created_at)}</span>
         <span>{t('common.durationIcon', formatDuration(result.elapsed_seconds))}</span>

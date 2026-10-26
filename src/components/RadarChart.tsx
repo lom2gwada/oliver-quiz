@@ -1,3 +1,6 @@
+import { useTranslation } from '../i18n'
+import { formatPercent } from '../utils/format'
+
 interface RadarAxisPoint {
   label: string
   value: number
@@ -17,6 +20,7 @@ function pointAt(angleDeg: number, radius: number): [number, number] {
  * partir de 3 axes (sinon on ne forme pas de polygone) et reste lisible jusqu'à une dizaine (cf. `bucketsToRadarAxes`
  * qui limite déjà en amont), donc pas de garde supplémentaire sur le nombre max ici. */
 export function RadarChart({ title, axes, note }: { title: string; axes: RadarAxisPoint[]; note?: string }) {
+  const { language } = useTranslation()
   if (axes.length < 3) return null
 
   const angleStep = 360 / axes.length
@@ -46,7 +50,7 @@ export function RadarChart({ title, axes, note }: { title: string; axes: RadarAx
     <figcaption>
       <h3>{title}</h3>
       <ul>
-        {axes.map((axis) => <li key={axis.label}>{axis.label} — {axis.value}%</li>)}
+        {axes.map((axis) => <li key={axis.label}>{axis.label} — {formatPercent(axis.value, language)}</li>)}
       </ul>
       {note && <p className="radar-chart-note">{note}</p>}
     </figcaption>

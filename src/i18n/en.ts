@@ -20,6 +20,20 @@ export const en = {
   'nav.quiz': '⚙️ Quiz',
   'nav.menu': 'Menu',
   'filter.summary': (active: number) => (active > 0 ? `Filters (${active})` : 'Filters'),
+  'metric.paceValue': (value: string) => `${value} correct answers/min`,
+  'metric.pointsShare': (percent: string) => `${percent} of the points`,
+  'metric.pointsShareHint': 'Share of the points earned: hard questions are worth more, so this is not the number of correct answers.',
+  'metric.successRateHint': 'Share of the attempted questions that got a correct answer.',
+  'metric.discovered': (percent: string) => `${percent} of the quiz discovered`,
+  'metric.discoveredShort': 'discovered',
+  'metric.discoveredHint': 'Share of the quiz questions already met at least once, in a classic game or a review.',
+  'topScore.hint': 'See the leaderboard',
+  'topScore.classic': (who: string, count: number) => `Best classic score: ${who} — ${count} correct answer${count !== 1 ? 's' : ''}`,
+  'topScore.streak': (who: string, count: number, victory: boolean) => `Best no-mistake streak: ${who} — ${victory ? '🏆 ' : '🔥 '}${count} in a row`,
+  'topScore.timed': (who: string, pace: string) => `Best time-attack pace: ${who} — ${pace === '' ? '—' : `${pace} correct answers/min`}`,
+  'leaderboard.scoreCorrect': 'correct answers',
+  'leaderboard.scoreStreak': 'in a row',
+  'leaderboard.scorePace': 'correct/min',
   'nav.goHome': 'Back to the home page',
   'nav.home': 'Home',
   'nav.admin': 'Administration',
@@ -119,7 +133,7 @@ export const en = {
   'admin.guestResultsAverageScore': 'Average score',
   'admin.guestResultsAverageTime': 'Average time',
   'admin.guestResultsPerQuestion': 'Breakdown by question',
-  'admin.guestResultsCorrectRate': (correct: number, total: number, rate: number) => `${correct} / ${total} correct (${rate}%)`,
+  'admin.guestResultsCorrectRate': (correct: number, total: number, rate: string) => `${correct} / ${total} correct (${rate})`,
   'admin.guestResultsReceived': 'Responses received',
   'admin.publicQuizLabel': 'Visible to everyone by default',
   'admin.publicQuizHint': "This quiz is visible to every logged-in user, without granting individual access. The access management below then has no effect.",
@@ -324,8 +338,9 @@ export const en = {
   'history.errorLoad': 'Could not load the history.',
   'history.emptyState': 'No games recorded yet.',
   'history.gamesPlayed': 'Games played',
-  'history.bestScore': 'Best score',
-  'history.averageScore': 'Average score',
+  'history.bestPointsShare': 'Best score (% of points)',
+  'history.bestCorrect': 'Best score (correct answers)',
+  'history.averagePointsShare': 'Average score (% of points)',
   'history.totalPlaytime': 'Total playtime',
   'history.radarTitle': 'Success rate by theme',
   'history.radarNote': (count: number) => `Showing the ${count} most played themes.`,
@@ -366,12 +381,12 @@ export const en = {
   'leaderboard.modeOverall': '🏅 Overall',
   'leaderboard.errorLoad': 'Could not load the leaderboard.',
   'leaderboard.emptyState': 'No ranked games for this quiz in this mode. Only games played without theme or difficulty filters, and outside review sessions, count.',
-  'leaderboard.detailsClassic': (correct: number, total: number, rate: number, pace: string, points: string, duration: string) =>
-    `${correct}/${total} (${rate}%) · ${pace} · ${points} · ⏱ ${duration}`,
-  'leaderboard.detailsStreak': (themes: string, pace: string, rate: string, points: string, duration: string) =>
-    `${themes} · ${pace} · ${rate} · ${points} · ⏱ ${duration}`,
-  'leaderboard.detailsTimed': (correct: number, total: number, rate: string, points: string, durationLabel: string, elapsed: string) =>
-    `${correct}/${total} · ${rate} · ${points} · ${durationLabel} · ⏱ ${elapsed}`,
-  'leaderboard.detailsOverall': (attempted: number, games: number, rate: number, points: string) =>
-    `${attempted} attempted · ${games} game${games !== 1 ? 's' : ''} · ${rate}% success rate · ${points}`,
+  'leaderboard.detailsClassic': (correct: number, total: number, points: string, pace: string, duration: string) =>
+    `${correct}/${total} correct answers · ${points} · ${pace} · ⏱ ${duration}`,
+  'leaderboard.detailsStreak': (themes: string, pace: string, points: string, duration: string) =>
+    `${themes} · ${pace} · ${points} · ⏱ ${duration}`,
+  'leaderboard.detailsTimed': (correct: number, total: number, points: string, durationLabel: string, elapsed: string) =>
+    `${correct}/${total} correct answers · ${points} · ${durationLabel} · ⏱ ${elapsed}`,
+  'leaderboard.detailsOverall': (attempted: number, games: number, rate: string, points: string) =>
+    `${attempted} questions attempted · ${games} game${games !== 1 ? 's' : ''} · ${rate} correct answers · ${points}`,
 } satisfies Record<TranslationKey, string | ((...args: never[]) => string)>

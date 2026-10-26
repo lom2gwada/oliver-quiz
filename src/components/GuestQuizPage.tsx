@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { GuestLinkMode } from '../types/guestLink'
 import type { AnswersByQuestion, Quiz } from '../types/quiz'
 import { LanguageProvider, useTranslation } from '../i18n'
+import { formatPercent } from '../utils/format'
 import { fetchGuestQuiz, submitGuestResult } from '../utils/guestQuiz'
 import { QuizLanguageProvider } from '../utils/quizLanguageContext'
 import { useAdvanceGuard } from '../utils/useAdvanceGuard'
@@ -37,7 +38,7 @@ function GuestQuizLoader({ token }: { token: string }) {
 }
 
 function GuestSession({ token, mode, quiz }: { token: string; mode: GuestLinkMode; quiz: Quiz }) {
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
   const questions = useMemo(() => quiz.questions.map(withShuffledAnswers), [quiz])
   const [step, setStep] = useState<'name' | 'quiz' | 'done'>('name')
   const [name, setName] = useState('')
@@ -98,7 +99,7 @@ function GuestSession({ token, mode, quiz }: { token: string; mode: GuestLinkMod
       {isTest ? <>
         <div className="score">
           <p>{t('guest.thanksTest', name.trim())}</p>
-          <strong>{score}%</strong>
+          <strong>{formatPercent(score, language)}</strong>
           <span>{t('result.pointsEarned', earned, total)}</span>
         </div>
         <div className="corrections">{questions.map((item) => {

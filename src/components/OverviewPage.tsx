@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from '../i18n'
 import { CoverageBar } from './CoverageBar'
-import { coveragePercent, coverageTotals, fetchQuizCoverage, REVIEW_BATCH_SIZE, splitCoverage, type QuizCoverage } from '../utils/coverage'
+import { coveragePercentTenths, coverageTotals, fetchQuizCoverage, REVIEW_BATCH_SIZE, splitCoverage, type QuizCoverage } from '../utils/coverage'
 import { longDate } from '../utils/dateFormat'
+import { formatPercent } from '../utils/format'
 
 interface OverviewPageProps {
   /** Sélectionne le quiz cliqué comme quiz actif et revient à l'accueil, prêt à le lancer. */
@@ -59,15 +60,15 @@ export function OverviewPage({ onSelectQuiz, onReviewQuiz, onViewHistory, onView
       </div>
       <ul className="overview-list">
         {started.map((row) => {
-          const percent = coveragePercent(row.seen_count, row.question_count)
+          const percent = coveragePercentTenths(row.seen_count, row.question_count)
           const batch = Math.min(row.due_count, REVIEW_BATCH_SIZE)
           return <li key={row.quiz_id} className="overview-card">
             <button type="button" className="overview-item" onClick={() => onSelectQuiz(row.quiz_id)}>
               <span className="overview-item-head">
                 <span className="overview-item-title">{row.quiz_title}</span>
-                <span className="overview-item-percent">{percent}%</span>
+                <span className="overview-item-percent" title={t('metric.discoveredHint')}>{formatPercent(percent, language, 1)} <small className="overview-item-percent-label">{t('metric.discoveredShort')}</small></span>
               </span>
-              <CoverageBar percent={percent} label={row.quiz_title} />
+              <CoverageBar percent={percent} label={`${row.quiz_title} — ${t('metric.discovered', formatPercent(percent, language, 1))}`} />
               <span className="overview-item-meta">
                 {t('overview.seen', row.seen_count, row.question_count)} · {t('overview.games', row.games_played)}
                 {row.last_played_at && <> · {t('overview.lastPlayed', longDate(row.last_played_at, language))}</>}
