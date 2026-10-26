@@ -18,6 +18,7 @@ import { storeLanguage, takePendingLanguage } from './utils/languagePreference'
 import { isKnownQuizLanguage, normalizeQuizLanguage, quizInterfaceLanguage, quizLanguageLabel } from './utils/quizLanguage'
 import { OverviewPage } from './components/OverviewPage'
 import { ExpandableText } from './components/ExpandableText'
+import { ModePicker } from './components/ModePicker'
 import { ProfilePage } from './components/ProfilePage'
 import { QuizDetailPage } from './components/QuizDetailPage'
 import { QuizListPage } from './components/QuizListPage'
@@ -55,7 +56,7 @@ import { formatDuration } from '@engine/utils/time'
  * fetch répond, avec un vrai id (éditable comme n'importe quel quiz hébergé). */
 const initialQuiz = parseQuiz(sampleQuiz)
 const questionCounts = [5, 10, 20, 30, 50]
-/** En minutes ; 0 = mode "Infini" (pas de limite). */
+/** En minutes ; 0 = « Sans limite » : entraînement, sans fin de partie automatique. */
 const durationOptions = [5, 10, 15, 20, 0]
 
 function pickRandomQuestions<T>(questions: T[], count: number): T[] {
@@ -694,19 +695,15 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'start' && <section className="start-page">
       {quizListState === 'loading' && <p className="mode-hint">{t('start.quizListLoading')}</p>}
       {(quizListState === 'error' || quizLoadError) && <p className="alert" role="alert">{quizListState === 'error' ? t('start.quizListError') : quizLoadError} <button type="button" className="secondary alert-retry" onClick={retryQuizLoad}>{t('start.retry')}</button></p>}
-      <div className="mode-picker" role="group" aria-label={t('start.modeGroupLabel')}>
-        <button type="button" className={gameMode === 'classic' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('classic') }}>{t('common.modeClassic')}</button>
-        <button type="button" className={gameMode === 'streak' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('streak') }}>{t('common.modeStreak')}</button>
-        <button type="button" className={gameMode === 'timed' ? 'mode-option active' : 'mode-option'} onClick={() => { playClick(); setGameMode('timed') }}>{t('common.modeTimed')}</button>
-      </div>
+      <ModePicker value={gameMode} onChange={(mode) => { playClick(); setGameMode(mode) }} />
       <FilterPanel themes={quiz.categories} selectedThemes={selectedThemes} difficulty={difficulty} onThemeToggle={toggleTheme} onDifficultyChange={setDifficulty} />
       {gameMode === 'classic' && <label className="question-count">{t('start.questionCountLabel')}<select value={questionCount} onChange={(event) => { playClick(); setQuestionCount(Number(event.target.value)) }}>{questionCounts.map((count) => <option key={count} value={count} disabled={count > filteredQuestions.length}>{t('start.questionCountOption', count, count > filteredQuestions.length)}</option>)}<option value={filteredQuestions.length}>{t('start.allQuestionsOption', filteredQuestions.length)}</option></select></label>}
-      {gameMode === 'streak' && <p className="mode-hint">{t('start.streakHint')}</p>}
       {gameMode === 'timed' && <label className="question-count">{t('start.durationLabel')}<select value={durationMinutes} onChange={(event) => { playClick(); setDurationMinutes(Number(event.target.value)) }}>{durationOptions.map((minutes) => <option key={minutes} value={minutes}>{t('start.durationOption', minutes)}</option>)}</select></label>}
       <label className="theme-checkbox timer-toggle">
-        <input type="checkbox" checked={timeboxed} onChange={(event) => { playClick(); setTimeboxed(event.target.checked) }} />
+        <input type="checkbox" checked={timeboxed} aria-describedby="timer-hint" onChange={(event) => { playClick(); setTimeboxed(event.target.checked) }} />
         {t('start.timerToggle')}
       </label>
+      <p className="mode-hint timer-hint" id="timer-hint">{t('start.timerHint', gameMode)}</p>
       {gameMode === 'classic' && timeboxed && <p className="mode-hint">{t('start.timedEstimate', formatDuration(timedEstimateSeconds))}</p>}
       <p>{t('start.availability', filteredQuestions.length, gameMode, Math.min(questionCount, filteredQuestions.length))}</p>
       <button type="button" className="start-button" onClick={gameMode === 'classic' ? startQuiz : gameMode === 'streak' ? startStreak : startTimed} disabled={!filteredQuestions.length || !quizReady}>{gameMode === 'classic' ? t('start.startClassic') : gameMode === 'streak' ? t('start.startStreak') : t('start.startTimed')}</button>

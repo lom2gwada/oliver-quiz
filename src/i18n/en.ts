@@ -59,9 +59,18 @@ export const en = {
   'start.questionCountOption': (count: number, unavailable: boolean) =>
     `${count} question${count !== 1 ? 's' : ''}${unavailable ? ' (unavailable)' : ''}`,
   'start.allQuestionsOption': (count: number) => `All questions (${count})`,
-  'start.streakHint': 'Answer correctly in a row, no time limit: the run ends at the first mistake.',
+  'start.modeDescription': (mode: GameMode) => {
+    if (mode === 'streak') return 'Answer correctly in a row: the run ends at the first mistake. The detailed correction comes at the end.'
+    if (mode === 'timed') return 'Answer as many questions as you can before time runs out; the detailed correction comes at the end.'
+    return 'A set number of random questions; the detailed correction comes at the end.'
+  },
+  'start.timerHint': (mode: GameMode) => {
+    if (mode === 'streak') return 'Each question has its own time limit: with no answer in time it counts as a mistake and the run ends.'
+    if (mode === 'timed') return 'Added to the overall duration: each question has its own time limit, and with no answer in time it counts as wrong.'
+    return 'Each question has its own time limit: with no answer in time it counts as wrong.'
+  },
   'start.durationLabel': 'Duration',
-  'start.durationOption': (minutes: number) => minutes === 0 ? 'Unlimited' : `${minutes} minutes`,
+  'start.durationOption': (minutes: number) => minutes === 0 ? 'No limit (practice)' : `${minutes} minutes`,
   'start.timerToggle': '⏳ Timer per question',
   'start.timedEstimate': (duration: string) => `Estimated quiz duration: ~${duration}`,
   'start.availability': (count: number, mode: GameMode, drawn: number) => {
@@ -350,7 +359,7 @@ export const en = {
 
   'common.loading': 'Loading…',
   'common.allThemes': 'All themes',
-  'common.unlimited': 'Unlimited',
+  'common.unlimited': 'No limit',
   'common.minutesShort': (minutes: number) => `${minutes} min`,
   'common.durationIcon': (formatted: string) => `⏱ ${formatted}`,
 
