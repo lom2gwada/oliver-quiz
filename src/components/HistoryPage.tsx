@@ -6,6 +6,8 @@ import { bucketsToChartGroups, bucketsToRadarAxes, computeRecords, computeThemeW
 import { computeDueQuestions, fetchQuestionProgress, selectReviewQuestions, type QuestionProgressRow } from '../utils/leitner'
 import { longDate, shortDate } from '../utils/dateFormat'
 import { formatPercent } from '../utils/format'
+import { buildQuizOptions } from '../utils/quizOptions'
+import { timedDurationLabel } from '../utils/timedDuration'
 import { formatDuration } from '@engine/utils/time'
 import { PieChart } from '@engine/components/PieChart'
 import { RadarChart } from './RadarChart'
@@ -21,6 +23,8 @@ interface HistoryPageProps {
   onBack: () => void
   quiz: Quiz
   hostedQuizId: string
+  /** Les quiz auxquels le joueur a accès : la liste du sélecteur est la même que celle du classement. */
+  hostedQuizzes: { id: string; title: string }[]
   onReviewDue: (questions: Question[]) => void
   /** Ouvre le classement du quiz affiché ici (pas forcément le quiz actif de l'appli : le sélecteur de cette page
    * ne change que l'affichage) — `key`/`label` sont ceux de ce quiz dans le sélecteur. */
@@ -32,7 +36,7 @@ interface HistoryPageProps {
  * plutôt que de les traiter comme deux quiz différents. */
 const quizKeyOf = (row: { quiz_id: string | null; quiz_title: string }) => row.quiz_id ?? row.quiz_title
 
-export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue, onViewLeaderboard }: HistoryPageProps) {
+export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onReviewDue, onViewLeaderboard }: HistoryPageProps) {
   const { t, language } = useTranslation()
   const [rows, setRows] = useState<QuizResultRow[] | null>(null)
   const [streakRows, setStreakRows] = useState<StreakResultRow[]>([])
@@ -58,28 +62,23 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue, onViewLea
 
   const activeQuizKey = hostedQuizId || quiz.metadata.title
 
-  // Un même quiz renommé produit deux titres figés différents dans les vieilles lignes — on affiche le titre
-  // le plus récent rencontré pour chaque clé (les lignes de `quiz_results` arrivent triées par date décroissante),
-  // et on force le titre courant pour le quiz actuellement chargé si son historique apparaît dans la liste
-  // (seul quiz dont on connaît le titre à jour sans dépendre de ce qui a été figé au moment de chaque partie).
-  const keyLabels = new Map<string, string>()
-  const rememberKey = (row: { quiz_id: string | null; quiz_title: string }) => {
-    const key = quizKeyOf(row)
-    if (!keyLabels.has(key)) keyLabels.set(key, row.quiz_title)
-  }
-  ;(rows ?? []).forEach(rememberKey)
-  streakRows.forEach(rememberKey)
-  timedRows.forEach(rememberKey)
-  if (keyLabels.has(activeQuizKey)) keyLabels.set(activeQuizKey, quiz.metadata.title)
-  const quizKeys = Array.from(keyLabels.keys())
+  // Même liste, même ordre que le sélecteur du classement (voir `buildQuizOptions`). Un même quiz renommé produit deux
+  // titres figés différents dans les vieilles lignes : le titre courant du quiz accessible, ou à défaut le plus récent
+  // rencontré (les lignes arrivent triées par date décroissante), est celui affiché.
+  const seen = [...(rows ?? []), ...streakRows, ...timedRows].map((row) => ({ key: quizKeyOf(row), label: row.quiz_title }))
+  const quizOptions = buildQuizOptions({ hosted: hostedQuizzes, seen, active: { key: activeQuizKey, label: quiz.metadata.title }, language })
+  const keyLabels = new Map(quizOptions.map((option) => [option.key, option.label]))
+  const quizKeys = quizOptions.map((option) => option.key)
 
-  const activeQuiz = selectedQuiz && quizKeys.includes(selectedQuiz) ? selectedQuiz : (quizKeys.includes(activeQuizKey) ? activeQuizKey : quizKeys[0] ?? activeQuizKey)
+  const activeQuiz = selectedQuiz && quizKeys.includes(selectedQuiz) ? selectedQuiz : activeQuizKey
   const quizRows = rows ? rows.filter((row) => quizKeyOf(row) === activeQuiz) : null
   const quizStreakRows = streakRows.filter((row) => quizKeyOf(row) === activeQuiz)
   const bestStreak = quizStreakRows.length ? Math.max(...quizStreakRows.map((row) => row.streak_count)) : 0
-  const quizTimedRows = timedRows.filter((row) => quizKeyOf(row) === activeQuiz)
+  // Une partie contre-la-montre sans aucune question tentée n'a rien à montrer (« ✅ 0 / 0 ») : elle est masquée.
+  const quizTimedRows = timedRows.filter((row) => quizKeyOf(row) === activeQuiz && row.question_count > 0)
   const bestTimedCount = quizTimedRows.length ? Math.max(...quizTimedRows.map((row) => row.correct_count)) : 0
-  const timedDurationLabel = (row: TimedResultRow) => row.duration_seconds === 0 ? t('common.unlimited') : t('common.minutesShort', Math.round(row.duration_seconds / 60))
+  // « Parties jouées » : toutes les parties du quiz, tous modes confondus — comme « Mes quiz ».
+  const totalGames = (quizRows?.length ?? 0) + quizStreakRows.length + quizTimedRows.length
 
   const records = quizRows ? computeRecords(quizRows) : null
   const chartPoints = quizRows ? [...quizRows].reverse().map((row) => ({ label: shortDate(row.created_at, language), score: row.score })) : []
@@ -112,12 +111,12 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue, onViewLea
     {rows && !rows.length && <p>{t('history.emptyState')}</p>}
     {quizKeys.length > 0 && <label className="quiz-select">{t('start.quizLabel')}
       <select value={activeQuiz} onChange={(event) => setSelectedQuiz(event.target.value)}>
-        {quizKeys.map((key) => <option key={key} value={key}>{keyLabels.get(key)}</option>)}
+        {quizOptions.map((option) => <option key={option.key} value={option.key}>{option.label}</option>)}
       </select>
     </label>}
     {records && records.gamesPlayed > 0 && <>
       <div className="records-grid">
-        <div className="record-tile"><span className="record-value">{records.gamesPlayed}</span><span className="record-label">{t('history.gamesPlayed')}</span></div>
+        <div className="record-tile"><span className="record-value">{totalGames}</span><span className="record-label">{t('history.gamesPlayed')}</span></div>
         <div className="record-tile"><span className="record-value">{formatPercent(records.bestScore, language)}</span><span className="record-label" title={t('metric.pointsShareHint')}>{t('history.bestPointsShare')}</span></div>
         <div className="record-tile"><span className="record-value">{formatPercent(records.averageScore, language)}</span><span className="record-label" title={t('metric.pointsShareHint')}>{t('history.averagePointsShare')}</span></div>
         <div className="record-tile"><span className="record-value">{formatDuration(records.totalPlaytimeSeconds)}</span><span className="record-label">{t('history.totalPlaytime')}</span></div>
@@ -149,7 +148,7 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue, onViewLea
       <h3 className="stats-group-title profile-section-title">{t('history.streakSectionTitle')}</h3>
       <div className="records-grid">
         <div className="record-tile"><span className="record-value">🔥 {bestStreak}</span><span className="record-label">{t('history.bestStreak')}</span></div>
-        <div className="record-tile"><span className="record-value">{quizStreakRows.length}</span><span className="record-label">{t('history.gamesPlayed')}</span></div>
+        <div className="record-tile"><span className="record-value">{quizStreakRows.length}</span><span className="record-label">{t('history.modeGames')}</span></div>
       </div>
       <ul className="history-list">
         {quizStreakRows.slice(0, 10).map((row) => <li className="history-item" key={row.id}>
@@ -163,14 +162,14 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, onReviewDue, onViewLea
       <h3 className="stats-group-title profile-section-title">{t('history.timedSectionTitle')}</h3>
       <div className="records-grid">
         <div className="record-tile"><span className="record-value">✅ {bestTimedCount}</span><span className="record-label">{t('history.bestCorrect')}</span></div>
-        <div className="record-tile"><span className="record-value">{quizTimedRows.length}</span><span className="record-label">{t('history.gamesPlayed')}</span></div>
+        <div className="record-tile"><span className="record-value">{quizTimedRows.length}</span><span className="record-label">{t('history.modeGames')}</span></div>
       </div>
       <ul className="history-list">
         {quizTimedRows.slice(0, 10).map((row) => <li className="history-item" key={row.id}>
           <span className="history-score">✅ {row.correct_count} / {row.question_count}</span>
           <span className="history-date">{longDate(row.created_at, language)}</span>
           <span className="history-themes">{row.themes.join(', ') || t('common.allThemes')}</span>
-          <span>{timedDurationLabel(row)}</span>
+          <span>{timedDurationLabel(row.elapsed_seconds, row.duration_seconds, t)}</span>
         </li>)}
       </ul>
     </div>}

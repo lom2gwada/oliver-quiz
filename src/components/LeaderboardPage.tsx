@@ -8,6 +8,8 @@ import { supabase } from '../utils/supabase'
 import { longDate } from '../utils/dateFormat'
 import { formatNumber, formatPercent } from '../utils/format'
 import { formatDuration } from '@engine/utils/time'
+import { buildQuizOptions } from '../utils/quizOptions'
+import { timedDurationLabel } from '../utils/timedDuration'
 
 const RANK_MEDALS: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
 const MAX_ROWS = 10
@@ -31,6 +33,8 @@ interface DisplayRow {
 interface LeaderboardPageProps {
   quiz: Quiz
   hostedQuizId: string
+  /** Les quiz auxquels le joueur a accès : la liste du sélecteur est la même que celle de l'historique. */
+  hostedQuizzes: { id: string; title: string }[]
   initialMode?: GameMode
   /** Quiz à afficher d'emblée quand on arrive depuis la page d'historique (qui peut montrer un autre quiz que
    * le quiz actif) ; ajouté au sélecteur même sans partie classée, pour ne pas retomber sur un autre quiz. */
@@ -53,7 +57,7 @@ const pointsLabel = (points: number | null) => (points !== null ? `${points} pts
 const pointsSummary = (earned: number | null, total: number | null, t: Translate, language: Language) =>
   earned === null ? '—' : total ? `${earned} pts (${t('metric.pointsShare', formatPercent(Math.round((earned / total) * 100), language))})` : `${earned} pts`
 
-export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', focusQuiz = null, onViewOverview, onBack }: LeaderboardPageProps) {
+export function LeaderboardPage({ quiz, hostedQuizId, hostedQuizzes, initialMode = 'classic', focusQuiz = null, onViewOverview, onBack }: LeaderboardPageProps) {
   const { t, language } = useTranslation()
   const [mode, setMode] = useState<LeaderboardTab>(initialMode)
   const [rows, setRows] = useState<LeaderboardRow[] | null>(null)
@@ -74,21 +78,17 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', f
 
   const activeRows = mode === 'classic' ? rows : mode === 'streak' ? streakRows : mode === 'timed' ? timedRows : overallRows
 
-  // Le sélecteur de quiz liste tous les quiz ayant une partie dans N'IMPORTE QUEL mode (pas seulement le mode
-  // actif) : sinon changer d'onglet pouvait faire disparaître le quiz choisi de la liste et en faisait
-  // resélectionner un autre silencieusement, sans que l'utilisateur comprenne pourquoi. Le quiz choisi reste
-  // donc le même en changeant d'onglet ; s'il n'a pas de partie dans ce mode, `displayRows` sera simplement vide.
+  // Le sélecteur de quiz est celui de l'historique (voir `buildQuizOptions`) : les quiz accessibles, plus ceux dont une
+  // ligne existe encore dans N'IMPORTE QUEL mode (pas seulement le mode actif — sinon changer d'onglet faisait disparaître
+  // le quiz choisi), plus le quiz actif, même sans aucune partie classée : les vues du classement ne retiennent que les
+  // parties sans filtre, donc un quiz joué uniquement avec des filtres en serait absent. Le quiz choisi reste le même en
+  // changeant d'onglet ; s'il n'a pas de partie dans ce mode, `displayRows` sera simplement vide.
   const allSources = [rows, streakRows, timedRows, overallRows]
   const activeQuizKey = hostedQuizId || quiz.metadata.title
-  // Le quiz actuellement chargé figure toujours dans la liste, même sans aucune partie classée : les vues du
-  // classement ne retiennent que les parties sans filtre, donc un quiz joué uniquement avec des filtres en
-  // serait absent — et la page afficherait silencieusement le classement d'un autre quiz (cas typique en
-  // arrivant depuis « Mes quiz »).
-  const quizKeys = Array.from(new Set([activeQuizKey, ...(focusQuiz ? [focusQuiz.key] : []), ...allSources.flatMap((source) => (source ?? []).map(quizKeyOf))]))
-  const keyLabels = new Map<string, string>([[activeQuizKey, quiz.metadata.title]])
-  if (focusQuiz && !keyLabels.has(focusQuiz.key)) keyLabels.set(focusQuiz.key, focusQuiz.label)
-  allSources.forEach((source) => (source ?? []).forEach((row) => { if (!keyLabels.has(quizKeyOf(row))) keyLabels.set(quizKeyOf(row), row.quiz_title) }))
-  const activeQuiz = selectedQuiz && quizKeys.includes(selectedQuiz) ? selectedQuiz : (quizKeys.includes(activeQuizKey) ? activeQuizKey : quizKeys[0])
+  const seen = [...(focusQuiz ? [focusQuiz] : []), ...allSources.flatMap((source) => (source ?? []).map((row) => ({ key: quizKeyOf(row), label: row.quiz_title })))]
+  const quizOptions = buildQuizOptions({ hosted: hostedQuizzes, seen, active: { key: activeQuizKey, label: quiz.metadata.title }, language })
+  const quizKeys = quizOptions.map((option) => option.key)
+  const activeQuiz = selectedQuiz && quizKeys.includes(selectedQuiz) ? selectedQuiz : activeQuizKey
 
   // Chaque vue est déjà triée côté base, mais le tri global (toutes parties confondues) ne correspond pas
   // forcément au top 10 d'un quiz une fois filtré sur `activeQuiz` — d'où ce re-tri après filtrage.
@@ -114,13 +114,13 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', f
             score: `${row.victory ? '🏆' : '🔥'} ${row.best_streak}`, scoreLabel: t('leaderboard.scoreStreak'), detailsHint: t('metric.pointsShareHint'),
           }))
         : mode === 'timed'
-          ? (timedRows ?? []).filter((row) => quizKeyOf(row) === activeQuiz)
+          ? (timedRows ?? []).filter((row) => quizKeyOf(row) === activeQuiz && row.question_count > 0)
             .sort((a, b) => b.correct_count - a.correct_count || (b.pace_per_minute ?? -1) - (a.pace_per_minute ?? -1))
             .slice(0, MAX_ROWS)
             .map((row) => ({
               userId: row.user_id, pseudo: row.pseudo, avatar: row.avatar,
               date: longDate(row.played_at, language),
-              details: t('leaderboard.detailsTimed', row.correct_count, row.question_count, pointsSummary(row.earned_points, row.total_points, t, language), row.duration_seconds === 0 ? t('common.unlimited') : t('common.minutesShort', Math.round(row.duration_seconds / 60)), formatDuration(row.elapsed_seconds)),
+              details: t('leaderboard.detailsTimed', row.correct_count, row.question_count, pointsSummary(row.earned_points, row.total_points, t, language), timedDurationLabel(row.elapsed_seconds, row.duration_seconds, t)),
               score: row.pace_per_minute !== null ? formatNumber(row.pace_per_minute, language) : '—', scoreLabel: t('leaderboard.scorePace'), detailsHint: t('metric.pointsShareHint'),
             }))
           : (overallRows ?? []).filter((row) => quizKeyOf(row) === activeQuiz)
@@ -152,7 +152,7 @@ export function LeaderboardPage({ quiz, hostedQuizId, initialMode = 'classic', f
     {activeRows && !displayRows.length && <p>{t('leaderboard.emptyState')}</p>}
     {quizKeys.length > 0 && <label className="quiz-select">{t('start.quizLabel')}
       <select value={activeQuiz} onChange={(event) => setSelectedQuiz(event.target.value)}>
-        {quizKeys.map((key) => <option key={key} value={key}>{keyLabels.get(key)}</option>)}
+        {quizOptions.map((option) => <option key={option.key} value={option.key}>{option.label}</option>)}
       </select>
     </label>}
     {displayRows.length > 0 && <ol className="leaderboard-list">
