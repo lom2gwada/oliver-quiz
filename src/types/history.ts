@@ -65,7 +65,15 @@ export interface QuestionResultPayload {
   question_id: string
   question_text: string
   correct: boolean
+  /** La partie (`quiz_results.id`) et le rang de la question dedans ; `null` pour une ligne d'avant ces colonnes. */
+  quiz_result_id: string | null
+  position: number
+  /** La réponse du joueur (texte, ou liste d'identifiants), `null` sans réponse. */
+  answer: string | string[] | null
 }
+
+/** Une question d'une partie, telle que `fetchGameQuestions` la relit. */
+export type GameQuestionRow = Pick<QuestionResultPayload, 'question_id' | 'question_text' | 'correct' | 'position' | 'answer'>
 
 export interface StreakResultPayload {
   /** Voir `QuizResultPayload.id`. */

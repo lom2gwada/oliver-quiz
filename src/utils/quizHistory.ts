@@ -1,5 +1,5 @@
 import type { AnswersByQuestion, Question, QuestionAttempt, Category } from '../types/quiz'
-import type { ChartGroup, QuestionResultPayload, QuizRecords, QuizResultPayload, QuizResultRow, RadarAxis, StatBucket, StreakResultPayload, StreakResultRow, ThemeWeekHeatmap, TimedResultPayload, TimedResultRow } from '../types/history'
+import type { ChartGroup, GameQuestionRow, QuestionResultPayload, QuizRecords, QuizResultPayload, QuizResultRow, RadarAxis, StatBucket, StreakResultPayload, StreakResultRow, ThemeWeekHeatmap, TimedResultPayload, TimedResultRow } from '../types/history'
 import { isCorrect } from '../components/ResultPage'
 import { supabase } from './supabase'
 
@@ -62,15 +62,26 @@ export async function fetchQuizHistory(): Promise<QuizResultRow[]> {
 
 /** Une ligne par question de la partie : journal brut, conservé même si la sélection des questions à réviser
  * repose désormais sur `question_progress` (boîtes de Leitner, voir `utils/leitner.ts`) plutôt que sur ce log. */
-export function buildQuestionResultPayloads(questions: Question[], answers: AnswersByQuestion, quizTitle: string, quizId: string | null): QuestionResultPayload[] {
-  return questions.map((question) => ({
+export function buildQuestionResultPayloads(questions: Question[], answers: AnswersByQuestion, quizTitle: string, quizId: string | null, gameId: string | null = null): QuestionResultPayload[] {
+  return questions.map((question, index) => ({
     id: crypto.randomUUID(),
     quiz_title: quizTitle,
     quiz_id: quizId,
     question_id: question.id,
     question_text: question.question,
     correct: isCorrect(question, answers[question.id]),
+    quiz_result_id: gameId,
+    position: index,
+    answer: answers[question.id] ?? null,
   }))
+}
+
+/** Les questions d'une partie classique, dans l'ordre où elles ont été posées. Vide pour une partie d'avant
+ * `035_question_results_game_detail.sql` : son détail se limite aux totaux déjà stockés sur la partie. */
+export async function fetchGameQuestions(gameId: string): Promise<GameQuestionRow[]> {
+  const { data, error } = await supabase.from('question_results').select('question_id, question_text, correct, position, answer').eq('quiz_result_id', gameId).order('position', { ascending: true })
+  if (error) throw error
+  return data ?? []
 }
 
 export async function saveQuestionResults(payloads: QuestionResultPayload[]): Promise<void> {
@@ -194,12 +205,25 @@ export function weekStartKey(date: Date): string {
   return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
 }
 
+/** Les lundis de toutes les semaines entre deux clés `YYYY-MM-DD` de lundi, bornes comprises, du plus ancien au plus récent. */
+export function weekKeysBetween(first: string, last: string): string[] {
+  const keys: string[] = []
+  const [year, month, day] = first.split('-').map(Number)
+  for (let offset = 0; ; offset += 7) {
+    const key = weekStartKey(new Date(year, month - 1, day + offset))
+    if (key > last) return keys
+    keys.push(key)
+  }
+}
+
 /** Croise thèmes (lignes) et semaines (colonnes) : pour chaque case, le cumul correct/total des parties de cette
- * semaine, `null` si le thème n'a pas été joué. Seules les `maxWeeks` dernières semaines comportant au moins une
- * partie sont gardées (pas de colonnes vides), et les `maxThemes` thèmes les plus joués — au-delà, la grille
- * devient illisible sur les quiz à beaucoup de thèmes. */
+ * semaine, `null` si le thème n'a pas été joué. Les colonnes sont toutes les semaines de la période — de la première
+ * à la dernière partie, semaines sans partie comprises (les sauter faisait paraître consécutives deux semaines
+ * éloignées) — limitées aux `maxWeeks` dernières, et les lignes aux `maxThemes` thèmes les plus joués : au-delà, la
+ * grille devient illisible sur les quiz à beaucoup de thèmes. */
 export function computeThemeWeekHeatmap(rows: QuizResultRow[], maxWeeks = 12, maxThemes = 15): ThemeWeekHeatmap {
-  const weekKeys = Array.from(new Set(rows.map((row) => weekStartKey(new Date(row.created_at))))).sort().slice(-maxWeeks)
+  const playedWeeks = Array.from(new Set(rows.map((row) => weekStartKey(new Date(row.created_at))))).sort()
+  const weekKeys = playedWeeks.length ? weekKeysBetween(playedWeeks[0], playedWeeks[playedWeeks.length - 1]).slice(-maxWeeks) : []
   const byTheme = new Map<string, Map<string, StatBucket>>()
   rows.forEach((row) => {
     const week = weekStartKey(new Date(row.created_at))
