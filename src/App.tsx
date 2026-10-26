@@ -690,7 +690,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       </label>
       {gameMode === 'classic' && timeboxed && <p className="mode-hint">{t('start.timedEstimate', formatDuration(timedEstimateSeconds))}</p>}
       <p>{t('start.availability', filteredQuestions.length, gameMode, Math.min(questionCount, filteredQuestions.length))}</p>
-      <button type="button" onClick={gameMode === 'classic' ? startQuiz : gameMode === 'streak' ? startStreak : startTimed} disabled={!filteredQuestions.length || !quizReady}>{gameMode === 'classic' ? t('start.startClassic') : gameMode === 'streak' ? t('start.startStreak') : t('start.startTimed')}</button>
+      <button type="button" className="start-button" onClick={gameMode === 'classic' ? startQuiz : gameMode === 'streak' ? startStreak : startTimed} disabled={!filteredQuestions.length || !quizReady}>{gameMode === 'classic' ? t('start.startClassic') : gameMode === 'streak' ? t('start.startStreak') : t('start.startTimed')}</button>
     </section>}
     {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} timeboxed={timeboxed} onFinish={(nextAnswers, duration, played) => {
       setAnswers(nextAnswers); setElapsedSeconds(duration); setSessionQuestions(played); replace('results')

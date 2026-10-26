@@ -18,6 +18,8 @@ export const en = {
 
   'nav.profile': '👤 Profile',
   'nav.quiz': '⚙️ Quiz',
+  'nav.menu': 'Menu',
+  'filter.summary': (active: number) => (active > 0 ? `Filters (${active})` : 'Filters'),
   'nav.goHome': 'Back to the home page',
   'nav.home': 'Home',
   'nav.admin': 'Administration',
