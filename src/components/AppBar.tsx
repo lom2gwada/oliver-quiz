@@ -4,6 +4,7 @@ import { useTranslation } from '../i18n'
 import type { Profile } from '../types/profile'
 import type { View } from '../utils/routes'
 import { LanguageSwitch } from './LanguageSwitch'
+import { SoundIcon } from './SoundIcon'
 
 interface AppBarProps {
   view: View
@@ -44,7 +45,7 @@ export function AppBar({ view, muted, profile, onLanguageChange, onToggleSound, 
     <button type="button" className="secondary app-menu-toggle" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-controls="app-menu" aria-label={t('nav.menu')}>{menuOpen ? '✕' : '☰'}</button>
     <div className="header-actions" id="app-menu">
       <LanguageSwitch value={language} onChange={(next) => { setMenuOpen(false); onLanguageChange(next) }} />
-      <button type="button" className="secondary" onClick={thenClose(onToggleSound)} aria-label={muted ? t('nav.unmuteSound') : t('nav.muteSound')}>{muted ? '🔇' : '🔊'}</button>
+      <button type="button" className="secondary" onClick={thenClose(onToggleSound)} aria-label={muted ? t('nav.unmuteSound') : t('nav.muteSound')}><SoundIcon muted={muted} /></button>
       <button type="button" className="secondary" onClick={thenClose(onProfile)} aria-current={view === 'profile' ? 'page' : undefined}>{profile ? `${profile.avatar} ${profile.pseudo}` : t('nav.profile')}</button>
       {profile?.isAdmin && <button type="button" className="secondary" onClick={thenClose(onAdmin)} aria-current={onAdminPage ? 'page' : undefined}>{t('nav.quiz')}</button>}
       <button type="button" className="secondary" onClick={thenClose(onLogout)}>{t('common.logout')}</button>

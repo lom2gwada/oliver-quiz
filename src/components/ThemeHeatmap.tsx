@@ -2,8 +2,9 @@ import type { ThemeWeekHeatmap } from '../types/history'
 import { useTranslation } from '../i18n'
 import { formatPercent } from '../utils/format'
 
-/** Du rouge (0 %) au vert (100 %) en passant par l'ambre — teinte HSL directe, lisible en thème clair comme sombre. */
-const rateColor = (rate: number) => `hsl(${Math.round(rate * 1.2)} 62% 38%)`
+/** Du rouge (0 %) au vert (100 %) en passant par l'ambre — teinte HSL directe. Luminosité à 27 % : le texte blanc des cases
+ * garde un contraste d'au moins 4,5:1 sur toute la plage (à 38 %, le jaune-vert tombait vers 3:1). */
+export const rateColor = (rate: number) => `hsl(${Math.round(rate * 1.2)} 62% 27%)`
 
 export function ThemeHeatmap({ heatmap, title, note }: { heatmap: ThemeWeekHeatmap; title: string; note?: string }) {
   const { t, language } = useTranslation()
