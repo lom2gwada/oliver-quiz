@@ -9,7 +9,9 @@ import { CoverageBar } from './components/CoverageBar'
 import { SaveStatusNotice } from './components/SaveStatusNotice'
 import { LanguageSwitch } from './components/LanguageSwitch'
 import { QuizLanguageProvider } from './utils/quizLanguageContext'
-import { confirmWithBlur } from './utils/confirmWithBlur'
+import { confirmDialog } from './utils/confirmDialog'
+import { abandonGameConfirm, deleteQuestionConfirm, leaveProfileConfirm } from './utils/confirmPresets'
+import { ConfirmHost } from './components/ConfirmHost'
 import { hashToRoute, isEphemeralView, routeToHash, type View } from './utils/routes'
 import { breadcrumbFor, isPlayingView, isQuizPage } from './utils/pageContext'
 import { formatNumber, formatPercent } from './utils/format'
@@ -291,13 +293,17 @@ export default function App({ onLogout }: { onLogout: () => void }) {
         if (!target?.quizId || isEphemeralView(nextView) || target.quizId === selectedIdRef.current) return
         if (hostedQuizzesRef.current.some((hosted) => hosted.id === target.quizId)) selectHostedQuizRef.current(target.quizId)
       }
-      if (viewRef.current === 'profile' && nextView !== 'profile' && profileDirtyRef.current && !window.confirm(tRef.current('profile.confirmLeave'))) {
-        window.history.pushState({ view: 'profile' }, '', urlForView('profile'))
+      if (viewRef.current === 'profile' && nextView !== 'profile' && profileDirtyRef.current) {
+        confirmDialog(leaveProfileConfirm(tRef.current)).then((leave) => {
+          if (!leave) { window.history.pushState({ view: 'profile' }, '', urlForView('profile')); return }
+          setView(nextView)
+          syncQuiz()
+        })
         return
       }
       if ((viewRef.current === 'quiz' || viewRef.current === 'streak' || viewRef.current === 'timed') && nextView !== viewRef.current) {
         const playingView = viewRef.current
-        confirmWithBlur(tRef.current('start.confirmAbandon')).then((leave) => {
+        confirmDialog(abandonGameConfirm(tRef.current, tRef.current('start.confirmAbandon'))).then((leave) => {
           if (!leave) { window.history.pushState({ view: playingView }, '', urlForView(playingView)); return }
           setAnswers({}); setSessionQuestions([]); setElapsedSeconds(0)
           setView(nextView)
@@ -320,13 +326,13 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   useEffect(() => { if (profile && !profile.isAdmin && (view === 'quizzes' || view === 'quizDetail')) replace('start') }, [profile, view])
   // Navigation depuis la barre supérieure, présente sur toutes les pages : quitter une partie en cours en abandonne la
   // progression, comme le bouton « Annuler » et le retour du navigateur, et demande donc confirmation.
-  const confirmLeaveProfile = () => !profileDirtyRef.current || window.confirm(t('profile.confirmLeave'))
+  const confirmLeaveProfile = async () => !profileDirtyRef.current || await confirmDialog(leaveProfileConfirm(t))
   const goTo = async (next: View) => {
     if (viewRef.current === next) return
     playClick()
-    if (viewRef.current === 'profile' && !confirmLeaveProfile()) return
+    if (viewRef.current === 'profile' && !(await confirmLeaveProfile())) return
     if (isPlayingView(viewRef.current)) {
-      if (!(await confirmWithBlur(t('start.confirmAbandon')))) return
+      if (!(await confirmDialog(abandonGameConfirm(t, t('start.confirmAbandon'))))) return
       setAnswers({}); setSessionQuestions([]); setElapsedSeconds(0)
     }
     navigate(next)
@@ -462,7 +468,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
 
   /** Admin uniquement, sur un quiz hébergé actif : supprime définitivement une question, après confirmation. */
   const deleteQuestion = async (id: string) => {
-    if (!window.confirm(t('admin.confirmDeleteQuestion'))) return
+    if (!(await confirmDialog(deleteQuestionConfirm(t)))) return
     setEditError('')
     try {
       await republishQuestions(quiz.questions.filter((question) => question.id !== id))
@@ -744,7 +750,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} hostedQuizId={selectedHostedQuizId} hostedQuizzes={hostedQuizzes} onReviewDue={reviewDue} onViewLeaderboard={(key, label) => { playClick(); viewLeaderboard('history', 'classic', { key, label }) }} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} hostedQuizId={selectedHostedQuizId} hostedQuizzes={hostedQuizzes} initialMode={leaderboardMode} focusQuiz={leaderboardFocus} onViewOverview={() => viewOverview('leaderboard')} onBack={() => navigate(leaderboardBack)} />}
     {view === 'about' && <AboutPage onBack={() => navigate('start')} />}
-    {view === 'profile' && <ProfilePage key={profile ? 'loaded' : 'loading'} profile={profile} onDirtyChange={(dirty) => { profileDirtyRef.current = dirty }} onBack={() => { if (confirmLeaveProfile()) navigate('start') }} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} />}
+    {view === 'profile' && <ProfilePage key={profile ? 'loaded' : 'loading'} profile={profile} onDirtyChange={(dirty) => { profileDirtyRef.current = dirty }} onBack={async () => { if (await confirmLeaveProfile()) navigate('start') }} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} />}
     <AppFooter onAbout={() => goTo('about')} />
+    <ConfirmHost />
   </main></QuizLanguageProvider></LanguageProvider>
 }

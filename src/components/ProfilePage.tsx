@@ -5,6 +5,8 @@ import { playClick } from '@engine/utils/sound'
 import { supabase } from '../utils/supabase'
 import { applyTheme } from '../utils/theme'
 import { deleteMyAccount, verifyPassword } from '../utils/account'
+import { confirmDialog } from '../utils/confirmDialog'
+import { deleteAccountConfirm } from '../utils/confirmPresets'
 import { isPseudoDirty } from '../utils/profileDraft'
 
 export const AVATAR_OPTIONS = ['🙂', '😎', '🤓', '🦊', '🐱', '🐶', '🦁', '🐼', '🚀', '🎯', '⭐', '🔥']
@@ -108,7 +110,7 @@ export function ProfilePage({ profile, onBack, onSave, onDirtyChange }: ProfileP
   const submitDelete = async (event: React.FormEvent) => {
     event.preventDefault()
     setDeleteError('')
-    if (!window.confirm(t('profile.deleteConfirm'))) return
+    if (!(await confirmDialog(deleteAccountConfirm(t)))) return
     setDeleting(true)
     if (!(await verifyPassword(email, deletePassword))) {
       setDeleting(false)

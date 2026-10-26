@@ -4,6 +4,8 @@ import { useTranslation } from '../i18n'
 import { createGuestLink, deleteGuestLink, fetchGuestLinks } from '../utils/guestLinks'
 import type { Quiz } from '../types/quiz'
 import { GuestResultsPanel } from './GuestResultsPanel'
+import { confirmDialog } from '../utils/confirmDialog'
+import { deleteGuestLinkConfirm } from '../utils/confirmPresets'
 
 const guestLinkUrl = (token: string) => `${window.location.origin}${window.location.pathname}?g=${token}`
 
@@ -39,7 +41,7 @@ export function GuestLinksManager({ quizId, quiz }: { quizId: string; quiz: Quiz
   }
 
   const remove = async (token: string) => {
-    if (!window.confirm(t('admin.confirmDeleteGuestLink'))) return
+    if (!(await confirmDialog(deleteGuestLinkConfirm(t)))) return
     setError('')
     try {
       await deleteGuestLink(token)

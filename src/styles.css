@@ -339,3 +339,12 @@ header.app-header { display: block; padding-bottom: 1.4rem; margin-bottom: 2rem;
 .profile-email { margin: 0 0 1.2rem; color: var(--text-soft); overflow-wrap: anywhere; }
 
 .sound-icon { display: block; }
+
+.confirm-dialog { width: min(28rem, calc(100vw - 2rem)); padding: 0; border: 1px solid var(--border); border-radius: .9rem; background: var(--surface-solid); color: var(--text); box-shadow: var(--shadow); }
+.confirm-dialog::backdrop { background: rgba(2, 6, 23, .55); }
+.confirm-body { display: grid; gap: .8rem; padding: 1.3rem 1.4rem; }
+.confirm-body h2 { margin: 0; font-size: 1.15rem; color: var(--ink); }
+.confirm-body p { margin: 0; color: var(--text-soft); }
+.confirm-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .6rem; margin-top: .4rem; }
+.confirm-actions button { width: auto; }
+.confirm-actions button.danger { background: #b91c1c; color: #fff; }
