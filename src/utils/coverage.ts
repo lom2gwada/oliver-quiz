@@ -13,7 +13,7 @@ export interface QuizCoverage {
   due_count: number
 }
 
-/** Taille d'une session de révision lancée depuis la vue d'ensemble (les plus fragiles d'abord) — la page
+/** Taille d'une session de révision lancée depuis « Mes quiz » (les plus fragiles d'abord) — la page
  * d'historique propose, elle, de choisir cette taille. */
 export const REVIEW_BATCH_SIZE = 20
 

@@ -556,7 +556,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     navigate('quiz')
   }
 
-  /** Depuis la vue d'ensemble : charge le quiz choisi et lance directement une révision sur ses cartes Leitner
+  /** Depuis « Mes quiz » : charge le quiz choisi et lance directement une révision sur ses cartes Leitner
    * échues (les plus fragiles d'abord). Rejette en cas d'échec de chargement pour que la page l'affiche. */
   const reviewQuizDue = async (id: string) => {
     const content = parseQuiz(await fetchQuizContent(id))
@@ -568,7 +568,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
 
   const [reviewing, setReviewing] = useState(false)
   const [reviewError, setReviewError] = useState(false)
-  /** Bouton « Réviser » de l'accueil : même session que depuis la vue d'ensemble, sur le quiz actif. */
+  /** Bouton « Réviser » de l'accueil : même session que depuis « Mes quiz », sur le quiz actif. */
   const reviewActiveQuiz = async () => {
     setReviewError(false)
     setReviewing(true)
@@ -667,7 +667,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {activeCoverage?.quiz_id === selectedHostedQuizId && activeCoverage.due_count > 0 && <button type="button" className="secondary" disabled={reviewing} onClick={reviewActiveQuiz}>{reviewing ? t('common.loading') : t('overview.review', Math.min(activeCoverage.due_count, REVIEW_BATCH_SIZE))}</button>}
     <button type="button" className="secondary" disabled={reviewing} onClick={() => { playClick(); viewHistory('start') }}>{t('overview.history')}</button>
     <button type="button" className="secondary" disabled={reviewing} onClick={() => { playClick(); viewLeaderboard('start', gameMode) }}>{t('overview.leaderboard')}</button>
-    <button type="button" className="secondary" disabled={reviewing} onClick={() => { playClick(); viewOverview('start') }}>{t('start.changeQuiz')}</button>
+    <button type="button" className="secondary" disabled={reviewing} onClick={() => { playClick(); viewOverview('start') }}>{t('nav.overview')}</button>
   </div>
   {reviewError && <p className="alert" role="alert">{t('overview.errorReview')}</p>}
 </div>}

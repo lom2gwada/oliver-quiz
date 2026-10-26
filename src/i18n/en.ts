@@ -33,7 +33,6 @@ export const en = {
   'nav.by': (author: string) => `by ${author}`,
 
   'start.quizLabel': 'Quiz',
-  'start.changeQuiz': '📊 Change quiz',
   'start.quizListLoading': 'Loading quizzes…',
   'start.quizListError': 'Could not load the quiz list.',
   'start.retry': 'Retry',
@@ -339,7 +338,7 @@ export const en = {
   'history.dueBox': (box: number) => `Box ${box}/5`,
 
   'overview.title': 'My quizzes',
-  'overview.errorLoad': 'Could not load the overview.',
+  'overview.errorLoad': 'Could not load “My quizzes”.',
   'overview.emptyState': "You haven't played any quiz yet.",
   'overview.summary': (quizCount: number, seen: number, total: number) =>
     `${quizCount} quiz${quizCount > 1 ? 'zes' : ''} in progress · ${seen} of ${total} questions seen`,
