@@ -32,6 +32,16 @@ p { color: var(--text-muted); } .eyebrow { margin: 0; color: var(--accent-text);
 /* Page floutée pendant la confirmation d'abandon d'un quiz en cours (voir utils/confirmWithBlur.ts). */
 #root.is-confirming { filter: blur(8px); }
 .save-notice { margin: 0 0 1rem; padding: .6rem .9rem; font-size: .9rem; }
+.danger-zone { margin-top: 3rem; padding: 1.2rem 1.4rem; display: grid; gap: 1rem; border: 1px solid var(--error); border-radius: .8rem; background: color-mix(in srgb, var(--danger-bg) 45%, transparent); }
+.danger-zone h3 { margin: 0; color: var(--danger-text); }
+.danger-zone p { margin: 0; color: var(--text-soft); }
+.danger-zone .alert { background: var(--danger-bg); }
+.danger-step { display: flex; align-items: center; flex-wrap: wrap; gap: .8rem; }
+.danger-confirm { display: grid; gap: .4rem; color: var(--text-soft); }
+.danger-confirm input { width: 100%; background: var(--surface-solid); color: var(--text); border: 1px solid var(--border-input); border-radius: .45rem; padding: .7rem; }
+.danger-confirm .danger-title { color: var(--danger-text); user-select: all; overflow-wrap: anywhere; }
+.danger-zone > button.danger { justify-self: start; width: auto; }
+.danger-zone > button.danger:disabled { opacity: .45; cursor: not-allowed; }
 .language-switch { display: inline-flex; border: 1px solid var(--border); border-radius: .6rem; overflow: hidden; }.language-switch button { background: transparent; color: var(--text-soft); border: 0; border-radius: 0; padding: .55rem .7rem; font-size: .85rem; font-weight: 600; }.language-switch button[aria-pressed="true"] { background: var(--surface-selected); color: var(--text); font-weight: 800; }
 .header-actions { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; }
 .file-input { background: var(--surface-alt); border: 1px solid var(--border-input); padding: .65rem .8rem; border-radius: .55rem; cursor: pointer; white-space: nowrap; } .file-input input { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; } .file-input:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }

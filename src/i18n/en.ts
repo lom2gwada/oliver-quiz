@@ -69,10 +69,14 @@ export const en = {
   'admin.errorAddTheme': 'Could not add this theme.',
   'admin.errorDuplicateTitleOther': 'Another quiz already has this title.',
   'admin.errorUpdateQuiz': 'Could not update this quiz.',
-  'admin.deleteQuizButton': '🗑️ Delete this quiz',
+  'admin.deleteQuizButton': '🗑️ Permanently delete this quiz',
+  'admin.dangerZoneTitle': 'Danger zone',
+  'admin.dangerZoneIntro': "Deleting a quiz is permanent: its questions, the access granted, its guest links and every player's review progress are removed. The game history is kept unless you also purge it. Export the quiz first.",
+  'admin.exportBeforeDeleteButton': 'Export this quiz (JSON) before deleting it',
+  'admin.exportedNotice': 'Export downloaded ✓',
+  'admin.dangerConfirmPrompt': 'To confirm, type the quiz title:',
+  'admin.dangerConfirmPlaceholder': 'Quiz title',
   'admin.deleteHistoryTooLabel': "Also delete this quiz's history (games and leaderboard, for every player)",
-  'admin.confirmDeleteQuiz': (title: string, includeHistory: boolean) =>
-    `Permanently delete "${title}"? All its questions and every granted access will be lost.${includeHistory ? " This quiz's history and leaderboard will also be deleted for every player." : ' Its history and leaderboard will remain visible.'} This action cannot be undone.`,
   'admin.errorDeleteQuiz': 'Could not delete this quiz.',
   'admin.errorDeleteQuizHistory': 'The quiz was deleted, but its history could not be cleared.',
 
