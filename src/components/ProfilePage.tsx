@@ -4,6 +4,7 @@ import { useTranslation } from '../i18n'
 import { playClick } from '@engine/utils/sound'
 import { supabase } from '../utils/supabase'
 import { applyTheme } from '../utils/theme'
+import { deleteMyAccount, verifyPassword } from '../utils/account'
 import { isPseudoDirty } from '../utils/profileDraft'
 
 export const AVATAR_OPTIONS = ['🙂', '😎', '🤓', '🦊', '🐱', '🐶', '🦁', '🐼', '🚀', '🎯', '⭐', '🔥']
@@ -12,12 +13,11 @@ interface ProfilePageProps {
   profile: Profile | null
   onBack: () => void
   onSave: (profile: Profile) => Promise<void>
-  onViewOverview: () => void
   /** Signale à l'appli que le pseudo saisi n'est pas enregistré : elle demande confirmation avant de quitter la page. */
   onDirtyChange: (dirty: boolean) => void
 }
 
-export function ProfilePage({ profile, onBack, onSave, onViewOverview, onDirtyChange }: ProfilePageProps) {
+export function ProfilePage({ profile, onBack, onSave, onDirtyChange }: ProfilePageProps) {
   const { t } = useTranslation()
   // La page est remontée (voir `key` dans App) quand le profil arrive : ces valeurs partent toujours du profil enregistré.
   const [pseudo, setPseudo] = useState(profile?.pseudo ?? '')
@@ -53,6 +53,11 @@ export function ProfilePage({ profile, onBack, onSave, onViewOverview, onDirtyCh
     }
   }
 
+  // L'e-mail du compte (celui de la connexion) : affiché pour qu'on sache sous quelle adresse on est connecté.
+  const [email, setEmail] = useState('')
+  useEffect(() => { supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? '')).catch(() => {}) }, [])
+
+  const [currentPassword, setCurrentPassword] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordError, setPasswordError] = useState('')
@@ -82,13 +87,42 @@ export function ProfilePage({ profile, onBack, onSave, onViewOverview, onDirtyCh
       return
     }
     setPasswordSaving(true); setPasswordError(''); setPasswordSaved(false)
+    // Une session restée ouverte ne suffit pas à changer le mot de passe : on redemande l'actuel.
+    if (!(await verifyPassword(email, currentPassword))) {
+      setPasswordSaving(false)
+      setPasswordError(t('profile.currentPasswordWrong'))
+      return
+    }
     const { error: updateError } = await supabase.auth.updateUser({ password })
     setPasswordSaving(false)
     if (updateError) {
       setPasswordError(t('profile.errorPassword'))
       return
     }
-    setPassword(''); setConfirmPassword(''); setPasswordSaved(true)
+    setCurrentPassword(''); setPassword(''); setConfirmPassword(''); setPasswordSaved(true)
+  }
+
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+  const submitDelete = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setDeleteError('')
+    if (!window.confirm(t('profile.deleteConfirm'))) return
+    setDeleting(true)
+    if (!(await verifyPassword(email, deletePassword))) {
+      setDeleting(false)
+      setDeleteError(t('profile.currentPasswordWrong'))
+      return
+    }
+    const failure = await deleteMyAccount()
+    if (failure) {
+      setDeleting(false)
+      setDeleteError(t(failure === 'lastAdmin' ? 'profile.deleteErrorLastAdmin' : 'profile.deleteError'))
+      return
+    }
+    // Le compte n'existe plus : la session locale est fermée, l'écran de connexion prend la suite.
+    await supabase.auth.signOut()
   }
 
   return <section className="stats-page">
@@ -96,9 +130,7 @@ export function ProfilePage({ profile, onBack, onSave, onViewOverview, onDirtyCh
       <h2>{t('profile.title')}</h2>
       <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
     </div>
-    <div className="nav-links">
-      <button type="button" className="secondary" onClick={onViewOverview}>{t('nav.overview')}</button>
-    </div>
+    <p className="profile-email"><strong>{t('profile.emailLabel')}</strong> {email || '…'}</p>
     <form className="profile-form" onSubmit={submit}>
       <label>{t('profile.pseudoLabel')}
         <input value={pseudo} onChange={(event) => { setPseudo(event.target.value); setSaved(false) }} required maxLength={30} placeholder={t('profile.pseudoPlaceholder')} />
@@ -134,6 +166,9 @@ export function ProfilePage({ profile, onBack, onSave, onViewOverview, onDirtyCh
 
     <h3 className="stats-group-title profile-section-title">{t('profile.passwordTitle')}</h3>
     <form className="profile-form" onSubmit={submitPassword}>
+      <label>{t('profile.currentPasswordLabel')}
+        <input type="password" value={currentPassword} onChange={(event) => { setCurrentPassword(event.target.value); setPasswordSaved(false) }} required autoComplete="current-password" />
+      </label>
       <label>{t('profile.newPasswordLabel')}
         <input type="password" value={password} onChange={(event) => { setPassword(event.target.value); setPasswordSaved(false) }} required minLength={6} autoComplete="new-password" />
       </label>
@@ -143,6 +178,15 @@ export function ProfilePage({ profile, onBack, onSave, onViewOverview, onDirtyCh
       {passwordError && <p className="alert" role="alert">{passwordError}</p>}
       {passwordSaved && !passwordError && <p className="profile-saved">{t('profile.passwordSaved')}</p>}
       <button type="submit" disabled={passwordSaving}>{passwordSaving ? t('profile.changingPassword') : t('profile.changePassword')}</button>
+    </form>
+    <form className="danger-zone" onSubmit={submitDelete}>
+      <h3>{t('profile.deleteTitle')}</h3>
+      <p>{t('profile.deleteWarning')}</p>
+      <label className="danger-confirm">{t('profile.currentPasswordLabel')}
+        <input type="password" value={deletePassword} onChange={(event) => setDeletePassword(event.target.value)} required autoComplete="current-password" />
+      </label>
+      {deleteError && <p className="alert" role="alert">{deleteError}</p>}
+      <button type="submit" className="danger" disabled={deleting || !deletePassword}>{deleting ? t('profile.deleting') : t('profile.deleteButton')}</button>
     </form>
     <p className="profile-about-link"><a href="#/a-propos">{t('about.link')}</a></p>
   </section>
