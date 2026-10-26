@@ -51,3 +51,25 @@ La clé `anon` est prévue pour être publique (elle finit de toute façon dans 
 ## Format d'un quiz JSON
 
 Un fichier de quiz doit respecter le contrat défini dans [`src/types/quiz.ts`](src/types/quiz.ts) et validé par [`parseQuiz`](src/utils/quizValidation.ts). Voir [`src/data/sample-quiz.json`](src/data/sample-quiz.json) pour un exemple complet.
+
+### Métadonnées facultatives : image et liens
+
+Outre `title`, `author`, `createdAt`, `description` et `language`, `metadata` accepte deux champs optionnels (un quiz qui n'en a pas reste valide) :
+
+```json
+"metadata": {
+  "title": "Le Personal MBA",
+  "author": "…",
+  "createdAt": "2026-10-26",
+  "image": { "url": "https://covers.openlibrary.org/b/isbn/9781591845577-M.jpg", "alt": "Couverture du livre Le Personal MBA" },
+  "links": [
+    { "label": "Acheter le livre", "url": "https://example.com/livre", "commercial": true },
+    { "label": "Site de l'auteur", "url": "https://example.org" }
+  ]
+}
+```
+
+- `image` : `{ url, alt }`. L'URL doit être en `https://` (elle est simplement référencée, pas hébergée) et le texte alternatif `alt` est **obligatoire** dès qu'une image est renseignée. Elle illustre le quiz sur l'accueil, dans « Mes quiz » et dans la fiche du quiz ; si l'URL ne se charge plus, une image de remplacement neutre s'affiche.
+- `links` : liste ordonnée de `{ label, url, commercial? }`, URL en `https://`. Affichés dans un bloc « Pour aller plus loin » (écrans de résultat et fiche du quiz), ouverts dans un nouvel onglet avec `rel="noopener noreferrer"`. Un lien `"commercial": true` est signalé « lien d'achat ».
+- À l'import, une URL qui n'est pas en `https://`, un `alt` manquant ou un libellé vide sont refusés avec un message qui nomme le champ en cause (par exemple `metadata.links[1].url`). Dans l'admin, les deux champs se modifient depuis « Modifier les informations du quiz » (aperçu de l'image, liens ajoutables, retirables et réordonnables).
+- Les images de « Mes quiz » sont lues par `my_quiz_coverage()` : la migration [`032_quiz_coverage_image.sql`](supabase/032_quiz_coverage_image.sql) doit être appliquée à la base.
