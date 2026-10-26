@@ -312,3 +312,12 @@ header.app-header { display: block; padding-bottom: 1.4rem; margin-bottom: 2rem;
 .game-detail { margin: .4rem 0 1rem; padding: .8rem 1rem; border: 1px solid var(--border); border-radius: .6rem; background: var(--surface); }
 .game-detail-themes { display: flex; flex-wrap: wrap; gap: .4rem .9rem; margin: 0 0 .8rem; padding: 0; list-style: none; color: var(--text-soft); font-size: .85rem; }
 .game-detail .correction h4 { margin: 0 0 .4rem; }
+
+.review-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .4rem 1rem; margin: 0 0 1rem; padding: .5rem .9rem; border: 1px solid var(--accent); border-radius: .6rem; background: var(--surface-selected); color: var(--ink); }
+.review-banner span { color: var(--text-soft); font-size: .85rem; }
+.review-summary { margin: 1.5rem 0; padding: 1rem; border: 1px solid var(--border); border-radius: .6rem; background: var(--surface); }
+.review-summary p { margin: 0 0 .6rem; }
+.review-summary summary { cursor: pointer; color: var(--accent-text); font-weight: 600; }
+.review-summary-list { display: grid; gap: .5rem; margin: .8rem 0 0; padding: 0; list-style: none; }
+.review-summary-list li { display: grid; grid-template-columns: auto 1fr auto; gap: .6rem; align-items: baseline; font-size: .9rem; }
+.review-summary-move { color: var(--text-muted); white-space: nowrap; }

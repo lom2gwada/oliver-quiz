@@ -3,7 +3,7 @@ import type { Difficulty, Question, Quiz } from '../types/quiz'
 import type { QuizResultRow, StreakResultRow, TimedResultRow } from '../types/history'
 import { useTranslation } from '../i18n'
 import { bucketsToChartGroups, bucketsToRadarAxes, computeRecords, computeThemeWeekHeatmap, fetchQuizHistory, fetchStreakHistory, fetchTimedHistory, sumBuckets } from '../utils/quizHistory'
-import { computeDueQuestions, fetchQuestionProgress, selectReviewQuestions, type QuestionProgressRow } from '../utils/leitner'
+import { computeDueQuestions, fetchQuestionProgress, selectReviewCards, type QuestionProgressRow, type ReviewCard } from '../utils/leitner'
 import { longDate, shortDate } from '../utils/dateFormat'
 import { formatPercent } from '../utils/format'
 import { buildQuizOptions } from '../utils/quizOptions'
@@ -27,7 +27,7 @@ interface HistoryPageProps {
   hostedQuizId: string
   /** Les quiz auxquels le joueur a accès : la liste du sélecteur est la même que celle du classement. */
   hostedQuizzes: { id: string; title: string }[]
-  onReviewDue: (questions: Question[]) => void
+  onReviewDue: (cards: ReviewCard[]) => void
   /** Ouvre le classement du quiz affiché ici (pas forcément le quiz actif de l'appli : le sélecteur de cette page
    * ne change que l'affichage) — `key`/`label` sont ceux de ce quiz dans le sélecteur. */
   onViewLeaderboard: (key: string, label: string) => void
@@ -100,7 +100,7 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onRevie
 
   const canReplay = activeQuiz === activeQuizKey
   // `computeDueQuestions` trie de la boîte la plus basse (la plus fragile) à la plus haute ; la session composée au clic
-  // (`selectReviewQuestions`) mêle les plus fragiles et un tirage au hasard parmi le reste, dans un ordre mélangé.
+  // (`selectReviewCards`) mêle les plus fragiles et un tirage au hasard parmi le reste, dans un ordre mélangé.
   const dueCards = canReplay ? computeDueQuestions(progress, quiz.questions) : []
   const replayCap = Math.min(replayLimit, dueCards.length)
 
@@ -208,7 +208,7 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onRevie
                 <option value={dueCards.length}>{t('start.allQuestionsOption', dueCards.length)}</option>
               </select>
             </label>
-            <button type="button" onClick={() => onReviewDue(selectReviewQuestions(dueCards, replayCap))}>{t('history.reviewButton')}</button>
+            <button type="button" onClick={() => onReviewDue(selectReviewCards(dueCards, replayCap))}>{t('history.reviewButton')}</button>
           </div>
           <ul className="missed-list">
             {dueCards.map(({ question, box }) => <li className="missed-item" key={question.id}>

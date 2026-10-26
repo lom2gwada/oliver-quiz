@@ -66,15 +66,49 @@ export function computeDueQuestions(progress: QuestionProgressRow[], questions: 
     .map((row) => ({ question: byId.get(row.question_id)!, box: row.box }))
 }
 
+/** Une carte échue : la question et la boîte Leitner où elle se trouve avant la révision. */
+export interface ReviewCard {
+  question: Question
+  box: number
+}
+
 /** Compose une session de révision de `count` questions à partir des cartes échues (déjà triées par priorité, voir
  * `computeDueQuestions`) : la moitié (arrondie au-dessus) vient des cartes les plus fragiles — les ratées d'abord,
  * pour qu'elles reviennent vite —, le reste est tiré au hasard parmi les autres cartes échues, pour que tout
  * l'arriéré finisse par ressortir (sinon, tant qu'il y a plus de `count` cartes en boîte 1, les cartes des boîtes
  * suivantes n'étaient jamais proposées). L'ordre de la session est mélangé : plus de séquence apprise par cœur. */
-export function selectReviewQuestions(due: { question: Question; box: number }[], count: number): Question[] {
+export function selectReviewCards(due: ReviewCard[], count: number): ReviewCard[] {
   const size = Math.min(count, due.length)
   const priorityCount = Math.ceil(size / 2)
   const priority = due.slice(0, priorityCount)
   const randomPart = shuffle(due.slice(priorityCount)).slice(0, size - priorityCount)
-  return shuffle([...priority, ...randomPart]).map((card) => card.question)
+  return shuffle([...priority, ...randomPart])
+}
+
+/** Ce qu'une question a connu pendant une révision : sa boîte avant, sa boîte après (voir `nextBox`). */
+export interface ReviewOutcome {
+  question: Question
+  from: number
+  to: number
+  correct: boolean
+}
+
+/** Les mouvements de boîte d'une révision terminée, dans l'ordre des questions. `boxes` donne la boîte de chaque question
+ * avant la session (boîte 1 à défaut). C'est le même calcul que celui de `createQuestionProgressJob` à l'enregistrement. */
+export function reviewOutcomes(questions: Question[], answers: AnswersByQuestion, boxes: Record<string, number>): ReviewOutcome[] {
+  return questions.map((question) => {
+    const from = boxes[question.id] ?? 1
+    const correct = isCorrect(question, answers[question.id])
+    return { question, from, to: nextBox(from, correct), correct }
+  })
+}
+
+/** Questions montées de boîte, retombées en boîte 1 depuis une boîte plus haute, et restées où elles étaient (réussies en
+ * boîte 5, ou ratées en boîte 1). */
+export function summarizeOutcomes(outcomes: ReviewOutcome[]): { up: number; down: number; same: number } {
+  return {
+    up: outcomes.filter((outcome) => outcome.to > outcome.from).length,
+    down: outcomes.filter((outcome) => outcome.to < outcome.from).length,
+    same: outcomes.filter((outcome) => outcome.to === outcome.from).length,
+  }
 }

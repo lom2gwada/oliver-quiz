@@ -9,6 +9,8 @@ import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { dictationLanguageTag } from '../utils/dictation'
 import { confirmWithBlur } from '../utils/confirmWithBlur'
 import { useAdvanceGuard } from '../utils/useAdvanceGuard'
+import { hasAnswer } from '../utils/hasAnswer'
+import { MAX_BOX } from '../utils/leitner'
 import { questionToSpeech } from '../utils/speech'
 import { ListenButton } from './ListenButton'
 import { QuestionBody } from './QuestionBody'
@@ -50,9 +52,12 @@ interface QuizPageProps {
   /** `playedQuestions` : les questions telles qu'elles ont été affichées (réponses mélangées), pour la correction. */
   onFinish: (answers: AnswersByQuestion, elapsedSeconds: number, playedQuestions: Question[]) => void
   onCancel: () => void
+  /** Présent pour une révision : la boîte Leitner de chaque question avant la session. Signale le mode (bandeau, boîte)
+   * et empêche de passer une question sans réponse par erreur (voir « Passer »). */
+  reviewBoxes?: Record<string, number>
 }
 
-export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel }: QuizPageProps) {
+export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel, reviewBoxes }: QuizPageProps) {
   const { t, language } = useTranslation()
   // Lecture de l'énoncé dans la langue du quiz (celle de l'interface à défaut) — même règle que la dictée.
   const speechTag = dictationLanguageTag(quiz.metadata.language, language)
@@ -78,12 +83,19 @@ export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel }: Qui
   // « Suivante » et Entrée ignorent un clic qui suit de trop près l'affichage de la question (double clic) ; l'expiration
   // du temps limite, elle, avance toujours.
   const goNext = () => { if (canAdvance()) advance() }
+  // En révision, « Suivante » et Entrée ne passent pas une question laissée vide : seul « Passer », distinct, le fait.
+  const reviewing = reviewBoxes !== undefined
+  const unanswered = reviewing && question !== undefined && !hasAnswer(answers[question.id])
   const timeLimit = timeboxed && question ? questionTimeLimit(question) : null
   const remaining = useQuestionTimer(question?.id ?? '', timeLimit, advance)
 
   if (!question) return <section className="empty"><h2>{t('quiz.emptyTitle')}</h2><p>{t('quiz.emptyHintQuiz')}</p><button type="button" className="secondary" onClick={onCancel}>{t('common.back')}</button></section>
   const theme = quiz.categories.find((item) => item.id === question.category)?.label ?? question.category
   return <section className="quiz-card">
+    {reviewing && <div className="review-banner">
+      <strong>{t('review.banner')}</strong>
+      <span title={t('review.boxHint')}>{t('review.box', reviewBoxes[question.id] ?? 1, MAX_BOX)}</span>
+    </div>}
     <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span>{remaining !== null && timeLimit !== null && <span className={`quiz-timer-${questionTimerUrgency(remaining, timeLimit)}`}>⏳ {remaining}s</span>}{!timeboxed && <span>⏱ {formatDuration(elapsed)}</span>}</div>
     <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${((current + 1) / shuffledQuestions.length) * 100}%` }} /></div>
     <div className="question-progress-row">
@@ -92,13 +104,15 @@ export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel }: Qui
           classique et à la révision ; les modes sans-faute et contre-la-montre n'ont pas ce bouton. */}
       {!timeboxed && <ListenButton key={question.id} text={questionToSpeech(question, speechTag)} languageTag={speechTag} />}
     </div>
-    <QuestionBody key={question.id} question={question} answer={answers[question.id]} onChange={updateAnswer} onEnter={goNext} />
+    <QuestionBody key={question.id} question={question} answer={answers[question.id]} onChange={updateAnswer} onEnter={() => { if (!unanswered) goNext() }} />
     <div className="quiz-actions">
       <button type="button" className="secondary" onClick={cancelQuiz}>{t('common.cancel')}</button>
       <div className="quiz-nav">
         {/* Revenir en arrière permettrait de relire une question déjà expirée sans pression de temps : pas de sens en mode chrono. */}
         {!timeboxed && <button type="button" className="secondary" onClick={() => setCurrent((value) => value - 1)} disabled={current === 0}>{t('quiz.previous')}</button>}
-        <button type="button" onClick={goNext}>{current === shuffledQuestions.length - 1 ? t('quiz.viewCorrection') : t('quiz.next')}</button>
+        {unanswered
+          ? <button type="button" className="secondary" title={t('quiz.skipHint')} onClick={goNext}>{t('quiz.skip')}</button>
+          : <button type="button" onClick={goNext}>{current === shuffledQuestions.length - 1 ? t('quiz.viewCorrection') : t('quiz.next')}</button>}
       </div>
     </div>
   </section>

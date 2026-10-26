@@ -36,7 +36,7 @@ import type { HostedQuizSummary } from './types/hostedQuiz'
 import { buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, deleteQuizHistory, saveQuestionResults, saveQuizResult, saveStreakResult, saveTimedResult } from './utils/quizHistory'
 import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchStreakTopScore, fetchTimedTopScore, fetchTopScore } from './utils/leaderboard'
-import { computeDueQuestions, createQuestionProgressJob, fetchQuestionProgress, selectReviewQuestions } from './utils/leitner'
+import { computeDueQuestions, createQuestionProgressJob, fetchQuestionProgress, selectReviewCards, type ReviewCard } from './utils/leitner'
 import { runSaveJobs, type SaveJob, type SaveStatus } from './utils/gameSave'
 import { coveragePercentTenths, fetchQuizCoverage, REVIEW_BATCH_SIZE, type QuizCoverage } from './utils/coverage'
 import { deleteQuiz, fetchAccessibleQuizzes, fetchAccessibleQuizzesWithRetry, fetchQuizContent, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
@@ -95,6 +95,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   // Une session de révision Leitner ne porte que sur un sous-ensemble ciblé de questions, pas sur le
   // pool filtré normal : elle ne doit jamais compter comme "sans filtre" pour le classement.
   const [isReplay, setIsReplay] = useState(false)
+  /** Pendant et après une révision : la boîte Leitner de chaque question avant la session (par id de question). */
+  const [reviewBoxes, setReviewBoxes] = useState<Record<string, number>>({})
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [streakResult, setStreakResult] = useState<StreakResult | null>(null)
   const [durationMinutes, setDurationMinutes] = useState(10)
@@ -554,11 +556,12 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     replace('quiz')
   }
 
-  const reviewDue = (questions: Question[]) => {
+  const reviewDue = (cards: ReviewCard[]) => {
     playClick()
     setAnswers({})
     setIsReplay(true)
-    setSessionQuestions(questions)
+    setReviewBoxes(Object.fromEntries(cards.map((card) => [card.question.id, card.box])))
+    setSessionQuestions(cards.map((card) => card.question))
     navigate('quiz')
   }
 
@@ -566,7 +569,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
    * échues (les plus fragiles d'abord). Rejette en cas d'échec de chargement pour que la page l'affiche. */
   const reviewQuizDue = async (id: string) => {
     const content = parseQuiz(await fetchQuizContent(id))
-    const due = selectReviewQuestions(computeDueQuestions(await fetchQuestionProgress(id), content.questions), REVIEW_BATCH_SIZE)
+    const due = selectReviewCards(computeDueQuestions(await fetchQuestionProgress(id), content.questions), REVIEW_BATCH_SIZE)
     if (!due.length) throw new Error('no due question')
     selectId(id); setQuiz(content); applyQuizLanguage(content); setSelectedThemes([]); setDifficulty(''); setQuizLoadError('')
     reviewDue(due)
@@ -709,7 +712,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       <p>{t('start.availability', filteredQuestions.length, gameMode, Math.min(questionCount, filteredQuestions.length))}</p>
       <button type="button" className="start-button" onClick={gameMode === 'classic' ? startQuiz : gameMode === 'streak' ? startStreak : startTimed} disabled={!filteredQuestions.length || !quizReady}>{gameMode === 'classic' ? t('start.startClassic') : gameMode === 'streak' ? t('start.startStreak') : t('start.startTimed')}</button>
     </section>}
-    {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} timeboxed={timeboxed} onFinish={(nextAnswers, duration, played) => {
+    {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} timeboxed={timeboxed} reviewBoxes={isReplay ? reviewBoxes : undefined} onFinish={(nextAnswers, duration, played) => {
       setAnswers(nextAnswers); setElapsedSeconds(duration); setSessionQuestions(played); replace('results')
       const resultPayload = buildQuizResultPayload(played, nextAnswers, quiz.categories, duration, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered && !isReplay)
       const detailPayloads = buildQuestionResultPayloads(played, nextAnswers, quiz.metadata.title, selectedHostedQuizId || null, resultPayload.id)
@@ -720,7 +723,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       ])
     }} onCancel={backToStart} />}
     {(view === 'results' || view === 'streakResults' || view === 'timedResults') && <SaveStatusNotice status={saveStatus} onRetry={retrySave} />}
-    {view === 'results' && <ResultPage links={quiz.metadata.links} questions={sessionQuestions} answers={answers} themes={quiz.categories} elapsedSeconds={elapsedSeconds} onRestartSame={isReplay ? undefined : restartQuiz} onBackToSettings={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} />}
+    {view === 'results' && <ResultPage links={quiz.metadata.links} reviewBoxes={isReplay ? reviewBoxes : undefined} questions={sessionQuestions} answers={answers} themes={quiz.categories} elapsedSeconds={elapsedSeconds} onRestartSame={isReplay ? undefined : restartQuiz} onBackToSettings={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} />}
     {view === 'streak' && <StreakQuizPage quiz={quiz} pool={filteredQuestions} timeboxed={timeboxed} onFinish={finishStreak} onCancel={backToStart} />}
     {view === 'streakResults' && streakResult && <StreakResultPage links={quiz.metadata.links} {...streakResult} onRestartSame={restartStreak} onBackToSettings={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} />}
     {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
