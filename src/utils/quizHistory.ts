@@ -23,6 +23,7 @@ export function buildQuizResultPayload(questions: Question[], answers: AnswersBy
   const themeLabel = (id: string) => themes.find((theme) => theme.id === id)?.label ?? id
 
   return {
+    id: crypto.randomUUID(),
     quiz_title: quizTitle,
     quiz_id: quizId,
     score: totalPoints ? Math.round((earnedPoints / totalPoints) * 100) : 0,
@@ -39,10 +40,18 @@ export function buildQuizResultPayload(questions: Question[], answers: AnswersBy
   }
 }
 
-/** Best-effort : une partie non enregistrée ne doit jamais empêcher l'utilisateur de voir son résultat. */
+/** Insère des lignes dont l'`id` est fourni par le client : rejouer l'écriture (reprise automatique, ou bouton
+ * « Réessayer » après une réponse perdue alors que la ligne était bien arrivée) ne crée jamais de doublon. Lève l'erreur
+ * au lieu de l'avaler : c'est l'appelant (`runSaveJobs`) qui relance, puis prévient le joueur si rien n'y fait. */
+async function insertOnce(table: 'quiz_results' | 'question_results' | 'streak_results' | 'timed_results', rows: object | object[]): Promise<void> {
+  const { error } = await supabase.from(table).upsert(rows, { onConflict: 'id', ignoreDuplicates: true })
+  if (error) throw error
+}
+
+/** L'enregistrement n'empêche jamais d'afficher le résultat : il se fait en arrière-plan, et un échec final est
+ * signalé sur l'écran de résultat (voir `SaveStatusNotice`). */
 export async function saveQuizResult(payload: QuizResultPayload): Promise<void> {
-  const { error } = await supabase.from('quiz_results').insert(payload)
-  if (error) console.error("Impossible d'enregistrer le résultat du quiz.", error)
+  await insertOnce('quiz_results', payload)
 }
 
 export async function fetchQuizHistory(): Promise<QuizResultRow[]> {
@@ -55,6 +64,7 @@ export async function fetchQuizHistory(): Promise<QuizResultRow[]> {
  * repose désormais sur `question_progress` (boîtes de Leitner, voir `utils/leitner.ts`) plutôt que sur ce log. */
 export function buildQuestionResultPayloads(questions: Question[], answers: AnswersByQuestion, quizTitle: string, quizId: string | null): QuestionResultPayload[] {
   return questions.map((question) => ({
+    id: crypto.randomUUID(),
     quiz_title: quizTitle,
     quiz_id: quizId,
     question_id: question.id,
@@ -63,11 +73,9 @@ export function buildQuestionResultPayloads(questions: Question[], answers: Answ
   }))
 }
 
-/** Best-effort, comme `saveQuizResult`. */
 export async function saveQuestionResults(payloads: QuestionResultPayload[]): Promise<void> {
   if (!payloads.length) return
-  const { error } = await supabase.from('question_results').insert(payloads)
-  if (error) console.error("Impossible d'enregistrer le détail des réponses.", error)
+  await insertOnce('question_results', payloads)
 }
 
 /** `rows` peut être dans n'importe quel ordre — seuls les agrégats comptent ici. */
@@ -103,6 +111,7 @@ export function buildStreakResultPayload(streakCount: number, elapsedSeconds: nu
   const totalPoints = playedQuestions.reduce((sum, question) => sum + question.points, 0)
   const missedPoints = victory || !playedQuestions.length ? 0 : playedQuestions[playedQuestions.length - 1].points
   return {
+    id: crypto.randomUUID(),
     quiz_title: quizTitle,
     quiz_id: quizId,
     streak_count: streakCount,
@@ -115,10 +124,8 @@ export function buildStreakResultPayload(streakCount: number, elapsedSeconds: nu
   }
 }
 
-/** Best-effort, comme `saveQuizResult`. */
 export async function saveStreakResult(payload: StreakResultPayload): Promise<void> {
-  const { error } = await supabase.from('streak_results').insert(payload)
-  if (error) console.error("Impossible d'enregistrer le résultat du mode sans-faute.", error)
+  await insertOnce('streak_results', payload)
 }
 
 export async function fetchStreakHistory(): Promise<StreakResultRow[]> {
@@ -134,6 +141,7 @@ export function buildTimedResultPayload(attempts: QuestionAttempt[], elapsedSeco
   const themeLabel = (id: string) => themes.find((theme) => theme.id === id)?.label ?? id
   const correctAttempts = attempts.filter((attempt) => isCorrect(attempt.question, attempt.answer))
   return {
+    id: crypto.randomUUID(),
     quiz_title: quizTitle,
     quiz_id: quizId,
     correct_count: correctAttempts.length,
@@ -147,10 +155,8 @@ export function buildTimedResultPayload(attempts: QuestionAttempt[], elapsedSeco
   }
 }
 
-/** Best-effort, comme `saveQuizResult`. */
 export async function saveTimedResult(payload: TimedResultPayload): Promise<void> {
-  const { error } = await supabase.from('timed_results').insert(payload)
-  if (error) console.error("Impossible d'enregistrer le résultat du mode contre-la-montre.", error)
+  await insertOnce('timed_results', payload)
 }
 
 export async function fetchTimedHistory(): Promise<TimedResultRow[]> {

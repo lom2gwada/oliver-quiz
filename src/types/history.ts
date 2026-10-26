@@ -4,6 +4,8 @@ export interface StatBucket {
 }
 
 export interface QuizResultPayload {
+  /** Identifiant généré côté client : rejouer l'écriture (reprise automatique, bouton « Réessayer ») ne crée jamais de doublon. */
+  id: string
   quiz_title: string
   /** Lien stable vers `quizzes.id` — permet de retrouver l'historique d'un quiz même après renommage. `null`
    * pour les parties jouées avant l'introduction de ce champ ou dont le quiz source a depuis été supprimé. */
@@ -24,7 +26,6 @@ export interface QuizResultPayload {
 }
 
 export interface QuizResultRow extends QuizResultPayload {
-  id: string
   created_at: string
 }
 
@@ -57,6 +58,8 @@ export interface ThemeWeekHeatmap {
 }
 
 export interface QuestionResultPayload {
+  /** Voir `QuizResultPayload.id`. */
+  id: string
   quiz_title: string
   quiz_id: string | null
   question_id: string
@@ -65,6 +68,8 @@ export interface QuestionResultPayload {
 }
 
 export interface StreakResultPayload {
+  /** Voir `QuizResultPayload.id`. */
+  id: string
   quiz_title: string
   quiz_id: string | null
   streak_count: number
@@ -79,11 +84,12 @@ export interface StreakResultPayload {
 }
 
 export interface StreakResultRow extends StreakResultPayload {
-  id: string
   created_at: string
 }
 
 export interface TimedResultPayload {
+  /** Voir `QuizResultPayload.id`. */
+  id: string
   quiz_title: string
   quiz_id: string | null
   correct_count: number
@@ -100,6 +106,5 @@ export interface TimedResultPayload {
 }
 
 export interface TimedResultRow extends TimedResultPayload {
-  id: string
   created_at: string
 }

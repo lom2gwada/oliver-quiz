@@ -76,7 +76,7 @@ describe('buildStreakResultPayload', () => {
   it('builds a payload with resolved, deduped theme labels', () => {
     const payload = buildStreakResultPayload(7, 120, false, [qcm, bool, qcm], themes, 'Culture générale', null, true)
     expect(payload).toEqual({
-      quiz_title: 'Culture générale', quiz_id: null, streak_count: 7, elapsed_seconds: 120, victory: false,
+      id: expect.any(String), quiz_title: 'Culture générale', quiz_id: null, streak_count: 7, elapsed_seconds: 120, victory: false,
       themes: ['Histoire', 'Géographie'], earned_points: 3, total_points: 4, unfiltered: true,
     })
   })
@@ -114,7 +114,7 @@ describe('buildTimedResultPayload', () => {
       300, 300, themes, 'Culture générale', null, true,
     )
     expect(payload).toEqual({
-      quiz_title: 'Culture générale', quiz_id: null, correct_count: 2, question_count: 3,
+      id: expect.any(String), quiz_title: 'Culture générale', quiz_id: null, correct_count: 2, question_count: 3,
       duration_seconds: 300, elapsed_seconds: 300, themes: ['Histoire', 'Géographie'],
       earned_points: 2, total_points: 4, unfiltered: true,
     })
@@ -288,8 +288,8 @@ describe('buildQuestionResultPayloads', () => {
   it('tags each question with its own correctness', () => {
     const payloads = buildQuestionResultPayloads([qcm, bool], { q1: ['a'], q2: ['false'] }, 'Culture générale', null)
     expect(payloads).toEqual([
-      { quiz_title: 'Culture générale', quiz_id: null, question_id: 'q1', question_text: 'Q ?', correct: true },
-      { quiz_title: 'Culture générale', quiz_id: null, question_id: 'q2', question_text: 'Vrai ou faux ?', correct: false },
+      { id: expect.any(String), quiz_title: 'Culture générale', quiz_id: null, question_id: 'q1', question_text: 'Q ?', correct: true },
+      { id: expect.any(String), quiz_title: 'Culture générale', quiz_id: null, question_id: 'q2', question_text: 'Vrai ou faux ?', correct: false },
     ])
   })
 

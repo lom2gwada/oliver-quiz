@@ -1,6 +1,5 @@
 import type { AnswersByQuestion, Question } from '../types/quiz'
 import { isCorrect } from '../components/ResultPage'
-import { retryWithBackoff } from './retry'
 import { shuffle } from './shuffle'
 import { supabase } from './supabase'
 
@@ -34,27 +33,25 @@ export async function fetchQuestionProgress(quizId: string): Promise<QuestionPro
   return data ?? []
 }
 
-/** Fait avancer chaque question jouée d'une case dans sa boîte Leitner (ou la renvoie en boîte 1 si ratée).
- * Best-effort, comme le reste de l'enregistrement d'historique : une partie non enregistrée ne doit jamais
- * empêcher l'utilisateur de voir son résultat. */
-export async function recordQuestionProgress(quizId: string, questions: Question[], answers: AnswersByQuestion): Promise<void> {
-  try {
-    // Lecture et écriture reprises séparément : la lecture peut être rejouée sans risque, et l'écriture pose un
-    // état absolu (boîte + échéance déjà calculées). Rejouer toute la chaîne après une réponse perdue ferait
-    // avancer une seconde fois les cartes dont la première écriture avait pourtant réussi.
-    const previous = await retryWithBackoff(() => fetchQuestionProgress(quizId), { delaysMs: [800, 2400] })
-    const previousBox = new Map(previous.map((row) => [row.question_id, row.box]))
-    const updatedAt = new Date().toISOString()
-    const payloads = questions.map((question) => {
-      const box = nextBox(previousBox.get(question.id) ?? 1, isCorrect(question, answers[question.id]))
-      return { quiz_id: quizId, question_id: question.id, box, due_at: dueAtFor(box), updated_at: updatedAt }
-    })
-    await retryWithBackoff(async () => {
-      const { error } = await supabase.from('question_progress').upsert(payloads, { onConflict: 'user_id,quiz_id,question_id' })
-      if (error) throw error
-    }, { delaysMs: [800, 2400] })
-  } catch (error) {
-    console.error("Impossible d'enregistrer la progression Leitner.", error)
+/** Prépare l'enregistrement de la progression Leitner d'une partie : chaque question jouée avance d'une case dans sa
+ * boîte (ou retombe en boîte 1 si ratée). Renvoie une tâche rejouable (voir `runSaveJobs`) : la lecture des boîtes
+ * actuelles et le calcul des nouvelles ne se font qu'une fois, puis l'écriture — un état absolu (boîte + échéance) —
+ * est simplement renvoyée à l'identique. Rejouer toute la chaîne après une réponse perdue ferait avancer une seconde
+ * fois les cartes dont la première écriture avait pourtant réussi. Lève l'erreur : l'appelant relance puis prévient. */
+export function createQuestionProgressJob(quizId: string, questions: Question[], answers: AnswersByQuestion): () => Promise<void> {
+  let payloads: { quiz_id: string; question_id: string; box: number; due_at: string; updated_at: string }[] | null = null
+  return async () => {
+    if (!payloads) {
+      const previous = await fetchQuestionProgress(quizId)
+      const previousBox = new Map(previous.map((row) => [row.question_id, row.box]))
+      const updatedAt = new Date().toISOString()
+      payloads = questions.map((question) => {
+        const box = nextBox(previousBox.get(question.id) ?? 1, isCorrect(question, answers[question.id]))
+        return { quiz_id: quizId, question_id: question.id, box, due_at: dueAtFor(box), updated_at: updatedAt }
+      })
+    }
+    const { error } = await supabase.from('question_progress').upsert(payloads, { onConflict: 'user_id,quiz_id,question_id' })
+    if (error) throw error
   }
 }
 
