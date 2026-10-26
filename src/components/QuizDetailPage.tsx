@@ -15,11 +15,15 @@ import { QuestionTable } from './QuestionTable'
 import { QuizAccessManager } from './QuizAccessManager'
 import { difficultyLabel, TYPE_ICONS, typeLabel } from './QuizPage'
 import { correctAnswer } from './ResultPage'
+import { TabList, tabPanelId } from './TabList'
+import { matchesQuestion, normalizeSearch } from '../utils/questionSearch'
 
 const THEME_COLORS = ['#38bdf8', '#a78bfa', '#34d399', '#fbbf24', '#fb7185', '#22d3ee', '#f472b6', '#94a3b8']
 const QUESTION_TYPES: Question['type'][] = ['qcm', 'text', 'code', 'ordering', 'boolean', 'cloze', 'matching', 'numeric']
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard']
 const DIFFICULTY_COLORS: Record<Difficulty, string> = { easy: '#34d399', medium: '#38bdf8', hard: '#fb7185' }
+
+type DetailTab = 'info' | 'questions' | 'access' | 'guests' | 'stats'
 
 interface QuizDetailPageProps {
   quiz: Quiz
@@ -58,6 +62,8 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
   const effectiveCreatingTheme = quiz.categories.some((theme) => theme.id === creatingTheme) ? creatingTheme : (quiz.categories[0]?.id ?? '')
   const [draftQuestion, setDraftQuestion] = useState<Question | null>(null)
   const [newThemeLabel, setNewThemeLabel] = useState('')
+  const [tab, setTab] = useState<DetailTab>('info')
+  const [search, setSearch] = useState('')
   const [addingTheme, setAddingTheme] = useState(false)
   const addTheme = async () => {
     setAddingTheme(true)
@@ -79,109 +85,140 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
     }))
     .filter((slice) => slice.value > 0)
 
+  // Les onglets que ce compte peut utiliser : la gestion (questions, accès, liens invités) est réservée aux admins, et
+  // les accès comme les liens invités n'existent que pour un quiz hébergé.
+  const tabs: { id: DetailTab; label: string }[] = [
+    { id: 'info', label: t('admin.tabInfo') },
+    ...(isAdmin ? [{ id: 'questions' as const, label: t('admin.tabQuestions', quiz.questions.length) }] : []),
+    ...(isAdmin && hostedQuizId ? [{ id: 'access' as const, label: t('admin.tabAccess') }, { id: 'guests' as const, label: t('admin.tabGuests') }] : []),
+    { id: 'stats', label: t('admin.tabStats') },
+  ]
+  const activeTab = tabs.some((item) => item.id === tab) ? tab : 'info'
+
+  const normalizedSearch = normalizeSearch(search)
+  const matchingQuestions = quiz.questions.filter((question) => matchesQuestion(question, normalizedSearch, (item) => correctAnswer(item, t)))
+
   return <section className="stats-page">
     <div className="stats-header">
       <h2>{quiz.metadata.title}</h2>
       <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
     </div>
     {quizLoadError && <p className="alert" role="alert">{quizLoadError}</p>}
-    {(quiz.metadata.image || quiz.metadata.description) && <div className="quiz-detail-intro">
-      <QuizCover image={quiz.metadata.image} size="large" />
-      {quiz.metadata.description && <p className="quiz-description">{quiz.metadata.description}</p>}
-    </div>}
-    <FurtherReading links={quiz.metadata.links} />
-    <div className="quiz-detail-actions">
-      {canEditQuiz && <EditQuizMetaForm
-        title={quiz.metadata.title}
-        author={quiz.metadata.author}
-        description={quiz.metadata.description ?? ''}
-        language={quiz.metadata.language ?? ''}
-        image={quiz.metadata.image}
-        links={quiz.metadata.links}
-        error={editError}
-        onSave={onUpdateQuizMeta}
-      />}
-      {isAdmin && <button type="button" className="secondary" onClick={onExport}>{t('admin.exportButton')}</button>}
-    </div>
-    <h3 className="stats-group-title">{t('admin.questionBreakdownTitle')}</h3>
-    <div className="stats-grid">
-      <PieChart title={t('admin.byThemesChartTitle', quiz.questions.length)} data={byTheme} />
-      <PieChart title={t('admin.byTypesChartTitle', quiz.questions.length)} data={byType} />
-      {quiz.categories.map((theme) => {
-        const themeQuestions = quiz.questions.filter((question) => question.category === theme.id)
-        if (!themeQuestions.length) return null
-        const byDifficulty = DIFFICULTIES
-          .map((difficulty) => ({
-            label: difficultyLabel(t, difficulty),
-            value: themeQuestions.filter((question) => question.difficulty === difficulty).length,
-            color: DIFFICULTY_COLORS[difficulty],
-          }))
-          .filter((slice) => slice.value > 0)
-        return <PieChart key={theme.id} title={t('admin.themeQuestionsChartTitle', theme.label, themeQuestions.length)} data={byDifficulty} />
-      })}
-    </div>
-    {isAdmin && <>
-      {hostedQuizId && <>
-        <h3 className="stats-group-title profile-section-title">{t('admin.manageAccessTitle')}</h3>
+    <TabList tabs={tabs} value={activeTab} onChange={setTab} label={t('admin.tabsLabel')} idPrefix="quiz-detail" />
+    <div role="tabpanel" id={tabPanelId('quiz-detail')} aria-labelledby={`quiz-detail-tab-${activeTab}`} className="tab-panel">
+      {/* Toujours monté, seulement masqué : le formulaire de modification garde ce qu'on y a saisi quand on change d'onglet. */}
+      <div hidden={activeTab !== 'info'}>
+        {(quiz.metadata.image || quiz.metadata.description) && <div className="quiz-detail-intro">
+          <QuizCover image={quiz.metadata.image} size="large" />
+          {quiz.metadata.description && <p className="quiz-description">{quiz.metadata.description}</p>}
+        </div>}
+        <FurtherReading links={quiz.metadata.links} />
+        <div className="quiz-detail-actions">
+          {canEditQuiz && <EditQuizMetaForm
+            title={quiz.metadata.title}
+            author={quiz.metadata.author}
+            description={quiz.metadata.description ?? ''}
+            language={quiz.metadata.language ?? ''}
+            image={quiz.metadata.image}
+            links={quiz.metadata.links}
+            error={editError}
+            onSave={onUpdateQuizMeta}
+          />}
+          {isAdmin && <button type="button" className="secondary" onClick={onExport}>{t('admin.exportButton')}</button>}
+        </div>
+        {canEditQuiz && <DangerZone key={hostedQuizId} title={quiz.metadata.title} onExport={onExport} onDelete={(deleteHistoryToo) => onDeleteQuiz(hostedQuizId, quiz.metadata.title, deleteHistoryToo)} error={deleteQuizError} />}
+      </div>
+
+      {activeTab === 'stats' && <>
+        <h3 className="stats-group-title">{t('admin.questionBreakdownTitle')}</h3>
+        <div className="stats-grid">
+          <PieChart title={t('admin.byThemesChartTitle', quiz.questions.length)} data={byTheme} />
+          <PieChart title={t('admin.byTypesChartTitle', quiz.questions.length)} data={byType} />
+          {quiz.categories.map((theme) => {
+            const themeQuestions = quiz.questions.filter((question) => question.category === theme.id)
+            if (!themeQuestions.length) return null
+            const byDifficulty = DIFFICULTIES
+              .map((difficulty) => ({
+                label: difficultyLabel(t, difficulty),
+                value: themeQuestions.filter((question) => question.difficulty === difficulty).length,
+                color: DIFFICULTY_COLORS[difficulty],
+              }))
+              .filter((slice) => slice.value > 0)
+            return <PieChart key={theme.id} title={t('admin.themeQuestionsChartTitle', theme.label, themeQuestions.length)} data={byDifficulty} />
+          })}
+        </div>
+      </>}
+
+      {activeTab === 'access' && isAdmin && hostedQuizId && <>
+        <h3 className="stats-group-title">{t('admin.manageAccessTitle')}</h3>
         <QuizAccessManager quiz={{ id: hostedQuizId, title: quiz.metadata.title, is_public: isPublic }} onTogglePublic={onTogglePublic} />
-        <h3 className="stats-group-title profile-section-title">{t('admin.guestLinksTitle')}</h3>
+      </>}
+
+      {activeTab === 'guests' && isAdmin && hostedQuizId && <>
+        <h3 className="stats-group-title">{t('admin.guestLinksTitle')}</h3>
         <GuestLinksManager quizId={hostedQuizId} quiz={quiz} />
       </>}
-      <h3 className="stats-group-title profile-section-title">{t('admin.allQuestionsTitle', quiz.questions.length)}</h3>
-      {canEditQuiz && <div className="question-create-bar">
-        <input type="text" value={newThemeLabel} onChange={(event) => setNewThemeLabel(event.target.value)} placeholder={t('admin.newThemePlaceholder')} />
-        <button type="button" className="secondary" onClick={addTheme} disabled={addingTheme || !newThemeLabel.trim()}>{t('admin.addThemeButton')}</button>
-      </div>}
-      {canEditQuiz && editError && !draftQuestion && !editingQuestionId && <p className="alert" role="alert">{editError}</p>}
-      {canEditQuiz && (draftQuestion ? <QuestionEditForm
-        question={draftQuestion}
-        themes={quiz.categories}
-        error={editError}
-        onCancel={() => setDraftQuestion(null)}
-        onSave={async (created) => { try { await onAddQuestion(created); setDraftQuestion(null) } catch { /* editError affiché dans le formulaire */ } }}
-      /> : <div className="question-create-bar">
-        <select value={creatingType} onChange={(event) => setCreatingType(event.target.value as Question['type'])}>
-          {QUESTION_TYPES.map((type) => <option key={type} value={type}>{TYPE_ICONS[type]} {typeLabel(t, type)}</option>)}
-        </select>
-        <select value={effectiveCreatingTheme} onChange={(event) => setCreatingTheme(event.target.value)}>
-          {quiz.categories.map((theme) => <option key={theme.id} value={theme.id}>{theme.label}</option>)}
-        </select>
-        <button type="button" onClick={() => setDraftQuestion(createBlankQuestion(creatingType, effectiveCreatingTheme, t('admin.clozeSeedText')))} disabled={!effectiveCreatingTheme}>{t('admin.addQuestionButton')}</button>
-      </div>)}
-      {quiz.categories.map((theme) => {
-        const themeQuestions = quiz.questions.filter((question) => question.category === theme.id)
-        if (!themeQuestions.length) return null
-        return <details key={theme.id} className="question-list-group">
-          <summary>{t('admin.themeCount', theme.label, themeQuestions.length)}</summary>
-          <div className="question-list">
-            {themeQuestions.map((question) => <article key={question.id} className="question-list-item">
-              <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{t('admin.pointsLabel', question.points)}</span></div>
-              {editingQuestionId === question.id ? <QuestionEditForm
-                question={question}
-                themes={quiz.categories}
-                error={editError}
-                onCancel={() => setEditingQuestionId('')}
-                onSave={async (updated) => { try { await onSaveQuestion(updated); setEditingQuestionId('') } catch { /* editError affiché par le parent, formulaire laissé ouvert */ } }}
-              /> : previewingIds.includes(question.id) ? <QuestionPreview question={question} onClose={() => setPreview(question.id, false)} /> : <>
-                <p className="question-list-prompt">{question.question}</p>
-                {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
-                {question.diagram && <MermaidDiagram chart={question.diagram} />}
-                {question.table && <QuestionTable table={question.table} />}
-                <p><strong>{t('admin.answerLabel')}</strong> {correctAnswer(question, t)}</p>
-                <p className="question-list-explanation">{question.explanation}</p>
-                <div className="edit-toggle">
-                  <button type="button" className="secondary" onClick={() => setPreview(question.id, true)}>{t('admin.previewButton')}</button>
-                  {canEditQuiz && <>
-                    <button type="button" className="secondary" onClick={() => setEditingQuestionId(question.id)}>{t('admin.editButton')}</button>
-                    <button type="button" className="secondary" onClick={() => onDeleteQuestion(question.id)}>{t('admin.deleteButton')}</button>
-                  </>}
-                </div>
-              </>}
-            </article>)}
-          </div>
-        </details>
-      })}
-    </>}
-    {canEditQuiz && <DangerZone key={hostedQuizId} title={quiz.metadata.title} onExport={onExport} onDelete={(deleteHistoryToo) => onDeleteQuiz(hostedQuizId, quiz.metadata.title, deleteHistoryToo)} error={deleteQuizError} />}
+
+      {activeTab === 'questions' && isAdmin && <>
+        <h3 className="stats-group-title">{t('admin.allQuestionsTitle', quiz.questions.length)}</h3>
+        {canEditQuiz && <div className="question-create-bar">
+          <input type="text" value={newThemeLabel} onChange={(event) => setNewThemeLabel(event.target.value)} placeholder={t('admin.newThemePlaceholder')} />
+          <button type="button" className="secondary" onClick={addTheme} disabled={addingTheme || !newThemeLabel.trim()}>{t('admin.addThemeButton')}</button>
+        </div>}
+        {canEditQuiz && editError && !draftQuestion && !editingQuestionId && <p className="alert" role="alert">{editError}</p>}
+        {canEditQuiz && (draftQuestion ? <QuestionEditForm
+          question={draftQuestion}
+          themes={quiz.categories}
+          error={editError}
+          onCancel={() => setDraftQuestion(null)}
+          onSave={async (created) => { try { await onAddQuestion(created); setDraftQuestion(null) } catch { /* editError affiché dans le formulaire */ } }}
+        /> : <div className="question-create-bar">
+          <select value={creatingType} onChange={(event) => setCreatingType(event.target.value as Question['type'])}>
+            {QUESTION_TYPES.map((type) => <option key={type} value={type}>{TYPE_ICONS[type]} {typeLabel(t, type)}</option>)}
+          </select>
+          <select value={effectiveCreatingTheme} onChange={(event) => setCreatingTheme(event.target.value)}>
+            {quiz.categories.map((theme) => <option key={theme.id} value={theme.id}>{theme.label}</option>)}
+          </select>
+          <button type="button" onClick={() => setDraftQuestion(createBlankQuestion(creatingType, effectiveCreatingTheme, t('admin.clozeSeedText')))} disabled={!effectiveCreatingTheme}>{t('admin.addQuestionButton')}</button>
+        </div>)}
+        <label className="question-search">{t('admin.searchLabel')}
+          <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('admin.searchPlaceholder')} />
+        </label>
+        {normalizedSearch && <p className="mode-hint question-search-count" role="status">{matchingQuestions.length ? t('admin.searchResults', matchingQuestions.length, quiz.questions.length) : t('admin.searchNone')}</p>}
+        {quiz.categories.map((theme) => {
+          const themeQuestions = matchingQuestions.filter((question) => question.category === theme.id)
+          if (!themeQuestions.length) return null
+          return <details key={theme.id} className="question-list-group" open={normalizedSearch ? true : undefined}>
+            <summary>{t('admin.themeCount', theme.label, themeQuestions.length)}</summary>
+            <div className="question-list">
+              {themeQuestions.map((question) => <article key={question.id} className="question-list-item">
+                <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{t('admin.pointsLabel', question.points)}</span></div>
+                {editingQuestionId === question.id ? <QuestionEditForm
+                  question={question}
+                  themes={quiz.categories}
+                  error={editError}
+                  onCancel={() => setEditingQuestionId('')}
+                  onSave={async (updated) => { try { await onSaveQuestion(updated); setEditingQuestionId('') } catch { /* editError affiché par le parent, formulaire laissé ouvert */ } }}
+                /> : previewingIds.includes(question.id) ? <QuestionPreview question={question} onClose={() => setPreview(question.id, false)} /> : <>
+                  <p className="question-list-prompt">{question.question}</p>
+                  {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
+                  {question.diagram && <MermaidDiagram chart={question.diagram} />}
+                  {question.table && <QuestionTable table={question.table} />}
+                  <p><strong>{t('admin.answerLabel')}</strong> {correctAnswer(question, t)}</p>
+                  <p className="question-list-explanation">{question.explanation}</p>
+                  <div className="edit-toggle">
+                    <button type="button" className="secondary" onClick={() => setPreview(question.id, true)}>{t('admin.previewButton')}</button>
+                    {canEditQuiz && <>
+                      <button type="button" className="secondary" onClick={() => setEditingQuestionId(question.id)}>{t('admin.editButton')}</button>
+                      <button type="button" className="secondary" onClick={() => onDeleteQuestion(question.id)}>{t('admin.deleteButton')}</button>
+                    </>}
+                  </div>
+                </>}
+              </article>)}
+            </div>
+          </details>
+        })}
+      </>}
+    </div>
   </section>
 }

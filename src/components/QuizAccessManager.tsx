@@ -49,15 +49,14 @@ export function QuizAccessManager({ quiz, onTogglePublic }: QuizAccessManagerPro
       <input type="checkbox" checked={quiz.is_public} onChange={togglePublic} />
       {t('admin.publicQuizLabel')}
     </label>
-    <p className="mode-hint">{t('admin.publicQuizHint')}</p>
     {publicError && <p className="alert" role="alert">{publicError}</p>}
-    <div className="quiz-access-item">
+    {quiz.is_public ? <p className="mode-hint">{t('admin.publicQuizHint')}</p> : <div className="quiz-access-item">
       <div className="quiz-access-users">
         {profiles.map((profile) => <label key={profile.id} className="theme-checkbox">
           <input type="checkbox" checked={grantedIds.includes(profile.id)} onChange={() => toggle(profile.id)} />
           {profile.avatar} {profile.pseudo}
         </label>)}
       </div>
-    </div>
+    </div>}
   </div>
 }
