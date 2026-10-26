@@ -4,7 +4,8 @@ import { useTranslation } from '../i18n'
 import { formatDuration } from '@engine/utils/time'
 import { shuffle } from '../utils/shuffle'
 import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
-import { confirmWithBlur } from '../utils/confirmWithBlur'
+import { confirmDialog } from '../utils/confirmDialog'
+import { abandonGameConfirm } from '../utils/confirmPresets'
 import { useAdvanceGuard } from '../utils/useAdvanceGuard'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { QuestionBody } from './QuestionBody'
@@ -47,7 +48,7 @@ export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elapsed])
 
-  const cancelQuiz = async () => { if (await confirmWithBlur(t('start.confirmAbandon'))) onCancel() }
+  const cancelQuiz = async () => { if (await confirmDialog(abandonGameConfirm(t, t('start.confirmAbandon')))) onCancel() }
 
   // Pas de correction affichée question par question (comme le mode sans-faute) : le bilan complet
   // n'apparaît qu'à la fin. Si le pool filtré est épuisé avant la fin du temps, on remélange et ça continue.

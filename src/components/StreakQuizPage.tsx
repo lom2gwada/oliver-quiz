@@ -4,7 +4,8 @@ import { useTranslation } from '../i18n'
 import { formatDuration } from '@engine/utils/time'
 import { shuffle } from '../utils/shuffle'
 import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
-import { confirmWithBlur } from '../utils/confirmWithBlur'
+import { confirmDialog } from '../utils/confirmDialog'
+import { abandonGameConfirm } from '../utils/confirmPresets'
 import { useAdvanceGuard } from '../utils/useAdvanceGuard'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { isCorrect } from './ResultPage'
@@ -43,7 +44,7 @@ export function StreakQuizPage({ quiz, pool, timeboxed, onFinish, onCancel }: St
     return () => clearInterval(interval)
   }, [])
 
-  const cancelQuiz = async () => { if (await confirmWithBlur(t('quiz.confirmAbandonStreak'))) onCancel() }
+  const cancelQuiz = async () => { if (await confirmDialog(abandonGameConfirm(t, t('quiz.confirmAbandonStreak')))) onCancel() }
 
   // Pas de correction affichée question par question : comme le mode classique, tout se joue "à l'aveugle"
   // et le bilan complet n'apparaît qu'à la fin (voir StreakResultPage).
