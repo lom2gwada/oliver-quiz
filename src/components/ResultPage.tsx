@@ -3,6 +3,7 @@ import type { AnswersByQuestion, Question, Category, QuizLink } from '../types/q
 import type { TranslationKey } from '../i18n'
 import { translate, useTranslation } from '../i18n'
 import { formatPercent } from '../utils/format'
+import { matchesExpected } from '@engine/utils/answerMatch'
 import { formatDuration } from '@engine/utils/time'
 import { playFinish, playVictory } from '@engine/utils/sound'
 import { Confetti } from '@engine/components/Confetti'
@@ -28,8 +29,9 @@ const sameIds = (left: string[], right: string[]) => left.length === right.lengt
 export function isCorrect(question: Question, answer: AnswersByQuestion[string] | undefined): boolean {
   if (question.type === 'text' || question.type === 'cloze') {
     if (typeof answer !== 'string') return false
-    const normalize = (value: string) => question.content.caseSensitive ? value.trim() : value.trim().toLocaleLowerCase()
-    return question.content.expectedAnswers.map(normalize).includes(normalize(answer))
+    // Comparaison du moteur commun : accents, majuscules, tirets / apostrophes, article de tête et faute de frappe sur un
+    // mot long sont tolérés (voir `matchesExpected`) ; `caseSensitive` la rend stricte.
+    return matchesExpected(answer, question.content.expectedAnswers, question.content.caseSensitive)
   }
   if (question.type === 'numeric') {
     if (typeof answer !== 'string' || answer === '') return false

@@ -61,6 +61,50 @@ describe('text', () => {
   })
 })
 
+describe('text — tolerant matching (engine matchesExpected)', () => {
+  const napoleon: TextQuestion = { ...shared, type: 'text', question: 'Quel empereur ?', points: 1, content: { expectedAnswers: ['Napoléon'], caseSensitive: false } }
+  const country: TextQuestion = { ...shared, type: 'text', question: 'Quel pays ?', points: 1, content: { expectedAnswers: ['Le Pérou'], caseSensitive: false } }
+  const capital: TextQuestion = { ...shared, type: 'text', question: 'Quelle capitale ?', points: 1, content: { expectedAnswers: ['Bridgetown'], caseSensitive: false } }
+
+  it('accepts a missing accent', () => {
+    expect(isCorrect(napoleon, 'napoleon')).toBe(true)
+    expect(isCorrect(napoleon, 'NAPOLEON')).toBe(true)
+  })
+
+  it('accepts an answer typed with accents when the expected one has none', () => {
+    expect(isCorrect({ ...napoleon, content: { expectedAnswers: ['Napoleon'], caseSensitive: false } }, 'Napoléon')).toBe(true)
+  })
+
+  it('ignores the leading article', () => {
+    expect(isCorrect(country, 'Pérou')).toBe(true)
+    expect(isCorrect(country, 'perou')).toBe(true)
+    expect(isCorrect(country, 'le perou')).toBe(true)
+  })
+
+  it('accepts one typo on a long word, but not two', () => {
+    expect(isCorrect(capital, 'Bridgetwon')).toBe(true)
+    expect(isCorrect(capital, 'Bridgtwon')).toBe(false)
+  })
+
+  it('does not forgive a typo on a short word or a number', () => {
+    expect(isCorrect({ ...napoleon, content: { expectedAnswers: ['Cuba'], caseSensitive: false } }, 'Cube')).toBe(false)
+    expect(isCorrect({ ...napoleon, content: { expectedAnswers: ['1789'], caseSensitive: false } }, '1788')).toBe(false)
+  })
+
+  it('stays strict when the question is case-sensitive: no accent, case or typo tolerance', () => {
+    const strict: TextQuestion = { ...napoleon, content: { expectedAnswers: ['Napoléon'], caseSensitive: true } }
+    expect(isCorrect(strict, 'Napoléon')).toBe(true)
+    expect(isCorrect(strict, 'napoléon')).toBe(false)
+    expect(isCorrect(strict, 'Napoleon')).toBe(false)
+  })
+
+  it('applies to fill-in-the-blank questions too', () => {
+    const cloze: ClozeQuestion = { ...shared, type: 'cloze', question: 'L’empereur exilé à Sainte-Hélène est ___.', points: 1, content: { expectedAnswers: ['Napoléon'], caseSensitive: false } }
+    expect(isCorrect(cloze, 'napoleon')).toBe(true)
+    expect(isCorrect(cloze, 'Louis')).toBe(false)
+  })
+})
+
 describe('cloze', () => {
   const question: ClozeQuestion = { ...shared, type: 'cloze', question: 'La capitale est ___.', points: 1, content: { expectedAnswers: ['Paris'], caseSensitive: false } }
 
