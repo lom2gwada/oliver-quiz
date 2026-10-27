@@ -29,7 +29,7 @@
       { "id": "mur", "label": "Chute du mur de Berlin" },
       { "id": "ww1", "label": "Première Guerre mondiale" }
     ], "correctOrder": ["revolution", "ww1", "ww2", "mur"] } },
-    { "id": "hist-5", "type": "qcm", "theme": "histoire", "difficulty": "hard", "question": "Quel traité a officiellement mis fin à la Première Guerre mondiale ?", "tags": ["diplomatie"], "explanation": "Le traité de Versailles, signé en 1919, a mis fin à l'état de guerre entre l'Allemagne et les Alliés.", "points": 3, "content": { "multiple": false, "answers": [
+    { "id": "hist-5", "type": "qcm", "theme": "histoire", "difficulty": "medium", "question": "Quel traité a officiellement mis fin à la Première Guerre mondiale ?", "tags": ["diplomatie"], "explanation": "Le traité de Versailles, signé en 1919, a mis fin à l'état de guerre entre l'Allemagne et les Alliés.", "points": 3, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Le traité de Versailles", "isCorrect": true },
       { "id": "b", "label": "Le traité de Vienne", "isCorrect": false },
       { "id": "c", "label": "Le traité de Rome", "isCorrect": false }
@@ -51,9 +51,9 @@
       ],
       "correctPairs": { "napoleon": "r-napoleon", "cesar": "r-cesar", "louis14": "r-louis14", "vinci": "r-vinci" }
     } },
-    { "id": "hist-9", "type": "numeric", "theme": "histoire", "difficulty": "medium", "question": "En quelle année a éclaté la Révolution française ?", "tags": ["france"], "explanation": "La Révolution française a débuté en 1789 avec la prise de la Bastille.", "points": 2, "content": { "min": 1700, "max": 1900, "step": 1, "target": 1789, "tolerance": 3 } },
+    { "id": "hist-9", "type": "numeric", "theme": "histoire", "difficulty": "easy", "question": "En quelle année a éclaté la Révolution française ?", "tags": ["france"], "explanation": "La Révolution française a débuté en 1789 avec la prise de la Bastille.", "points": 2, "content": { "min": 1700, "max": 1900, "step": 1, "target": 1789, "tolerance": 3 } },
 
-    { "id": "geo-1", "type": "qcm", "theme": "geographie", "difficulty": "easy", "question": "Quelle est la capitale de l'Australie ?", "tags": ["capitales"], "explanation": "Canberra est la capitale de l'Australie, bien que Sydney soit la ville la plus peuplée.", "points": 1, "content": { "multiple": false, "answers": [
+    { "id": "geo-1", "type": "qcm", "theme": "geographie", "difficulty": "medium", "question": "Quelle est la capitale de l'Australie ?", "tags": ["capitales"], "explanation": "Canberra est la capitale de l'Australie, bien que Sydney soit la ville la plus peuplée.", "points": 1, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Sydney", "isCorrect": false },
       { "id": "b", "label": "Canberra", "isCorrect": true },
       { "id": "c", "label": "Melbourne", "isCorrect": false }
@@ -92,7 +92,7 @@
       ],
       "correctPairs": { "egypte": "r-afrique", "bresil": "r-as", "japon": "r-asie", "canada": "r-an" }
     } },
-    { "id": "geo-9", "type": "numeric", "theme": "geographie", "difficulty": "medium", "question": "Quelle est l'altitude approximative du Mont Blanc ?", "tags": ["montagnes"], "explanation": "Le Mont Blanc culmine à 4 809 mètres, point culminant des Alpes.", "points": 2, "content": { "min": 0, "max": 6000, "step": 50, "target": 4809, "tolerance": 100, "unit": "m" } },
+    { "id": "geo-9", "type": "numeric", "theme": "geographie", "difficulty": "hard", "question": "Quelle est l'altitude approximative du Mont Blanc ?", "tags": ["montagnes"], "explanation": "Le Mont Blanc culmine à 4 809 mètres, point culminant des Alpes.", "points": 2, "content": { "min": 0, "max": 6000, "step": 50, "target": 4809, "tolerance": 100, "unit": "m" } },
     { "id": "geo-10", "type": "qcm", "theme": "geographie", "difficulty": "easy", "question": "Quel pays ce drapeau représente-t-il ?", "tags": ["drapeaux"], "explanation": "Le drapeau du Brésil arbore un losange doré et un globe bleu sur fond vert, avec la devise \"Ordem e Progresso\".", "points": 1, "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/05/Flag_of_Brazil.svg", "imageAlt": "Un drapeau vert avec un losange jaune et un globe bleu au centre.", "content": { "multiple": false, "answers": [
       { "id": "a", "label": "L'Argentine", "isCorrect": false },
       { "id": "b", "label": "Le Brésil", "isCorrect": true },
@@ -111,18 +111,18 @@
       { "id": "c", "label": "9", "isCorrect": false }
     ] } },
     { "id": "sci-3", "type": "text", "theme": "sciences", "difficulty": "medium", "question": "Quelle est l'unité de mesure de la force dans le système international ?", "tags": ["physique"], "explanation": "Le newton (N) mesure une force, en hommage à Isaac Newton.", "points": 2, "content": { "expectedAnswers": ["le newton", "newton"], "caseSensitive": false } },
-    { "id": "sci-4", "type": "qcm", "theme": "sciences", "difficulty": "medium", "question": "Quel scientifique a formulé la théorie de la relativité ?", "tags": ["physique"], "explanation": "Albert Einstein a publié la relativité restreinte en 1905, puis la relativité générale en 1915.", "points": 2, "content": { "multiple": false, "answers": [
+    { "id": "sci-4", "type": "qcm", "theme": "sciences", "difficulty": "easy", "question": "Quel scientifique a formulé la théorie de la relativité ?", "tags": ["physique"], "explanation": "Albert Einstein a publié la relativité restreinte en 1905, puis la relativité générale en 1915.", "points": 2, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "Isaac Newton", "isCorrect": false },
       { "id": "b", "label": "Albert Einstein", "isCorrect": true },
       { "id": "c", "label": "Niels Bohr", "isCorrect": false }
     ] } },
-    { "id": "sci-5", "type": "qcm", "theme": "sciences", "difficulty": "hard", "question": "Quel gaz représente environ 78% de l'atmosphère terrestre ?", "tags": ["atmosphere"], "explanation": "L'azote (N2) est le composant majoritaire de l'atmosphère, loin devant l'oxygène (environ 21%).", "points": 3, "content": { "multiple": false, "answers": [
+    { "id": "sci-5", "type": "qcm", "theme": "sciences", "difficulty": "medium", "question": "Quel gaz représente environ 78% de l'atmosphère terrestre ?", "tags": ["atmosphere"], "explanation": "L'azote (N2) est le composant majoritaire de l'atmosphère, loin devant l'oxygène (environ 21%).", "points": 3, "content": { "multiple": false, "answers": [
       { "id": "a", "label": "L'oxygène", "isCorrect": false },
       { "id": "b", "label": "L'azote", "isCorrect": true },
       { "id": "c", "label": "Le dioxyde de carbone", "isCorrect": false }
     ] } },
     { "id": "sci-6", "type": "boolean", "theme": "sciences", "difficulty": "medium", "question": "La lumière se déplace plus vite que le son.", "tags": ["physique"], "explanation": "La lumière voyage à environ 300 000 km/s dans le vide, bien plus vite que le son (environ 340 m/s dans l'air).", "points": 2, "content": { "isTrue": true } },
-    { "id": "sci-7", "type": "cloze", "theme": "sciences", "difficulty": "medium", "question": "L'eau (H2O) est composée d'hydrogène et d'___.", "tags": ["chimie"], "explanation": "La molécule d'eau est formée de deux atomes d'hydrogène et d'un atome d'oxygène.", "points": 2, "content": { "expectedAnswers": ["oxygène", "oxygene"], "caseSensitive": false } },
+    { "id": "sci-7", "type": "cloze", "theme": "sciences", "difficulty": "easy", "question": "L'eau (H2O) est composée d'hydrogène et d'___.", "tags": ["chimie"], "explanation": "La molécule d'eau est formée de deux atomes d'hydrogène et d'un atome d'oxygène.", "points": 2, "content": { "expectedAnswers": ["oxygène", "oxygene"], "caseSensitive": false } },
     { "id": "sci-8", "type": "matching", "theme": "sciences", "difficulty": "medium", "question": "Associez chaque élément chimique à son symbole.", "tags": ["chimie"], "explanation": "Chaque élément possède un symbole issu du tableau périodique : Au (or), Fe (fer), O (oxygène), C (carbone).", "points": 2, "content": {
       "left": [
         { "id": "or", "label": "Or" },
@@ -237,7 +237,7 @@
       { "id": "b", "label": "Le badminton", "isCorrect": true },
       { "id": "c", "label": "Le squash", "isCorrect": false }
     ] } },
-    { "id": "sport-5", "type": "ordering", "theme": "sport", "difficulty": "hard", "question": "Classez ces épreuves d'athlétisme de la plus courte à la plus longue distance.", "tags": ["athletisme"], "explanation": "100 m, 400 m, 1500 m, puis le marathon (42,195 km).", "points": 3, "content": { "items": [
+    { "id": "sport-5", "type": "ordering", "theme": "sport", "difficulty": "easy", "question": "Classez ces épreuves d'athlétisme de la plus courte à la plus longue distance.", "tags": ["athletisme"], "explanation": "100 m, 400 m, 1500 m, puis le marathon (42,195 km).", "points": 3, "content": { "items": [
       { "id": "marathon", "label": "Marathon" },
       { "id": "cent", "label": "100 m" },
       { "id": "millecinqcent", "label": "1500 m" },
@@ -283,7 +283,7 @@
       { "id": "b", "label": "Les années 1980", "isCorrect": false },
       { "id": "c", "label": "Les années 1990", "isCorrect": true }
     ] } },
-    { "id": "mus-6", "type": "boolean", "theme": "musique", "difficulty": "easy", "question": "Le piano est un instrument à cordes frappées.", "tags": ["instruments"], "explanation": "Le piano produit son son grâce à des marteaux qui frappent des cordes, il est donc classé parmi les cordes frappées.", "points": 1, "content": { "isTrue": true } },
+    { "id": "mus-6", "type": "boolean", "theme": "musique", "difficulty": "medium", "question": "Le piano est un instrument à cordes frappées.", "tags": ["instruments"], "explanation": "Le piano produit son son grâce à des marteaux qui frappent des cordes, il est donc classé parmi les cordes frappées.", "points": 1, "content": { "isTrue": true } },
     { "id": "mus-7", "type": "cloze", "theme": "musique", "difficulty": "easy", "question": "Wolfgang Amadeus ___ est un compositeur autrichien du XVIIIe siècle.", "tags": ["classique"], "explanation": "Wolfgang Amadeus Mozart (1756-1791) est l'un des plus grands compositeurs classiques.", "points": 1, "content": { "expectedAnswers": ["Mozart"], "caseSensitive": false } },
     { "id": "mus-8", "type": "matching", "theme": "musique", "difficulty": "medium", "question": "Associez chaque compositeur à sa nationalité.", "tags": ["compositeurs"], "explanation": "Mozart était autrichien, Beethoven allemand, Chopin polonais et Verdi italien.", "points": 2, "content": {
       "left": [
@@ -318,7 +318,7 @@
       { "id": "b", "label": "La bière", "isCorrect": false },
       { "id": "c", "label": "Le cidre", "isCorrect": false }
     ] } },
-    { "id": "gastro-5", "type": "ordering", "theme": "gastronomie", "difficulty": "hard", "question": "Classez ces étapes de préparation d'une pâte à pain dans l'ordre.", "tags": ["boulangerie"], "explanation": "On mélange les ingrédients, on pétrit la pâte, on la laisse lever, puis on la fait cuire au four.", "points": 3, "content": { "items": [
+    { "id": "gastro-5", "type": "ordering", "theme": "gastronomie", "difficulty": "medium", "question": "Classez ces étapes de préparation d'une pâte à pain dans l'ordre.", "tags": ["boulangerie"], "explanation": "On mélange les ingrédients, on pétrit la pâte, on la laisse lever, puis on la fait cuire au four.", "points": 3, "content": { "items": [
       { "id": "cuire", "label": "Cuire au four" },
       { "id": "melanger", "label": "Mélanger les ingrédients" },
       { "id": "lever", "label": "Laisser lever la pâte" },

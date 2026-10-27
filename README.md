@@ -84,6 +84,18 @@ Le plus simple pour démarrer : dans l'administration (page « Quiz »), le bout
 | `matching` | `{ "left": [{ "id": "l1", "label": "France" }, …], "right": [{ "id": "r1", "label": "Paris" }, …], "correctPairs": { "l1": "r1", … } }` — une correspondance par élément de `left` |
 | `numeric` | `{ "min": 1700, "max": 1900, "step": 1, "target": 1789, "tolerance": 0, "unit": "ans" }` — `min` < `max`, `target` entre les deux, `tolerance` ≥ 0, `unit` facultatif |
 
+### Choisir la difficulté
+
+La difficulté (`easy`, `medium`, `hard`) doit correspondre au ressenti d'un joueur adulte, pas à la forme de la question. Règle suivie pour le quiz d'exemple et recommandée pour les autres :
+
+| Niveau | Quand l'utiliser | Exemples du quiz d'exemple |
+| --- | --- | --- |
+| **Facile** (`easy`) | Culture générale courante, vue à l'école ou dans la vie quotidienne ; la bonne réponse se reconnaît ou se retrouve sans effort. | « Quel est le symbole chimique de l'or ? », « Combien de planètes compte le système solaire ? » |
+| **Intermédiaire** (`medium`) | Un fait précis à se rappeler (réponse à écrire, date à estimer, ordre ou association de plusieurs éléments), ou une réponse connue mais qui piège facilement. | « Quel gaz représente environ 78 % de l'atmosphère ? », « Quelle est la capitale de l'Australie ? » |
+| **Difficile** (`hard`) | Connaissance spécialisée, détail rarement retenu ou valeur précise ; ou un classement où l'ordre intuitif est faux. | « Quel écrivain français a reçu le prix Nobel de littérature en 1957 ? », « Classez ces films Star Wars par ordre de sortie » |
+
+En cas d'hésitation : le type de question ne fait pas la difficulté (un QCM peut être difficile, une réponse libre facile) ; on se demande combien de joueurs répondraient juste sans aide. Viser un mélange dans chaque thème, avec une majorité de Facile et d'Intermédiaire.
+
 ### Erreurs de validation
 
 Un fichier refusé affiche l'erreur avec le **chemin du champ fautif**, par exemple :
