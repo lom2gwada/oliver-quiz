@@ -37,7 +37,7 @@ import { TimedResultPage } from './components/TimedResultPage'
 import type { AnswersByQuestion, Difficulty, GameMode, Question, Quiz } from './types/quiz'
 import type { Profile } from './types/profile'
 import type { HostedQuizSummary } from './types/hostedQuiz'
-import { buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, deleteQuizHistory, saveQuestionResults, saveQuizResult, saveStreakResult, saveTimedResult } from './utils/quizHistory'
+import { buildAttemptResultPayloads, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, deleteQuizHistory, saveQuestionResults, saveQuizResult, saveStreakResult, saveTimedResult } from './utils/quizHistory'
 import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchStreakTopScore, fetchTimedTopScore, fetchTopScore } from './utils/leaderboard'
 import { computeDueQuestions, createQuestionProgressJob, fetchQuestionProgress, selectReviewCards, type ReviewCard } from './utils/leitner'
@@ -634,7 +634,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     setStreakResult(result)
     replace('streakResults')
     const payload = buildStreakResultPayload(result.streakCount, result.elapsedSeconds, result.victory, result.playedQuestions, quiz.categories, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered)
-    saveGame([() => saveStreakResult(payload)])
+    const detailPayloads = buildQuestionResultPayloads(result.playedQuestions, result.answers, quiz.metadata.title, selectedHostedQuizId || null, payload.id, 'streak')
+    saveGame([() => saveStreakResult(payload), () => saveQuestionResults(detailPayloads)])
   }
 
   const startTimed = () => {
@@ -653,7 +654,10 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     replace('timedResults')
     const payload = buildTimedResultPayload(result.attempts, result.elapsedSeconds, result.durationSeconds, quiz.categories, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered)
     // Une partie où rien n'a été tenté (« 0 / 0 ») ne dit rien : elle n'est pas enregistrée.
-    if (payload.question_count > 0) saveGame([() => saveTimedResult(payload)])
+    if (payload.question_count > 0) {
+      const detailPayloads = buildAttemptResultPayloads(result.attempts, quiz.metadata.title, selectedHostedQuizId || null, payload.id, 'timed')
+      saveGame([() => saveTimedResult(payload), () => saveQuestionResults(detailPayloads)])
+    }
   }
 
   selectHostedQuizRef.current = selectHostedQuiz

@@ -356,3 +356,5 @@ header.app-header { display: block; padding-bottom: 1.4rem; margin-bottom: 2rem;
 .quiz-import-help { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem 1.2rem; margin-top: .8rem; }
 .quiz-import-help a { color: var(--accent-text); font-weight: 600; }
 .quiz-import-help button { width: auto; }
+
+.history-mode { font-size: .8rem; font-weight: 600; color: var(--text-soft); white-space: nowrap; }

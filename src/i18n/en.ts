@@ -465,6 +465,8 @@ export const en = {
   'history.tabModes': 'Modes',
   'history.tabReview': (count: number) => `To review (${count})`,
   'history.tabGames': (count: number) => `Games (${count})`,
+  'history.modesHint': 'The records of each mode. All games, with their detail, are in the “Games” tab.',
+  'history.detailUnavailableBasic': "The questions of this game weren't kept (it was played before this feature existed).",
   'history.gamesHint': 'Open a game to see its questions, your answers and the correction.',
   'history.detailThemeTotal': (theme: string, correct: number, total: number) => `${theme}: ${correct}/${total}`,
   'history.detailError': "Couldn't load this game's details.",

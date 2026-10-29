@@ -463,6 +463,8 @@ export const fr = {
   'history.tabModes': 'Modes',
   'history.tabReview': (count: number) => `À réviser (${count})`,
   'history.tabGames': (count: number) => `Parties (${count})`,
+  'history.modesHint': "Les records de chaque mode. Toutes les parties, avec leur détail, sont dans l'onglet « Parties ».",
+  'history.detailUnavailableBasic': "Le détail des questions n'a pas été conservé pour cette partie (jouée avant l'ajout de cette fonction).",
   'history.gamesHint': 'Ouvre une partie pour revoir ses questions, tes réponses et la correction.',
   'history.detailThemeTotal': (theme: string, correct: number, total: number) => `${theme} : ${correct}/${total}`,
   'history.detailError': 'Impossible de charger le détail de cette partie.',

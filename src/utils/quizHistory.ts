@@ -1,4 +1,4 @@
-import type { AnswersByQuestion, Question, QuestionAttempt, Category } from '../types/quiz'
+import type { AnswersByQuestion, Question, QuestionAttempt, Category, GameMode } from '../types/quiz'
 import type { ChartGroup, GameQuestionRow, QuestionResultPayload, QuizRecords, QuizResultPayload, QuizResultRow, RadarAxis, StatBucket, StreakResultPayload, StreakResultRow, ThemeWeekHeatmap, TimedResultPayload, TimedResultRow } from '../types/history'
 import { isCorrect } from '../components/ResultPage'
 import { supabase } from './supabase'
@@ -62,24 +62,32 @@ export async function fetchQuizHistory(): Promise<QuizResultRow[]> {
 
 /** Une ligne par question de la partie : journal brut, conservé même si la sélection des questions à réviser
  * repose désormais sur `question_progress` (boîtes de Leitner, voir `utils/leitner.ts`) plutôt que sur ce log. */
-export function buildQuestionResultPayloads(questions: Question[], answers: AnswersByQuestion, quizTitle: string, quizId: string | null, gameId: string | null = null): QuestionResultPayload[] {
-  return questions.map((question, index) => ({
+export function buildQuestionResultPayloads(questions: Question[], answers: AnswersByQuestion, quizTitle: string, quizId: string | null, gameId: string | null = null, mode: GameMode = 'classic'): QuestionResultPayload[] {
+  return buildAttemptResultPayloads(questions.map((question) => ({ question, answer: answers[question.id] })), quizTitle, quizId, gameId, mode)
+}
+
+/** Même journal pour une partie dont les questions peuvent revenir (contre-la-montre) : une ligne par tentative, dans l'ordre. */
+export function buildAttemptResultPayloads(attempts: QuestionAttempt[], quizTitle: string, quizId: string | null, gameId: string | null, mode: GameMode): QuestionResultPayload[] {
+  return attempts.map(({ question, answer }, index) => ({
     id: crypto.randomUUID(),
     quiz_title: quizTitle,
     quiz_id: quizId,
     question_id: question.id,
     question_text: question.question,
-    correct: isCorrect(question, answers[question.id]),
-    quiz_result_id: gameId,
+    correct: isCorrect(question, answer),
+    game_mode: mode,
+    game_id: gameId,
     position: index,
-    answer: answers[question.id] ?? null,
+    answer: answer ?? null,
   }))
 }
 
-/** Les questions d'une partie classique, dans l'ordre où elles ont été posées. Vide pour une partie d'avant
- * `035_question_results_game_detail.sql` : son détail se limite aux totaux déjà stockés sur la partie. */
+/** Les questions d'une partie (de n'importe quel mode), dans l'ordre où elles ont été posées. Vide pour une partie d'avant
+ * `035_question_results_game_detail.sql` (classique) ou `040_question_results_any_mode.sql` (sans-faute, contre-la-montre) :
+ * son détail se limite alors aux totaux déjà stockés sur la partie. Lit aussi `quiz_result_id`, que l'ancienne version de
+ * l'appli (onglet resté ouvert) écrit encore ; un identifiant de partie est un UUID, il ne peut pas désigner deux parties. */
 export async function fetchGameQuestions(gameId: string): Promise<GameQuestionRow[]> {
-  const { data, error } = await supabase.from('question_results').select('question_id, question_text, correct, position, answer').eq('quiz_result_id', gameId).order('position', { ascending: true })
+  const { data, error } = await supabase.from('question_results').select('question_id, question_text, correct, position, answer').or(`game_id.eq.${gameId},quiz_result_id.eq.${gameId}`).order('position', { ascending: true })
   if (error) throw error
   return data ?? []
 }

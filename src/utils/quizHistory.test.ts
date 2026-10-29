@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BooleanQuestion, QCMQuestion, Category, Question } from '../types/quiz'
 import type { QuizResultRow } from '../types/history'
-import { bucketsToChartGroups, bucketsToRadarAxes, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, computeRecords, computeThemeWeekHeatmap, sumBuckets, weekKeysBetween, weekStartKey } from './quizHistory'
+import { bucketsToChartGroups, bucketsToRadarAxes, buildAttemptResultPayloads, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, computeRecords, computeThemeWeekHeatmap, sumBuckets, weekKeysBetween, weekStartKey } from './quizHistory'
 
 const themes: Category[] = [{ id: 'histoire', label: 'Histoire' }, { id: 'geo', label: 'Géographie' }]
 
@@ -302,8 +302,8 @@ describe('buildQuestionResultPayloads', () => {
   it('tags each question with its own correctness', () => {
     const payloads = buildQuestionResultPayloads([qcm, bool], { q1: ['a'], q2: ['false'] }, 'Culture générale', null)
     expect(payloads).toEqual([
-      { id: expect.any(String), quiz_title: 'Culture générale', quiz_id: null, question_id: 'q1', question_text: 'Q ?', correct: true, quiz_result_id: null, position: 0, answer: ['a'] },
-      { id: expect.any(String), quiz_title: 'Culture générale', quiz_id: null, question_id: 'q2', question_text: 'Vrai ou faux ?', correct: false, quiz_result_id: null, position: 1, answer: ['false'] },
+      { id: expect.any(String), quiz_title: 'Culture générale', quiz_id: null, question_id: 'q1', question_text: 'Q ?', correct: true, game_mode: 'classic', game_id: null, position: 0, answer: ['a'] },
+      { id: expect.any(String), quiz_title: 'Culture générale', quiz_id: null, question_id: 'q2', question_text: 'Vrai ou faux ?', correct: false, game_mode: 'classic', game_id: null, position: 1, answer: ['false'] },
     ])
   })
 
@@ -333,10 +333,30 @@ describe('buildQuestionResultPayloads — game detail', () => {
 
   it('links each question to its game, with its rank and the answer given', () => {
     const payloads = buildQuestionResultPayloads([q('a'), q('b')], { a: ['true'] }, 'Quiz', 'quiz-1', 'game-1')
-    expect(payloads.map((p) => [p.quiz_result_id, p.position, p.answer])).toEqual([['game-1', 0, ['true']], ['game-1', 1, null]])
+    expect(payloads.map((p) => [p.game_mode, p.game_id, p.position, p.answer])).toEqual([['classic', 'game-1', 0, ['true']], ['classic', 'game-1', 1, null]])
   })
 
   it('leaves the game empty when none is given', () => {
-    expect(buildQuestionResultPayloads([q('a')], {}, 'Quiz', null)[0].quiz_result_id).toBeNull()
+    expect(buildQuestionResultPayloads([q('a')], {}, 'Quiz', null)[0].game_id).toBeNull()
+  })
+
+  it('tags the questions of a streak game with their mode and judges each answer', () => {
+    const payloads = buildQuestionResultPayloads([q('a'), q('b')], { a: ['true'], b: ['false'] }, 'Quiz', 'quiz-1', 'streak-1', 'streak')
+    expect(payloads.map((p) => [p.game_mode, p.game_id, p.position, p.correct])).toEqual([['streak', 'streak-1', 0, true], ['streak', 'streak-1', 1, false]])
+  })
+})
+
+describe('buildAttemptResultPayloads', () => {
+  const q = (id: string): Question => ({ id, category: 'c', difficulty: 'easy', question: id, tags: [], explanation: '', points: 1, type: 'boolean', content: { isTrue: true } })
+
+  it('records one row per attempt, in order, even when a question comes back', () => {
+    const payloads = buildAttemptResultPayloads([{ question: q('a'), answer: ['true'] }, { question: q('b'), answer: undefined }, { question: q('a'), answer: ['false'] }], 'Quiz', null, 'timed-1', 'timed')
+    expect(payloads.map((p) => [p.question_id, p.position, p.correct, p.answer])).toEqual([['a', 0, true, ['true']], ['b', 1, false, null], ['a', 2, false, ['false']]])
+    expect(new Set(payloads.map((p) => p.id)).size).toBe(3)
+    expect(payloads.every((p) => p.game_mode === 'timed' && p.game_id === 'timed-1')).toBe(true)
+  })
+
+  it('has nothing to record for a game without any attempt', () => {
+    expect(buildAttemptResultPayloads([], 'Quiz', null, 'timed-1', 'timed')).toEqual([])
   })
 })
