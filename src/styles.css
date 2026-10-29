@@ -300,7 +300,7 @@ header.app-header { display: block; padding-bottom: 1.4rem; margin-bottom: 2rem;
   .language-switch button { min-width: 44px; }
   .theme-checkbox, .theme-option { min-height: 44px; }
   .avatar-option { min-width: 44px; min-height: 44px; }
-  .further-reading a { display: inline-flex; align-items: center; min-height: 44px; }
+  .further-reading a, .further-reading-inline a { display: inline-flex; align-items: center; min-height: 44px; }
   .profile-about-link a, .about-page li a { display: inline-block; padding: .6rem 0; }
   .breadcrumb a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 .2rem; }
   .active-quiz-actions button { padding: .5rem .85rem; }
@@ -358,3 +358,6 @@ header.app-header { display: block; padding-bottom: 1.4rem; margin-bottom: 2rem;
 .quiz-import-help button { width: auto; }
 
 .history-mode { font-size: .8rem; font-weight: 600; color: var(--text-soft); white-space: nowrap; }
+
+.further-reading-inline { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem 1rem; margin: .4rem 0 0; font-size: .85rem; color: var(--text-soft); }
+.further-reading-inline a { color: var(--accent-text); font-weight: 600; }

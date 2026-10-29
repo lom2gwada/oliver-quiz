@@ -22,6 +22,7 @@ import { OverviewPage } from './components/OverviewPage'
 import { AboutPage } from './components/AboutPage'
 import { AppFooter } from './components/AppFooter'
 import { ExpandableText } from './components/ExpandableText'
+import { FurtherReadingInline } from './components/FurtherReading'
 import { ModePicker } from './components/ModePicker'
 import { ProfilePage } from './components/ProfilePage'
 import { QuizDetailPage } from './components/QuizDetailPage'
@@ -700,6 +701,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
             <p>{t('nav.by', quiz.metadata.author)}{quiz.metadata.language && <> · {quizLanguageLabel(quiz.metadata.language, language, t)}</>}</p>
           </div>
         </div>
+        {view === 'start' && <FurtherReadingInline links={quiz.metadata.links} />}
         {view === 'start' && quiz.metadata.description && <ExpandableText key={quiz.metadata.description} className="quiz-description-preview" text={quiz.metadata.description} />}
         {view === 'start' && topScore && <button type="button" className="top-score" title={t('topScore.hint')} onClick={() => viewLeaderboard('start', gameMode)}>🏆 {topScoreText(topScore)} <span aria-hidden="true">›</span></button>}
         {view === 'start' && hostedQuizzes.length > 0 && <div className="active-quiz">
