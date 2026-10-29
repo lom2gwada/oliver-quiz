@@ -1,40 +1,36 @@
-import type { ReactElement } from 'react'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('../i18n', () => ({ useTranslation: () => ({ t: (key: string) => key, language: 'fr' }) }))
 
-import { FurtherReading } from './FurtherReading'
+import { FurtherReading, FurtherReadingInline } from './FurtherReading'
 
-type Node = ReactElement<{ children: unknown; href?: string; target?: string; rel?: string }>
+type Links = Parameters<typeof FurtherReading>[0]['links']
+const block = (links: Links) => renderToStaticMarkup(createElement(FurtherReading, { links }))
+const inline = (links: Links) => renderToStaticMarkup(createElement(FurtherReadingInline, { links }))
 
-/** Les <li> du bloc rendu (pas de DOM nécessaire). */
-function itemsOf(links: Parameters<typeof FurtherReading>[0]['links']): Node[] {
-  const root = FurtherReading({ links }) as ReactElement<{ children: Node[] }> | null
-  if (!root) return []
-  const list = root.props.children[1] as unknown as ReactElement<{ children: Node[] }>
-  return list.props.children
-}
+const links: Links = [{ label: 'Site officiel', url: 'https://a.org' }, { label: 'Le livre', url: 'https://b.org', commercial: true }]
 
-describe('FurtherReading', () => {
+describe.each([['FurtherReading', block], ['FurtherReadingInline (home page)', inline]] as const)('%s', (_name, render) => {
   it('renders nothing without links', () => {
-    expect(FurtherReading({ links: undefined })).toBeNull()
-    expect(FurtherReading({ links: [] })).toBeNull()
+    expect(render(undefined)).toBe('')
+    expect(render([])).toBe('')
   })
 
-  it('opens each link in a new tab with noopener noreferrer, in the authored order', () => {
-    const items = itemsOf([{ label: 'Site officiel', url: 'https://a.org' }, { label: 'Le livre', url: 'https://b.org', commercial: true }])
-    expect(items).toHaveLength(2)
-    const anchors = items.map((item) => (item.props.children as Node[])[0])
-    expect(anchors.map((anchor) => anchor.props.href)).toEqual(['https://a.org', 'https://b.org'])
-    for (const anchor of anchors) {
-      expect(anchor.props.target).toBe('_blank')
-      expect(anchor.props.rel).toBe('noopener noreferrer')
-    }
+  it('says what the links are for and opens each one in a new tab with noopener noreferrer, in the authored order', () => {
+    const html = render(links)
+    expect(html).toContain('links.title')
+    expect((html.match(/<a /g) ?? []).length).toBe(2)
+    expect(html.match(/target="_blank" rel="noopener noreferrer"/g)).toHaveLength(2)
+    expect(html.indexOf('href="https://a.org"')).toBeLessThan(html.indexOf('href="https://b.org"'))
   })
 
   it('flags only the commercial link', () => {
-    const [plain, shop] = itemsOf([{ label: 'Site officiel', url: 'https://a.org' }, { label: 'Le livre', url: 'https://b.org', commercial: true }])
-    expect((plain.props.children as unknown[])[1]).toBeFalsy()
-    expect((shop.props.children as unknown[])[1]).toBeTruthy()
+    expect(render(links).match(/link-commercial/g)).toHaveLength(1)
+  })
+
+  it('tells assistive technology that a link opens in a new tab', () => {
+    expect(render(links).match(/links\.newTab/g)).toHaveLength(2)
   })
 })
