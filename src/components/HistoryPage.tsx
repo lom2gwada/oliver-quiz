@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Difficulty, Question, Quiz } from '../types/quiz'
 import type { QuizResultRow, StreakResultRow, TimedResultRow } from '../types/history'
 import { useTranslation } from '../i18n'
+import type { Language, TranslationKey } from '../i18n'
 import { bucketsToChartGroups, bucketsToRadarAxes, computeRecords, computeThemeWeekHeatmap, fetchQuizHistory, fetchStreakHistory, fetchTimedHistory, sumBuckets } from '../utils/quizHistory'
 import { computeDueQuestions, fetchQuestionProgress, selectReviewCards, type QuestionProgressRow, type ReviewCard } from '../utils/leitner'
 import { longDate, shortDate } from '../utils/dateFormat'
@@ -13,6 +14,7 @@ import { PieChart } from '@engine/components/PieChart'
 import { RadarChart } from './RadarChart'
 import { difficultyLabel, typeLabel } from './QuizPage'
 import { GameDetail } from './GameDetail'
+import { mergeGames, type HistoryGame } from '../utils/historyGames'
 import { ScoreChart } from './ScoreChart'
 import { TabList, tabPanelId } from './TabList'
 import { ThemeHeatmap } from './ThemeHeatmap'
@@ -20,6 +22,8 @@ import { ThemeHeatmap } from './ThemeHeatmap'
 /** Tailles de lot proposées pour "Reprendre mes erreurs" — au-delà de quelques dizaines de questions
  * accumulées, tout reprendre d'un coup n'est plus une session de pratique digeste. */
 const REPLAY_COUNTS = [10, 20, 30, 50]
+
+type Translate = (key: TranslationKey, ...args: unknown[]) => string
 
 interface HistoryPageProps {
   onBack: () => void
@@ -39,6 +43,38 @@ interface HistoryPageProps {
 const quizKeyOf = (row: { quiz_id: string | null; quiz_title: string }) => row.quiz_id ?? row.quiz_title
 
 type HistoryTab = 'summary' | 'progress' | 'modes' | 'review' | 'games'
+
+const modeLabel = (game: HistoryGame, t: Translate) => t(game.mode === 'classic' ? 'common.modeClassic' : game.mode === 'streak' ? 'common.modeStreak' : 'common.modeTimed')
+
+/** Les colonnes d'une ligne de partie : le résultat propre au mode, la date, les thèmes, puis les points / la durée. */
+function gameSummary(game: HistoryGame, t: Translate, language: Language) {
+  if (game.mode === 'classic') {
+    const { row } = game
+    return <>
+      <span className="history-score" title={t('metric.pointsShareHint')}>{formatPercent(row.score, language)}</span>
+      <span className="history-date">{longDate(row.created_at, language)}</span>
+      <span className="history-themes">{row.themes.join(', ')}</span>
+      <span>{t('result.pointsEarned', row.earned_points, row.total_points)}</span>
+      <span>{t('common.durationIcon', formatDuration(row.elapsed_seconds))}</span>
+    </>
+  }
+  if (game.mode === 'streak') {
+    const { row } = game
+    return <>
+      <span className="history-score">{row.victory ? '🏆' : '🔥'} {row.streak_count}</span>
+      <span className="history-date">{longDate(row.created_at, language)}</span>
+      <span className="history-themes">{row.themes.join(', ') || t('common.allThemes')}</span>
+      <span>{t('common.durationIcon', formatDuration(row.elapsed_seconds))}</span>
+    </>
+  }
+  const { row } = game
+  return <>
+    <span className="history-score">✅ {row.correct_count} / {row.question_count}</span>
+    <span className="history-date">{longDate(row.created_at, language)}</span>
+    <span className="history-themes">{row.themes.join(', ') || t('common.allThemes')}</span>
+    <span>{timedDurationLabel(row.elapsed_seconds, row.duration_seconds, t)}</span>
+  </>
+}
 
 export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onReviewDue, onViewLeaderboard }: HistoryPageProps) {
   const { t, language } = useTranslation()
@@ -82,9 +118,10 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onRevie
   const bestStreak = quizStreakRows.length ? Math.max(...quizStreakRows.map((row) => row.streak_count)) : 0
   // Une partie contre-la-montre sans aucune question tentée n'a rien à montrer (« ✅ 0 / 0 ») : elle est masquée.
   const quizTimedRows = timedRows.filter((row) => quizKeyOf(row) === activeQuiz && row.question_count > 0)
+  const quizGames = mergeGames(quizRows ?? [], quizStreakRows, quizTimedRows)
   const bestTimedCount = quizTimedRows.length ? Math.max(...quizTimedRows.map((row) => row.correct_count)) : 0
   // « Parties jouées » : toutes les parties du quiz, tous modes confondus — comme « Mes quiz ».
-  const totalGames = (quizRows?.length ?? 0) + quizStreakRows.length + quizTimedRows.length
+  const totalGames = quizGames.length
 
   const records = quizRows ? computeRecords(quizRows) : null
   const chartPoints = quizRows ? [...quizRows].reverse().map((row) => ({ label: shortDate(row.created_at, language), score: row.score })) : []
@@ -111,7 +148,7 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onRevie
     ...(records && records.gamesPlayed > 0 ? [{ id: 'progress' as const, label: t('history.tabProgress') }] : []),
     ...(quizStreakRows.length > 0 || quizTimedRows.length > 0 ? [{ id: 'modes' as const, label: t('history.tabModes') }] : []),
     ...(dueCards.length > 0 ? [{ id: 'review' as const, label: t('history.tabReview', dueCards.length) }] : []),
-    ...(quizRows && quizRows.length > 0 ? [{ id: 'games' as const, label: t('history.tabGames', quizRows.length) }] : []),
+    ...(totalGames > 0 ? [{ id: 'games' as const, label: t('history.tabGames', totalGames) }] : []),
   ]
   const activeTab = tabs.some((item) => item.id === tab) ? tab : tabs[0]?.id
 
@@ -169,19 +206,13 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onRevie
           <RadarChart title={t('history.typeRadarTitle')} axes={typeAxes} />
         </>}
         {activeTab === 'modes' && <>
+          <p className="mode-hint games-hint">{t('history.modesHint')}</p>
           {quizStreakRows.length > 0 && <div className="stats-group">
             <h3 className="stats-group-title profile-section-title">{t('history.streakSectionTitle')}</h3>
             <div className="records-grid">
               <div className="record-tile"><span className="record-value">🔥 {bestStreak}</span><span className="record-label">{t('history.bestStreak')}</span></div>
               <div className="record-tile"><span className="record-value">{quizStreakRows.length}</span><span className="record-label">{t('history.modeGames')}</span></div>
             </div>
-            <ul className="history-list">
-              {quizStreakRows.slice(0, 10).map((row) => <li className="history-item" key={row.id}>
-                <span className="history-score">{row.victory ? '🏆' : '🔥'} {row.streak_count}</span>
-                <span className="history-date">{longDate(row.created_at, language)}</span>
-                <span className="history-themes">{row.themes.join(', ') || t('common.allThemes')}</span>
-              </li>)}
-            </ul>
           </div>}
           {quizTimedRows.length > 0 && <div className="stats-group">
             <h3 className="stats-group-title profile-section-title">{t('history.timedSectionTitle')}</h3>
@@ -189,14 +220,6 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onRevie
               <div className="record-tile"><span className="record-value">✅ {bestTimedCount}</span><span className="record-label">{t('history.bestCorrect')}</span></div>
               <div className="record-tile"><span className="record-value">{quizTimedRows.length}</span><span className="record-label">{t('history.modeGames')}</span></div>
             </div>
-            <ul className="history-list">
-              {quizTimedRows.slice(0, 10).map((row) => <li className="history-item" key={row.id}>
-                <span className="history-score">✅ {row.correct_count} / {row.question_count}</span>
-                <span className="history-date">{longDate(row.created_at, language)}</span>
-                <span className="history-themes">{row.themes.join(', ') || t('common.allThemes')}</span>
-                <span>{timedDurationLabel(row.elapsed_seconds, row.duration_seconds, t)}</span>
-              </li>)}
-            </ul>
           </div>}
         </>}
         {activeTab === 'review' && dueCards.length > 0 && <div className="missed-questions">
@@ -217,21 +240,18 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onRevie
             </li>)}
           </ul>
         </div>}
-        {activeTab === 'games' && quizRows && quizRows.length > 0 && <>
+        {activeTab === 'games' && quizGames.length > 0 && <>
           <p className="mode-hint games-hint">{t('history.gamesHint')}</p>
           <ul className="history-list">
-            {quizRows.map((row) => {
-              const open = openGameId === row.id
-              return <li key={row.id}>
-                <button type="button" className="history-item history-item-button" aria-expanded={open} aria-controls={`game-detail-${row.id}`} onClick={() => setOpenGameId(open ? null : row.id)}>
-                  <span className="history-score" title={t('metric.pointsShareHint')}>{formatPercent(row.score, language)}</span>
-                  <span className="history-date">{longDate(row.created_at, language)}</span>
-                  <span className="history-themes">{row.themes.join(', ')}</span>
-                  <span>{t('result.pointsEarned', row.earned_points, row.total_points)}</span>
-                  <span>{t('common.durationIcon', formatDuration(row.elapsed_seconds))}</span>
+            {quizGames.map((game) => {
+              const open = openGameId === game.id
+              return <li key={game.id}>
+                <button type="button" className="history-item history-item-button" aria-expanded={open} aria-controls={`game-detail-${game.id}`} onClick={() => setOpenGameId(open ? null : game.id)}>
+                  <span className="history-mode">{modeLabel(game, t)}</span>
+                  {gameSummary(game, t, language)}
                   <span className="history-chevron" aria-hidden="true">{open ? '▾' : '▸'}</span>
                 </button>
-                {open && <div id={`game-detail-${row.id}`}><GameDetail game={row} loadedQuiz={canReplay ? quiz : null} /></div>}
+                {open && <div id={`game-detail-${game.id}`}><GameDetail game={{ id: game.id, quiz_id: game.row.quiz_id, by_theme: game.mode === 'classic' ? game.row.by_theme : undefined }} loadedQuiz={canReplay ? quiz : null} /></div>}
               </li>
             })}
           </ul>

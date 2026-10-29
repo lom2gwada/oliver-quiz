@@ -1,3 +1,5 @@
+import type { GameMode } from './quiz'
+
 export interface StatBucket {
   correct: number
   total: number
@@ -65,8 +67,10 @@ export interface QuestionResultPayload {
   question_id: string
   question_text: string
   correct: boolean
-  /** La partie (`quiz_results.id`) et le rang de la question dedans ; `null` pour une ligne d'avant ces colonnes. */
-  quiz_result_id: string | null
+  /** La partie (son mode et son identifiant dans la table de résultats de ce mode) et le rang de la question dedans ;
+   * `game_id` est `null` pour une ligne d'avant ces colonnes. */
+  game_mode: GameMode
+  game_id: string | null
   position: number
   /** La réponse du joueur (texte, ou liste d'identifiants), `null` sans réponse. */
   answer: string | string[] | null
