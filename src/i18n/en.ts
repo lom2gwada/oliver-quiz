@@ -76,7 +76,7 @@ export const en = {
   'about.license': 'The source code can be read publicly on GitHub but is not released under an open licence: without the author’s agreement it may not be reused or redistributed.',
   'about.creditsTitle': 'Credits',
   'about.creditsQuizzes': 'The questions of each quiz are written by its author, shown on the quiz page. A quiz inspired by a book or a certification points to its source under “Going further”; the titles and trademarks mentioned belong to their owners.',
-  'about.creditsImages': 'Cover images are hosted by their original sources (for example Open Library): their rights remain those of their owners.',
+  'about.creditsImages': 'Cover images are hosted by their original sources (for example Open Library): their rights remain those of their owners. Portrait of Arthur Schopenhauer by Johann Schäfer (1859), public domain, via Wikimedia Commons.',
   'about.creditsLibraries': 'Libraries:',
   'about.creditsServices': 'Services:',
   'about.legalTitle': 'Legal notice',
