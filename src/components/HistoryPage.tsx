@@ -18,6 +18,8 @@ import { mergeGames, type HistoryGame } from '../utils/historyGames'
 import { ScoreChart } from './ScoreChart'
 import { TabList, tabPanelId } from './TabList'
 import { ThemeHeatmap } from './ThemeHeatmap'
+import { ThemeProgressTable } from './ThemeProgressTable'
+import { fetchThemeProgress, isHostedQuizId, themeProgressViews, type ThemeProgress } from '../utils/themeProgress'
 
 /** Tailles de lot proposées pour "Reprendre mes erreurs" — au-delà de quelques dizaines de questions
  * accumulées, tout reprendre d'un coup n'est plus une session de pratique digeste. */
@@ -42,7 +44,7 @@ interface HistoryPageProps {
  * plutôt que de les traiter comme deux quiz différents. */
 const quizKeyOf = (row: { quiz_id: string | null; quiz_title: string }) => row.quiz_id ?? row.quiz_title
 
-type HistoryTab = 'summary' | 'progress' | 'modes' | 'review' | 'games'
+type HistoryTab = 'summary' | 'progress' | 'themes' | 'modes' | 'review' | 'games'
 
 const modeLabel = (game: HistoryGame, t: Translate) => t(game.mode === 'classic' ? 'common.modeClassic' : game.mode === 'streak' ? 'common.modeStreak' : 'common.modeTimed')
 
@@ -82,6 +84,7 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onRevie
   const [streakRows, setStreakRows] = useState<StreakResultRow[]>([])
   const [timedRows, setTimedRows] = useState<TimedResultRow[]>([])
   const [progress, setProgress] = useState<QuestionProgressRow[]>([])
+  const [themeProgress, setThemeProgress] = useState<{ quizId: string; rows: ThemeProgress[] } | null>(null)
   const [error, setError] = useState('')
   const [selectedQuiz, setSelectedQuiz] = useState<string | null>(null)
   const [replayLimit, setReplayLimit] = useState(20)
@@ -113,6 +116,15 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onRevie
   const quizKeys = quizOptions.map((option) => option.key)
 
   const activeQuiz = selectedQuiz && quizKeys.includes(selectedQuiz) ? selectedQuiz : activeQuizKey
+
+  // La progression par thème se calcule en base (elle croise le contenu du quiz et les réponses données) et ne vaut que
+  // pour un quiz hébergé : pas d'onglet pour une vieille ligne qui n'a gardé que le titre du quiz.
+  useEffect(() => {
+    if (!isHostedQuizId(activeQuiz)) { setThemeProgress(null); return }
+    let current = true
+    fetchThemeProgress(activeQuiz).then((themeRows) => { if (current) setThemeProgress({ quizId: activeQuiz, rows: themeRows }) }).catch(() => { if (current) setThemeProgress(null) })
+    return () => { current = false }
+  }, [activeQuiz])
   const quizRows = rows ? rows.filter((row) => quizKeyOf(row) === activeQuiz) : null
   const quizStreakRows = streakRows.filter((row) => quizKeyOf(row) === activeQuiz)
   const bestStreak = quizStreakRows.length ? Math.max(...quizStreakRows.map((row) => row.streak_count)) : 0
@@ -136,6 +148,7 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onRevie
   const heatmap = computeThemeWeekHeatmap(quizRows ?? [])
 
   const canReplay = activeQuiz === activeQuizKey
+  const themeViews = themeProgress && themeProgress.quizId === activeQuiz ? themeProgressViews(themeProgress.rows) : []
   // `computeDueQuestions` trie de la boîte la plus basse (la plus fragile) à la plus haute ; la session composée au clic
   // (`selectReviewCards`) mêle les plus fragiles et un tirage au hasard parmi le reste, dans un ordre mélangé.
   const dueCards = canReplay ? computeDueQuestions(progress, quiz.questions) : []
@@ -146,6 +159,7 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onRevie
   const tabs: { id: HistoryTab; label: string }[] = [
     ...(totalGames > 0 ? [{ id: 'summary' as const, label: t('history.tabSummary') }] : []),
     ...(records && records.gamesPlayed > 0 ? [{ id: 'progress' as const, label: t('history.tabProgress') }] : []),
+    ...(totalGames > 0 && themeViews.length > 1 ? [{ id: 'themes' as const, label: t('history.tabThemes') }] : []),
     ...(quizStreakRows.length > 0 || quizTimedRows.length > 0 ? [{ id: 'modes' as const, label: t('history.tabModes') }] : []),
     ...(dueCards.length > 0 ? [{ id: 'review' as const, label: t('history.tabReview', dueCards.length) }] : []),
     ...(totalGames > 0 ? [{ id: 'games' as const, label: t('history.tabGames', totalGames) }] : []),
@@ -205,6 +219,7 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onRevie
           />}
           <RadarChart title={t('history.typeRadarTitle')} axes={typeAxes} />
         </>}
+        {activeTab === 'themes' && <ThemeProgressTable themes={themeViews} />}
         {activeTab === 'modes' && <>
           <p className="mode-hint games-hint">{t('history.modesHint')}</p>
           {quizStreakRows.length > 0 && <div className="stats-group">
