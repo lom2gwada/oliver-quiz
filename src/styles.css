@@ -361,3 +361,14 @@ header.app-header { display: block; padding-bottom: 1.4rem; margin-bottom: 2rem;
 
 .further-reading-inline { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem 1rem; margin: .4rem 0 0; font-size: .85rem; color: var(--text-soft); }
 .further-reading-inline a { color: var(--accent-text); font-weight: 600; }
+.theme-progress { margin: 0 0 2rem; background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 1.2rem; }
+.theme-progress figcaption .mode-hint { margin: 0 0 .8rem; font-size: .8rem; }
+.theme-progress-scroll { overflow-x: auto; }
+.theme-progress table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+.theme-progress thead th { color: var(--text-muted); font-weight: 600; text-align: left; white-space: nowrap; padding: 0 .8rem .5rem 0; }
+.theme-progress tbody th { text-align: left; font-weight: 600; color: var(--text-soft); padding: .55rem .8rem .55rem 0; min-width: 8rem; }
+.theme-progress td { padding: .55rem .8rem .55rem 0; min-width: 8rem; vertical-align: middle; }
+.theme-progress tbody tr + tr > * { border-top: 1px solid var(--border); }
+.theme-progress .quiz-progress { margin-top: .3rem; height: .45rem; }
+.theme-progress-count { color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.theme-progress-success { font-weight: 700; color: var(--ink); white-space: nowrap; }
