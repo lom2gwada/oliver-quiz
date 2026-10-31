@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { CorrectionExplanation } from './CorrectionExplanation'
 import type { AnswersByQuestion, Question, QuizLink } from '../types/quiz'
 import { useTranslation } from '../i18n'
 import { formatDuration } from '@engine/utils/time'
@@ -53,7 +54,7 @@ export function StreakResultPage({ links, streakCount, elapsedSeconds, victory, 
         {question.table && <QuestionTable table={question.table} />}
         {!correct && <p><strong>{t('result.yourAnswer')}</strong> {userAnswer(question, answers[question.id], t)}</p>}
         {!correct && <p><strong>{t('result.correctAnswerLabel')}</strong> {correctAnswer(question, t)}</p>}
-        <p>{question.explanation}</p>
+        <CorrectionExplanation text={question.explanation} />
         <QuestionReplay question={question} answer={answers[question.id]} />
       </article>
     })}</div>

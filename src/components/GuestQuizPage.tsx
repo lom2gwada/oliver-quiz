@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { CorrectionExplanation } from './CorrectionExplanation'
 import type { GuestLinkMode } from '../types/guestLink'
 import type { AnswersByQuestion, Quiz } from '../types/quiz'
 import { LanguageProvider, useTranslation } from '../i18n'
@@ -111,7 +112,7 @@ function GuestSession({ token, mode, quiz }: { token: string; mode: GuestLinkMod
             {item.table && <QuestionTable table={item.table} />}
             {!correct && <p><strong>{t('result.yourAnswer')}</strong> {userAnswer(item, answers[item.id], t)}</p>}
             {!correct && <p><strong>{t('result.correctAnswerLabel')}</strong> {correctAnswer(item, t)}</p>}
-            <p>{item.explanation}</p>
+            <CorrectionExplanation text={item.explanation} />
             <QuestionReplay question={item} answer={answers[item.id]} />
           </article>
         })}</div>

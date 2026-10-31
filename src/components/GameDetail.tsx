@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { CorrectionExplanation } from './CorrectionExplanation'
 import type { AnswersByQuestion, Question, Quiz } from '../types/quiz'
 import type { GameQuestionRow, StatBucket } from '../types/history'
 import { useTranslation } from '../i18n'
@@ -24,7 +25,7 @@ interface GameDetailProps {
 type State =
   | { status: 'loading' }
   | { status: 'error' }
-  | { status: 'ready'; rows: GameQuestionRow[]; questions: Map<string, Question> }
+  | { status: 'ready'; rows: GameQuestionRow[]; questions: Map<string, Question>; quizLanguage?: string }
 
 /** Le détail d'une partie (classique, sans-faute ou contre-la-montre) : totaux par thème (classique), puis chaque question dans l'ordre où elle a été posée, avec la
  * réponse donnée, la bonne réponse et l'explication. Les questions viennent du contenu *actuel* du quiz (retrouvé par
@@ -43,7 +44,7 @@ export function GameDetail({ game, loadedQuiz }: GameDetailProps) {
       if (rows.length && !quiz && game.quiz_id) {
         try { quiz = parseQuiz(await fetchQuizContent(game.quiz_id)) } catch { quiz = null }
       }
-      return { rows, questions: new Map((quiz?.questions ?? []).map((question) => [question.id, question])) }
+      return { rows, questions: new Map((quiz?.questions ?? []).map((question) => [question.id, question])), quizLanguage: quiz?.metadata.language }
     }
     load().then((result) => { if (!cancelled) setState({ status: 'ready', ...result }) }).catch(() => { if (!cancelled) setState({ status: 'error' }) })
     return () => { cancelled = true }
@@ -66,7 +67,7 @@ export function GameDetail({ game, loadedQuiz }: GameDetailProps) {
           <h4>{row.correct ? t('result.correct') : t('result.incorrect')} — {row.question_text}</h4>
           {question && !row.correct && <p><strong>{t('result.yourAnswer')}</strong> {userAnswer(question, answer, t)}</p>}
           {question && !row.correct && <p><strong>{t('result.correctAnswerLabel')}</strong> {correctAnswer(question, t)}</p>}
-          {question && <p>{question.explanation}</p>}
+          {question && <CorrectionExplanation text={question.explanation} quizLanguage={state.quizLanguage} />}
           {!question && <p className="mode-hint">{t('history.detailQuestionGone')}</p>}
         </article>
       })}
