@@ -399,6 +399,7 @@ export const en = {
   'quiz.listenStop': '⏹️ Stop',
   'result.listenExplanation': '🗣️ Listen to the explanation',
   'quiz.listenError': 'Reading aloud did not start',
+  'quiz.diagramError': 'This question’s diagram could not be displayed.',
   'save.failed': 'Game not saved — check your connection.',
   'save.retry': 'Retry',
   'save.retrying': 'Retrying…',
