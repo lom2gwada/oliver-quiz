@@ -397,6 +397,7 @@ export const en = {
   'quiz.answerAriaLabel': 'Answer',
   'quiz.listen': '🗣️ Listen',
   'quiz.listenStop': '⏹️ Stop',
+  'result.listenExplanation': '🗣️ Listen to the explanation',
   'quiz.listenError': 'Reading aloud did not start',
   'save.failed': 'Game not saved — check your connection.',
   'save.retry': 'Retry',

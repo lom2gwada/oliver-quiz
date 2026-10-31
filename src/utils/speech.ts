@@ -9,6 +9,11 @@ function blankWord(languageTag: string): string {
   return ','
 }
 
+/** Ce qui est lu pour l'explication d'une réponse : son texte entier (un code en ligne y est lu sans ses apostrophes inversées). */
+export function explanationToSpeech(explanation: string): string {
+  return explanation.replace(/`/g, '').replace(/\s+/g, ' ').trim()
+}
+
 /** Ce qui est lu pour une question : son énoncé seulement — ni les réponses (inutile et trop long), ni le code,
  * les tableaux ou diagrammes, qui se lisent très mal. Les trous d'un texte à trous deviennent « blanc »/« blank »
  * et les apostrophes inversées du code en ligne sont retirées pour ne pas être épelées. */

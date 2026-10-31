@@ -395,6 +395,7 @@ export const fr = {
   'quiz.answerAriaLabel': 'Réponse',
   'quiz.listen': '🗣️ Écouter',
   'quiz.listenStop': '⏹️ Arrêter',
+  'result.listenExplanation': '🗣️ Écouter l’explication',
   'quiz.listenError': 'La lecture vocale n’a pas démarré',
   'save.failed': 'Partie non enregistrée — vérifiez votre connexion.',
   'save.retry': 'Réessayer',

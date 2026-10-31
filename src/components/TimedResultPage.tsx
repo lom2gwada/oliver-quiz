@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { CorrectionExplanation } from './CorrectionExplanation'
 import type { QuestionAttempt, QuizLink } from '../types/quiz'
 import { useTranslation } from '../i18n'
 import { formatDuration } from '@engine/utils/time'
@@ -52,7 +53,7 @@ export function TimedResultPage({ links, attempts, elapsedSeconds, onRestartSame
         {question.table && <QuestionTable table={question.table} />}
         {!correct && <p><strong>{t('result.yourAnswer')}</strong> {userAnswer(question, answer, t)}</p>}
         {!correct && <p><strong>{t('result.correctAnswerLabel')}</strong> {correctAnswer(question, t)}</p>}
-        <p>{question.explanation}</p>
+        <CorrectionExplanation text={question.explanation} />
         <QuestionReplay question={question} answer={answer} />
       </article>
     })}</div>

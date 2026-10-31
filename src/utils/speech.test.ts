@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Question } from '../types/quiz'
-import { questionToSpeech } from './speech'
+import { explanationToSpeech, questionToSpeech } from './speech'
 
 const question = (text: string): Question => ({
   id: 'q', type: 'text', theme: 't', difficulty: 'easy', points: 1, question: text,
@@ -23,5 +23,15 @@ describe('questionToSpeech', () => {
 
   it('retire les apostrophes inversées du code en ligne', () => {
     expect(questionToSpeech(question('Que renvoie `Array.isArray([])` ?'), 'fr-FR')).toBe('Que renvoie Array.isArray([]) ?')
+  })
+})
+
+describe('explanationToSpeech', () => {
+  it('lit l’explication entière, sans espaces superflus ni apostrophes inversées', () => {
+    expect(explanationToSpeech('  Le symbole W vient de « Wolfram ».\n\nOn écrit `W` pour le tungstène.  ')).toBe('Le symbole W vient de « Wolfram ». On écrit W pour le tungstène.')
+  })
+
+  it('ne lit rien pour une explication vide', () => {
+    expect(explanationToSpeech('  \n ')).toBe('')
   })
 })
