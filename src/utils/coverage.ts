@@ -1,5 +1,6 @@
 import type { QuizImage } from '../types/quiz'
 import { isHttpsUrl } from './quizMeta'
+import { normalizeSearch } from './questionSearch'
 import { retryWithBackoff } from './retry'
 import { supabase } from './supabase'
 
@@ -58,6 +59,13 @@ export function splitCoverage(rows: QuizCoverage[]): { started: QuizCoverage[]; 
   const started = rows.filter(isStarted).sort((a, b) => (b.last_played_at ?? '').localeCompare(a.last_played_at ?? ''))
   const untouched = rows.filter((row) => !isStarted(row)).sort((a, b) => a.quiz_title.localeCompare(b.quiz_title))
   return { started, untouched }
+}
+
+/** Les quiz dont le titre ou la description contient la recherche (sans tenir compte des accents ni de la casse) ; une
+ * recherche vide les garde tous. */
+export function filterCoverage(rows: QuizCoverage[], query: string): QuizCoverage[] {
+  const wanted = normalizeSearch(query)
+  return wanted ? rows.filter((row) => normalizeSearch(`${row.quiz_title} ${row.description ?? ''}`).includes(wanted)) : rows
 }
 
 export function coverageTotals(started: QuizCoverage[]): { seen: number; total: number; percent: number } {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { coveragePercent, coveragePercentTenths, coverageTotals, splitCoverage, type QuizCoverage, coverageImage } from './coverage'
+import { coveragePercent, coveragePercentTenths, coverageTotals, filterCoverage, splitCoverage, type QuizCoverage, coverageImage } from './coverage'
 
 const row = (title: string, seen: number, total: number, games: number, last: string | null): QuizCoverage =>
   ({ quiz_id: title, quiz_title: title, question_count: total, seen_count: seen, games_played: games, last_played_at: last, due_count: 0, description: null, language: null })
@@ -71,5 +71,25 @@ describe('coverageImage', () => {
   it('ignores a URL that is not https, since the row comes straight from the database', () => {
     expect(coverageImage({ image_url: 'http://x.org/a.png', image_alt: 'Couverture' })).toBeUndefined()
     expect(coverageImage({ image_url: 'javascript:alert(1)', image_alt: 'x' })).toBeUndefined()
+  })
+})
+
+describe('filterCoverage', () => {
+  const quiz = (title: string, description: string | null) => ({ ...row(title, 0, 10, 0, null), description })
+  const rows = [quiz('Culture générale', 'Histoire, sciences et cinéma'), quiz('Scrum — PSM I', null), quiz('Java — Niveau Expert', 'La machine virtuelle')]
+
+  it('garde tous les quiz pour une recherche vide ou faite d’espaces', () => {
+    expect(filterCoverage(rows, '')).toHaveLength(3)
+    expect(filterCoverage(rows, '   ')).toHaveLength(3)
+  })
+
+  it('cherche dans le titre et dans la description, sans tenir compte des accents ni de la casse', () => {
+    expect(filterCoverage(rows, 'GENERALE').map((r) => r.quiz_title)).toEqual(['Culture générale'])
+    expect(filterCoverage(rows, 'cinema').map((r) => r.quiz_title)).toEqual(['Culture générale'])
+    expect(filterCoverage(rows, 'virtuelle').map((r) => r.quiz_title)).toEqual(['Java — Niveau Expert'])
+  })
+
+  it('ne trouve rien quand rien ne correspond', () => {
+    expect(filterCoverage(rows, 'spring')).toEqual([])
   })
 })
