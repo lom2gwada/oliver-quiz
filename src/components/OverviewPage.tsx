@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from '../i18n'
 import { CoverageBar } from './CoverageBar'
 import { QuizCover } from './QuizCover'
-import { coverageImage, coveragePercentTenths, coverageTotals, fetchQuizCoverage, REVIEW_BATCH_SIZE, splitCoverage, type QuizCoverage } from '../utils/coverage'
+import { coverageImage, coveragePercentTenths, coverageTotals, fetchQuizCoverage, filterCoverage, REVIEW_BATCH_SIZE, splitCoverage, type QuizCoverage } from '../utils/coverage'
 import { longDate } from '../utils/dateFormat'
 import { formatPercent } from '../utils/format'
 import { normalizeQuizLanguage, quizLanguageLabel } from '../utils/quizLanguage'
@@ -27,6 +27,7 @@ export function OverviewPage({ activeQuizId, onSelectQuiz, onReviewQuiz, onViewH
   const [error, setError] = useState(false)
   const [reviewingId, setReviewingId] = useState<string | null>(null)
   const [reviewError, setReviewError] = useState(false)
+  const [search, setSearch] = useState('')
 
   const load = () => {
     setError(false)
@@ -45,8 +46,12 @@ export function OverviewPage({ activeQuizId, onSelectQuiz, onReviewQuiz, onViewH
     }
   }
 
-  const { started, untouched } = splitCoverage(rows ?? [])
-  const totals = coverageTotals(started)
+  const all = splitCoverage(rows ?? [])
+  const totals = coverageTotals(all.started)
+  // La recherche ne filtre que l'affichage : le résumé du haut reste celui de tous les quiz commencés.
+  const searching = search.trim() !== ''
+  const started = filterCoverage(all.started, search)
+  const untouched = filterCoverage(all.untouched, search)
 
   return <section className="stats-page">
     <div className="stats-header">
@@ -56,13 +61,17 @@ export function OverviewPage({ activeQuizId, onSelectQuiz, onReviewQuiz, onViewH
     {error && <p className="alert" role="alert">{t('overview.errorLoad')} <button type="button" className="secondary alert-retry" onClick={load}>{t('start.retry')}</button></p>}
     {reviewError && <p className="alert" role="alert">{t('overview.errorReview')}</p>}
     {!rows && !error && <p>{t('common.loading')}</p>}
-    {rows && !started.length && <p>{t('overview.emptyState')}</p>}
-    {started.length > 0 && <>
+    {rows && !all.started.length && <p>{t('overview.emptyState')}</p>}
+    {rows && rows.length > 0 && <label className="question-search">{t('overview.searchLabel')}
+      <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('overview.searchPlaceholder')} />
+    </label>}
+    {searching && rows && <p className="mode-hint question-search-count" role="status">{started.length + untouched.length ? t('overview.searchResults', started.length + untouched.length, rows.length) : t('overview.searchNone')}</p>}
+    {all.started.length > 0 && <>
       <div className="overview-summary">
-        <strong>{t('overview.summary', started.length, totals.seen, totals.total)}</strong>
+        <strong>{t('overview.summary', all.started.length, totals.seen, totals.total)}</strong>
         <CoverageBar percent={totals.percent} label={t('overview.summaryBarLabel')} />
       </div>
-      <ul className="overview-list">
+      {started.length > 0 && <ul className="overview-list">
         {started.map((row) => {
           const percent = coveragePercentTenths(row.seen_count, row.question_count)
           const batch = Math.min(row.due_count, REVIEW_BATCH_SIZE)
@@ -87,11 +96,11 @@ export function OverviewPage({ activeQuizId, onSelectQuiz, onReviewQuiz, onViewH
             </div>
           </li>
         })}
-      </ul>
+      </ul>}
     </>}
-    {rows && (started.length > 0 || untouched.length > 0) && <>
-      <h3 className="overview-subtitle">{t('overview.discoverTitle', untouched.length)}</h3>
-      {untouched.length === 0 && <p className="mode-hint">{t('overview.discoverEmpty')}</p>}
+    {rows && (all.started.length > 0 || all.untouched.length > 0) && <>
+      {(untouched.length > 0 || !searching) && <h3 className="overview-subtitle">{t('overview.discoverTitle', untouched.length)}</h3>}
+      {all.untouched.length === 0 && <p className="mode-hint">{t('overview.discoverEmpty')}</p>}
       <ul className="overview-list">
         {untouched.map((row) => <li key={row.quiz_id} className={row.quiz_id === activeQuizId ? 'overview-card overview-card-active' : 'overview-card'}>
           <button type="button" className="overview-item overview-item-untouched" onClick={() => onSelectQuiz(row.quiz_id)}>
