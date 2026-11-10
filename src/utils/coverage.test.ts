@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { coveragePercent, coveragePercentTenths, coverageTotals, filterCoverage, splitCoverage, type QuizCoverage, coverageImage } from './coverage'
+import { canOfferUnseenOnly, coveragePercent, coveragePercentTenths, coverageTotals, filterCoverage, splitCoverage, type QuizCoverage, coverageImage } from './coverage'
 
 const row = (title: string, seen: number, total: number, games: number, last: string | null): QuizCoverage =>
   ({ quiz_id: title, quiz_title: title, question_count: total, seen_count: seen, games_played: games, last_played_at: last, due_count: 0, description: null, language: null })
@@ -91,5 +91,29 @@ describe('filterCoverage', () => {
 
   it('ne trouve rien quand rien ne correspond', () => {
     expect(filterCoverage(rows, 'spring')).toEqual([])
+  })
+})
+
+describe('canOfferUnseenOnly', () => {
+  it('n’est proposée qu’une fois le quiz joué, tant qu’il reste des questions à découvrir', () => {
+    expect(canOfferUnseenOnly(row('A', 12, 40, 1, '2026-11-01'), 'A')).toBe(true)
+    expect(canOfferUnseenOnly(row('A', 39, 40, 5, '2026-11-01'), 'A')).toBe(true)
+  })
+
+  it('n’est pas proposée avant la première partie', () => {
+    expect(canOfferUnseenOnly(row('A', 0, 40, 0, null), 'A')).toBe(false)
+  })
+
+  it('disparaît quand le quiz est entièrement découvert', () => {
+    expect(canOfferUnseenOnly(row('A', 40, 40, 6, '2026-11-01'), 'A')).toBe(false)
+  })
+
+  it('compte comme jouée une partie sans questions journalisées (ancien sans-faute)', () => {
+    expect(canOfferUnseenOnly(row('A', 0, 40, 1, '2026-11-01'), 'A')).toBe(true)
+  })
+
+  it('ignore la couverture d’un autre quiz ou absente', () => {
+    expect(canOfferUnseenOnly(row('B', 12, 40, 1, '2026-11-01'), 'A')).toBe(false)
+    expect(canOfferUnseenOnly(null, 'A')).toBe(false)
   })
 })

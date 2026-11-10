@@ -133,6 +133,14 @@ export const fr = {
     if (mode === 'timed') return `${base} — elles peuvent revenir plusieurs fois si le temps le permet.`
     return `${base}.`
   },
+  'start.unseenToggle': (unseen: number) => `🆕 Seulement des questions non découvertes (${unseen} dans cette sélection)`,
+  'start.unseenHint': (unseen: number, drawn: number) => {
+    if (unseen === 0) return "Aucune question à découvrir dans cette sélection : le tirage sera celui d'habitude."
+    if (unseen >= drawn) return 'Toutes les questions tirées seront nouvelles pour vous.'
+    const rest = drawn - unseen
+    const todo = unseen === 1 ? 'Une seule question est à découvrir' : `Seulement ${unseen} questions sont à découvrir`
+    return `${todo} dans cette sélection : ${rest === 1 ? "l'autre sera tirée" : `les ${rest} autres seront tirées`} au hasard parmi celles déjà vues.`
+  },
   'start.startClassic': 'Démarrer le quiz',
   'start.startStreak': 'Démarrer la série',
   'start.startTimed': 'Démarrer le chrono',

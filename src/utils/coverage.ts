@@ -54,6 +54,12 @@ export function coveragePercentTenths(seen: number, total: number): number {
  * ou contre-la-montre — qui ne journalisent pas les questions — a été utilisé. */
 export const isStarted = (row: QuizCoverage) => row.games_played > 0 || row.seen_count > 0
 
+/** L'option « seulement des questions non découvertes » n'a de sens que pour le quiz actif, une fois qu'on y a joué (la
+ * première partie ne contient que des questions neuves) et tant qu'il reste des questions à découvrir. */
+export function canOfferUnseenOnly(row: QuizCoverage | null, quizId: string): boolean {
+  return row !== null && row.quiz_id === quizId && isStarted(row) && row.seen_count < row.question_count
+}
+
 /** Quiz commencés (le plus récemment joué d'abord), puis quiz jamais joués (ordre alphabétique conservé). */
 export function splitCoverage(rows: QuizCoverage[]): { started: QuizCoverage[]; untouched: QuizCoverage[] } {
   const started = rows.filter(isStarted).sort((a, b) => (b.last_played_at ?? '').localeCompare(a.last_played_at ?? ''))
