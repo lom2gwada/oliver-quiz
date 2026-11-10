@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import sampleQuiz from './data/sample-quiz.json'
 import { FilterPanel } from './components/FilterPanel'
+import { UnseenOnlyOption } from './components/UnseenOnlyOption'
 import { HistoryPage } from './components/HistoryPage'
 import { LeaderboardPage } from './components/LeaderboardPage'
 import { AppBar } from './components/AppBar'
@@ -43,7 +44,7 @@ import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchStreakTopScore, fetchTimedTopScore, fetchTopScore } from './utils/leaderboard'
 import { computeDueQuestions, createQuestionProgressJob, fetchQuestionProgress, selectReviewCards, type ReviewCard } from './utils/leitner'
 import { runSaveJobs, type SaveJob, type SaveStatus } from './utils/gameSave'
-import { coveragePercentTenths, fetchQuizCoverage, REVIEW_BATCH_SIZE, type QuizCoverage } from './utils/coverage'
+import { canOfferUnseenOnly, coveragePercentTenths, fetchQuizCoverage, REVIEW_BATCH_SIZE, type QuizCoverage } from './utils/coverage'
 import { deleteQuiz, fetchAccessibleQuizzes, fetchAccessibleQuizzesWithRetry, fetchQuizContent, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
 import { applyTheme } from './utils/theme'
 import { LanguageProvider, translate } from './i18n'
@@ -52,6 +53,8 @@ import { parseQuiz, serializeQuiz } from './utils/quizValidation'
 import { questionTimeLimit } from './utils/questionTimeLimits'
 import { isSoundMuted, playClick, setSoundMuted } from '@engine/utils/sound'
 import { pickFreshQuestions } from './utils/pickFreshQuestions'
+import { pickUnseenQuestions, unseenQuestions } from './utils/pickUnseenQuestions'
+import { fetchSeenQuestionIds } from './utils/seenQuestions'
 import { shuffle } from './utils/shuffle'
 import { formatDuration } from '@engine/utils/time'
 
@@ -249,6 +252,20 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     fetchQuizCoverage().then((rows) => { if (!cancelled) setActiveCoverage(rows.find((row) => row.quiz_id === selectedHostedQuizId) ?? null) }).catch(() => { if (!cancelled) setActiveCoverage(null) })
     return () => { cancelled = true }
   }, [view, selectedHostedQuizId])
+  // Option « seulement des questions non découvertes » : proposée une fois le quiz actif joué, tant qu'il reste des
+  // questions à découvrir. `seenIds` (les questions déjà vues, même définition que la barre de progression) est relu à
+  // chaque retour sur l'accueil et complété localement à chaque partie terminée, pour que « Rejouer » en tienne compte
+  // avant même que la base ait enregistré la partie. Un échec de lecture masque simplement l'option.
+  const [onlyUnseen, setOnlyUnseen] = useState(false)
+  const [seenIds, setSeenIds] = useState<Set<string> | null>(null)
+  const unseenQuizId = canOfferUnseenOnly(activeCoverage, selectedHostedQuizId) ? selectedHostedQuizId : ''
+  useEffect(() => { setOnlyUnseen(false) }, [selectedHostedQuizId])
+  useEffect(() => {
+    if (!unseenQuizId) { setSeenIds(null); return }
+    let cancelled = false
+    fetchSeenQuestionIds(unseenQuizId).then((ids) => { if (!cancelled) setSeenIds(ids) }).catch(() => { if (!cancelled) setSeenIds(null) })
+    return () => { cancelled = true }
+  }, [unseenQuizId, activeCoverage])
   const [overviewBack, setOverviewBack] = useState<View>('start')
   const viewOverview = (from: View) => { setOverviewBack(from); navigate('overview') }
   const [historyBack, setHistoryBack] = useState<View>('start')
@@ -340,6 +357,11 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   }
   const filteredQuestions = useMemo(() => quiz.questions.filter((question) =>
     (!selectedThemes.length || selectedThemes.includes(question.category)) && (!difficulty || question.difficulty === difficulty)), [quiz, selectedThemes, difficulty])
+  /** Les ids déjà vus quand l'option « non découvertes » est proposée (et lisible), sinon `null`. */
+  const offeredSeenIds = unseenQuizId ? seenIds : null
+  /** L'option est cochée ET proposée : le tirage commence alors par les questions jamais vues. */
+  const unseenSeenIds = onlyUnseen ? offeredSeenIds : null
+  const unseenCount = useMemo(() => offeredSeenIds ? unseenQuestions(filteredQuestions, offeredSeenIds).length : 0, [filteredQuestions, offeredSeenIds])
   // Seules les parties jouées sans filtre comptent pour le classement : sinon un thème/une difficulté
   // choisie exprès rendrait les scores/streaks/rythmes incomparables entre joueurs.
   const isUnfiltered = selectedThemes.length === 0 && difficulty === ''
@@ -560,7 +582,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     playClick()
     setAnswers({})
     setIsReplay(false)
-    setSessionQuestions(pickRandomQuestions(filteredQuestions, questionCount))
+    setSessionQuestions(unseenSeenIds ? pickUnseenQuestions(filteredQuestions, unseenSeenIds, questionCount) : pickRandomQuestions(filteredQuestions, questionCount))
     navigate('quiz')
   }
 
@@ -570,7 +592,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const restartQuiz = () => {
     playClick()
     setAnswers({})
-    setSessionQuestions((previous) => pickFreshQuestions(filteredQuestions, previous, questionCount))
+    setSessionQuestions((previous) => unseenSeenIds ? pickUnseenQuestions(filteredQuestions, unseenSeenIds, questionCount, previous) : pickFreshQuestions(filteredQuestions, previous, questionCount))
     replace('quiz')
   }
 
@@ -725,6 +747,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       <ModePicker value={gameMode} onChange={(mode) => { playClick(); setGameMode(mode) }} />
       <FilterPanel themes={quiz.categories} selectedThemes={selectedThemes} difficulty={difficulty} onThemeToggle={toggleTheme} onDifficultyChange={setDifficulty} />
       {gameMode === 'classic' && <label className="question-count">{t('start.questionCountLabel')}<select value={questionCount} onChange={(event) => { playClick(); setQuestionCount(Number(event.target.value)) }}>{questionCounts.map((count) => <option key={count} value={count} disabled={count > filteredQuestions.length}>{t('start.questionCountOption', count, count > filteredQuestions.length)}</option>)}<option value={filteredQuestions.length}>{t('start.allQuestionsOption', filteredQuestions.length)}</option></select></label>}
+      {gameMode === 'classic' && offeredSeenIds && <UnseenOnlyOption checked={onlyUnseen} onChange={setOnlyUnseen} unseenCount={unseenCount} drawnCount={Math.min(questionCount, filteredQuestions.length)} />}
       {gameMode === 'timed' && <label className="question-count">{t('start.durationLabel')}<select value={durationMinutes} onChange={(event) => { playClick(); setDurationMinutes(Number(event.target.value)) }}>{durationOptions.map((minutes) => <option key={minutes} value={minutes}>{t('start.durationOption', minutes)}</option>)}</select></label>}
       <label className="theme-checkbox timer-toggle">
         <input type="checkbox" checked={timeboxed} aria-describedby="timer-hint" onChange={(event) => { playClick(); setTimeboxed(event.target.checked) }} />
@@ -737,6 +760,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     </section>}
     {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} timeboxed={timeboxed} reviewBoxes={isReplay ? reviewBoxes : undefined} onFinish={(nextAnswers, duration, played) => {
       setAnswers(nextAnswers); setElapsedSeconds(duration); setSessionQuestions(played); replace('results')
+      setSeenIds((current) => current && new Set([...current, ...played.map((question) => question.id)]))
       const resultPayload = buildQuizResultPayload(played, nextAnswers, quiz.categories, duration, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered && !isReplay)
       const detailPayloads = buildQuestionResultPayloads(played, nextAnswers, quiz.metadata.title, selectedHostedQuizId || null, resultPayload.id)
       saveGame([

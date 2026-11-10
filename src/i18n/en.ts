@@ -135,6 +135,14 @@ export const en = {
     if (mode === 'timed') return `${base} — they may repeat if time allows.`
     return `${base}.`
   },
+  'start.unseenToggle': (unseen: number) => `🆕 Only questions I haven't discovered yet (${unseen} in this selection)`,
+  'start.unseenHint': (unseen: number, drawn: number) => {
+    if (unseen === 0) return 'Nothing left to discover in this selection: the usual draw applies.'
+    if (unseen >= drawn) return 'All the questions drawn will be new to you.'
+    const rest = drawn - unseen
+    const todo = unseen === 1 ? 'Only one question is left to discover' : `Only ${unseen} questions are left to discover`
+    return `${todo} in this selection: ${rest === 1 ? 'the other one' : `the other ${rest}`} will be drawn at random from those already seen.`
+  },
   'start.startClassic': 'Start the quiz',
   'start.startStreak': 'Start the streak',
   'start.startTimed': 'Start the timer',
