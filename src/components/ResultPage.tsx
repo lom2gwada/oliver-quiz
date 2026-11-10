@@ -15,6 +15,7 @@ import { PieChart } from '@engine/components/PieChart'
 import { QuestionImage } from '@engine/components/QuestionImage'
 import { FurtherReading } from './FurtherReading'
 import { ResultActions } from './ResultActions'
+import { ResultNavLinks } from './ResultNavLinks'
 import { ReviewSummary } from './ReviewSummary'
 import { reviewOutcomes } from '../utils/leitner'
 import { difficultyLabel } from './QuizPage'
@@ -110,9 +111,10 @@ interface ResultPageProps {
   onBackToSettings: () => void
   onViewHistory: () => void
   onViewLeaderboard: () => void
+  onViewOverview: () => void
 }
 
-export function ResultPage({ links, reviewBoxes, questions, answers, themes, elapsedSeconds, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard }: ResultPageProps) {
+export function ResultPage({ links, reviewBoxes, questions, answers, themes, elapsedSeconds, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard, onViewOverview }: ResultPageProps) {
   const { t, language } = useTranslation()
   const earned = questions.filter((question) => isCorrect(question, answers[question.id])).reduce((total, question) => total + question.points, 0)
   const total = questions.reduce((sum, question) => sum + question.points, 0)
@@ -133,10 +135,7 @@ export function ResultPage({ links, reviewBoxes, questions, answers, themes, ela
     </div>
     {reviewBoxes && <ReviewSummary outcomes={reviewOutcomes(questions, answers, reviewBoxes)} />}
     <ResultActions onRestartSame={onRestartSame} onBackToSettings={onBackToSettings} />
-    <div className="nav-links">
-      <button type="button" className="secondary" onClick={onViewHistory}>{t('common.viewHistory')}</button>
-      <button type="button" className="secondary" onClick={onViewLeaderboard}>{t('common.viewLeaderboard')}</button>
-    </div>
+    <ResultNavLinks onViewHistory={onViewHistory} onViewLeaderboard={onViewLeaderboard} onViewOverview={onViewOverview} />
     <FurtherReading links={links} />
     <div className="stats-groups">
       <div className="stats-group">

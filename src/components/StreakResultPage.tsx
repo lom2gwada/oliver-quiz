@@ -11,6 +11,7 @@ import { QuestionTable } from './QuestionTable'
 import { QuestionImage } from '@engine/components/QuestionImage'
 import { FurtherReading } from './FurtherReading'
 import { ResultActions } from './ResultActions'
+import { ResultNavLinks } from './ResultNavLinks'
 import { correctAnswer, isCorrect, userAnswer } from './ResultPage'
 
 interface StreakResultPageProps {
@@ -25,9 +26,10 @@ interface StreakResultPageProps {
   onBackToSettings: () => void
   onViewHistory: () => void
   onViewLeaderboard: () => void
+  onViewOverview: () => void
 }
 
-export function StreakResultPage({ links, streakCount, elapsedSeconds, victory, playedQuestions, answers, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard }: StreakResultPageProps) {
+export function StreakResultPage({ links, streakCount, elapsedSeconds, victory, playedQuestions, answers, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard, onViewOverview }: StreakResultPageProps) {
   const { t } = useTranslation()
   useEffect(() => { victory ? playVictory() : playFinish() }, [])
   return <section className="results">
@@ -40,10 +42,7 @@ export function StreakResultPage({ links, streakCount, elapsedSeconds, victory, 
       <p className="duration">{t('result.duration', formatDuration(elapsedSeconds))}</p>
     </div>
     <ResultActions onRestartSame={onRestartSame} onBackToSettings={onBackToSettings} />
-    <div className="nav-links">
-      <button type="button" className="secondary" onClick={onViewHistory}>{t('common.viewHistory')}</button>
-      <button type="button" className="secondary" onClick={onViewLeaderboard}>{t('common.viewLeaderboard')}</button>
-    </div>
+    <ResultNavLinks onViewHistory={onViewHistory} onViewLeaderboard={onViewLeaderboard} onViewOverview={onViewOverview} />
     <FurtherReading links={links} />
     <div className="corrections">{playedQuestions.map((question) => {
       const correct = isCorrect(question, answers[question.id])
