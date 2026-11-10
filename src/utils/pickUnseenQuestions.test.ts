@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pickUnseenQuestions, unseenQuestions } from './pickUnseenQuestions'
+import { orderUnseenFirst, pickUnseenQuestions, unseenQuestions } from './pickUnseenQuestions'
 
 const questions = (count: number) => Array.from({ length: count }, (_, index) => ({ id: `q${index}` }))
 const ids = (items: { id: string }[]) => items.map((item) => item.id)
@@ -12,6 +12,36 @@ describe('unseenQuestions', () => {
 
   it('ignore les ids vus qui ne sont plus dans le pool', () => {
     expect(ids(unseenQuestions(questions(2), new Set(['ancienne-question'])))).toEqual(['q0', 'q1'])
+  })
+})
+
+describe('orderUnseenFirst', () => {
+  it('garde tout le pool et pose d’abord les questions jamais vues, puis les déjà vues', () => {
+    const pool = questions(20)
+    const seen = new Set(ids(pool.slice(0, 13)))
+    for (let run = 0; run < 50; run += 1) {
+      const order = orderUnseenFirst(pool, seen)
+      expect(order).toHaveLength(20)
+      expect(new Set(ids(order)).size).toBe(20)
+      expect(order.slice(0, 7).every((question) => !seen.has(question.id))).toBe(true)
+      expect(order.slice(7).every((question) => seen.has(question.id))).toBe(true)
+    }
+  })
+
+  it('mélange simplement le pool sans questions vues', () => {
+    const pool = questions(15)
+    for (const seen of [null, undefined]) expect(ids(orderUnseenFirst(pool, seen)).sort()).toEqual(ids(pool).sort())
+  })
+
+  it('mélange l’ordre à l’intérieur de chaque groupe', () => {
+    const pool = questions(40)
+    const seen = new Set(ids(pool.slice(0, 20)))
+    const orders = new Set(Array.from({ length: 20 }, () => ids(orderUnseenFirst(pool, seen).slice(0, 20)).join()))
+    expect(orders.size).toBeGreaterThan(1)
+  })
+
+  it('rend un ordre vide pour un pool vide', () => {
+    expect(orderUnseenFirst([], new Set(['q0']))).toEqual([])
   })
 })
 

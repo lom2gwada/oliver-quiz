@@ -134,8 +134,9 @@ export const fr = {
     return `${base}.`
   },
   'start.unseenToggle': (unseen: number) => `🆕 Seulement des questions non découvertes (${unseen} dans cette sélection)`,
-  'start.unseenHint': (unseen: number, drawn: number) => {
+  'start.unseenHint': (unseen: number, drawn: number, mode: GameMode) => {
     if (unseen === 0) return "Aucune question à découvrir dans cette sélection : le tirage sera celui d'habitude."
+    if (mode !== 'classic') return `${unseen === 1 ? 'La seule question à découvrir sera posée' : `Les ${unseen} questions à découvrir seront posées`} en premier, celles déjà vues ne viennent qu'ensuite.`
     if (unseen >= drawn) return 'Toutes les questions tirées seront nouvelles pour vous.'
     const rest = drawn - unseen
     const todo = unseen === 1 ? 'Une seule question est à découvrir' : `Seulement ${unseen} questions sont à découvrir`

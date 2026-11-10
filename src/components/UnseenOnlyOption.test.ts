@@ -1,18 +1,19 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
+import type { GameMode } from '../types/quiz'
 import { en } from '../i18n/en'
 import { fr } from '../i18n/fr'
 
 vi.mock('@engine/utils/sound', () => ({ playClick: vi.fn() }))
 vi.mock('../i18n', () => ({
-  useTranslation: () => ({ t: (key: keyof typeof fr, ...args: number[]) => { const value = fr[key] as unknown; return typeof value === 'function' ? (value as (...a: number[]) => string)(...args) : value }, language: 'fr' }),
+  useTranslation: () => ({ t: (key: keyof typeof fr, ...args: unknown[]) => { const value = fr[key] as unknown; return typeof value === 'function' ? (value as (...a: unknown[]) => string)(...args) : value }, language: 'fr' }),
 }))
 
 import { UnseenOnlyOption } from './UnseenOnlyOption'
 
-const render = (props: { checked: boolean; unseenCount: number; drawnCount: number }) =>
-  renderToStaticMarkup(createElement(UnseenOnlyOption, { ...props, onChange: () => {} }))
+const render = (props: { checked: boolean; unseenCount: number; drawnCount: number; mode?: GameMode }) =>
+  renderToStaticMarkup(createElement(UnseenOnlyOption, { mode: 'classic', ...props, onChange: () => {} }))
 
 describe('UnseenOnlyOption', () => {
   it('propose la case avec le nombre de questions à découvrir', () => {
@@ -42,11 +43,28 @@ describe('UnseenOnlyOption', () => {
   })
 })
 
+describe('UnseenOnlyOption en sans-faute et contre-la-montre', () => {
+  it.each(['streak', 'timed'] as const)('en mode %s, annonce que les nouvelles passent en premier', (mode) => {
+    expect(render({ mode, checked: true, unseenCount: 37, drawnCount: 10 })).toContain('Les 37 questions à découvrir seront posées en premier, celles déjà vues ne viennent qu&#x27;ensuite.')
+    expect(render({ mode, checked: true, unseenCount: 1, drawnCount: 10 })).toContain('La seule question à découvrir sera posée en premier')
+  })
+
+  it('prévient aussi quand il ne reste rien à découvrir', () => {
+    expect(render({ mode: 'timed', checked: true, unseenCount: 0, drawnCount: 10 })).toContain('Aucune question à découvrir dans cette sélection')
+  })
+
+  it('ne dit rien tant que la case n’est pas cochée', () => {
+    expect(render({ mode: 'streak', checked: false, unseenCount: 5, drawnCount: 10 })).not.toContain('unseen-hint')
+  })
+})
+
 describe('textes anglais', () => {
   it('suivent les mêmes cas que les français', () => {
-    expect(en['start.unseenHint'](10, 10)).toBe('All the questions drawn will be new to you.')
-    expect(en['start.unseenHint'](3, 10)).toBe('Only 3 questions are left to discover in this selection: the other 7 will be drawn at random from those already seen.')
-    expect(en['start.unseenHint'](1, 2)).toBe('Only one question is left to discover in this selection: the other one will be drawn at random from those already seen.')
-    expect(en['start.unseenHint'](0, 10)).toBe('Nothing left to discover in this selection: the usual draw applies.')
+    expect(en['start.unseenHint'](10, 10, 'classic')).toBe('All the questions drawn will be new to you.')
+    expect(en['start.unseenHint'](37, 10, 'streak')).toBe('The 37 questions left to discover will come first, those already seen only follow.')
+    expect(en['start.unseenHint'](1, 10, 'timed')).toBe('The one question left to discover will come first, those already seen only follow.')
+    expect(en['start.unseenHint'](3, 10, 'classic')).toBe('Only 3 questions are left to discover in this selection: the other 7 will be drawn at random from those already seen.')
+    expect(en['start.unseenHint'](1, 2, 'classic')).toBe('Only one question is left to discover in this selection: the other one will be drawn at random from those already seen.')
+    expect(en['start.unseenHint'](0, 10, 'classic')).toBe('Nothing left to discover in this selection: the usual draw applies.')
   })
 })
