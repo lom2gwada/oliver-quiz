@@ -136,8 +136,9 @@ export const en = {
     return `${base}.`
   },
   'start.unseenToggle': (unseen: number) => `🆕 Only questions I haven't discovered yet (${unseen} in this selection)`,
-  'start.unseenHint': (unseen: number, drawn: number) => {
+  'start.unseenHint': (unseen: number, drawn: number, mode: GameMode) => {
     if (unseen === 0) return 'Nothing left to discover in this selection: the usual draw applies.'
+    if (mode !== 'classic') return `${unseen === 1 ? 'The one question left to discover' : `The ${unseen} questions left to discover`} will come first, those already seen only follow.`
     if (unseen >= drawn) return 'All the questions drawn will be new to you.'
     const rest = drawn - unseen
     const todo = unseen === 1 ? 'Only one question is left to discover' : `Only ${unseen} questions are left to discover`

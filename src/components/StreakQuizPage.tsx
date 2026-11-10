@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { AnswersByQuestion, Question, Quiz, UserAnswer } from '../types/quiz'
 import { useTranslation } from '../i18n'
 import { formatDuration } from '@engine/utils/time'
-import { shuffle } from '../utils/shuffle'
+import { orderUnseenFirst } from '../utils/pickUnseenQuestions'
 import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
 import { confirmDialog } from '../utils/confirmDialog'
 import { abandonGameConfirm } from '../utils/confirmPresets'
@@ -23,15 +23,19 @@ export interface StreakResult {
 interface StreakQuizPageProps {
   quiz: Quiz
   pool: Question[]
+  /** Questions déjà vues, quand le joueur a choisi de découvrir d'abord les nouvelles : elles passent en premier. */
+  seenIds?: ReadonlySet<string> | null
   /** Si vrai, chaque question a un temps limite (le sien, sinon le barème par défaut) — voir `questionTimeLimits.ts`. */
   timeboxed: boolean
   onFinish: (result: StreakResult) => void
   onCancel: () => void
 }
 
-export function StreakQuizPage({ quiz, pool, timeboxed, onFinish, onCancel }: StreakQuizPageProps) {
+export function StreakQuizPage({ quiz, pool, seenIds, timeboxed, onFinish, onCancel }: StreakQuizPageProps) {
   const { t } = useTranslation()
-  const order = useMemo(() => shuffle(pool).map(withShuffledAnswers), [pool])
+  // Les questions vues au lancement de la série : l'ordre ne doit pas changer en cours de route.
+  const seenAtStart = useRef(seenIds)
+  const order = useMemo(() => orderUnseenFirst(pool, seenAtStart.current).map(withShuffledAnswers), [pool])
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState<UserAnswer | undefined>(undefined)
   const [answers, setAnswers] = useState<AnswersByQuestion>({})

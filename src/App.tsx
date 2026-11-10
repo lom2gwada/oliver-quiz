@@ -258,6 +258,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   // avant même que la base ait enregistré la partie. Un échec de lecture masque simplement l'option.
   const [onlyUnseen, setOnlyUnseen] = useState(false)
   const [seenIds, setSeenIds] = useState<Set<string> | null>(null)
+  /** Une partie terminée (tous modes) : ses questions comptent tout de suite comme vues, avant même l'enregistrement en base. */
+  const markSeen = (played: { id: string }[]) => setSeenIds((current) => current && new Set([...current, ...played.map((question) => question.id)]))
   const unseenQuizId = canOfferUnseenOnly(activeCoverage, selectedHostedQuizId) ? selectedHostedQuizId : ''
   useEffect(() => { setOnlyUnseen(false) }, [selectedHostedQuizId])
   useEffect(() => {
@@ -655,6 +657,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
 
   const finishStreak = (result: StreakResult) => {
     setStreakResult(result)
+    markSeen(result.playedQuestions)
     replace('streakResults')
     const payload = buildStreakResultPayload(result.streakCount, result.elapsedSeconds, result.victory, result.playedQuestions, quiz.categories, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered)
     const detailPayloads = buildQuestionResultPayloads(result.playedQuestions, result.answers, quiz.metadata.title, selectedHostedQuizId || null, payload.id, 'streak')
@@ -674,6 +677,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
 
   const finishTimed = (result: TimedResult) => {
     setTimedResult(result)
+    markSeen(result.attempts.map((attempt) => attempt.question))
     replace('timedResults')
     const payload = buildTimedResultPayload(result.attempts, result.elapsedSeconds, result.durationSeconds, quiz.categories, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered)
     // Une partie où rien n'a été tenté (« 0 / 0 ») ne dit rien : elle n'est pas enregistrée.
@@ -747,7 +751,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       <ModePicker value={gameMode} onChange={(mode) => { playClick(); setGameMode(mode) }} />
       <FilterPanel themes={quiz.categories} selectedThemes={selectedThemes} difficulty={difficulty} onThemeToggle={toggleTheme} onDifficultyChange={setDifficulty} />
       {gameMode === 'classic' && <label className="question-count">{t('start.questionCountLabel')}<select value={questionCount} onChange={(event) => { playClick(); setQuestionCount(Number(event.target.value)) }}>{questionCounts.map((count) => <option key={count} value={count} disabled={count > filteredQuestions.length}>{t('start.questionCountOption', count, count > filteredQuestions.length)}</option>)}<option value={filteredQuestions.length}>{t('start.allQuestionsOption', filteredQuestions.length)}</option></select></label>}
-      {gameMode === 'classic' && offeredSeenIds && <UnseenOnlyOption checked={onlyUnseen} onChange={setOnlyUnseen} unseenCount={unseenCount} drawnCount={Math.min(questionCount, filteredQuestions.length)} />}
+      {offeredSeenIds && <UnseenOnlyOption mode={gameMode} checked={onlyUnseen} onChange={setOnlyUnseen} unseenCount={unseenCount} drawnCount={Math.min(questionCount, filteredQuestions.length)} />}
       {gameMode === 'timed' && <label className="question-count">{t('start.durationLabel')}<select value={durationMinutes} onChange={(event) => { playClick(); setDurationMinutes(Number(event.target.value)) }}>{durationOptions.map((minutes) => <option key={minutes} value={minutes}>{t('start.durationOption', minutes)}</option>)}</select></label>}
       <label className="theme-checkbox timer-toggle">
         <input type="checkbox" checked={timeboxed} aria-describedby="timer-hint" onChange={(event) => { playClick(); setTimeboxed(event.target.checked) }} />
@@ -760,7 +764,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     </section>}
     {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} timeboxed={timeboxed} reviewBoxes={isReplay ? reviewBoxes : undefined} onFinish={(nextAnswers, duration, played) => {
       setAnswers(nextAnswers); setElapsedSeconds(duration); setSessionQuestions(played); replace('results')
-      setSeenIds((current) => current && new Set([...current, ...played.map((question) => question.id)]))
+      markSeen(played)
       const resultPayload = buildQuizResultPayload(played, nextAnswers, quiz.categories, duration, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered && !isReplay)
       const detailPayloads = buildQuestionResultPayloads(played, nextAnswers, quiz.metadata.title, selectedHostedQuizId || null, resultPayload.id)
       saveGame([
@@ -771,9 +775,9 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     }} onCancel={backToStart} />}
     {(view === 'results' || view === 'streakResults' || view === 'timedResults') && <SaveStatusNotice status={saveStatus} onRetry={retrySave} />}
     {view === 'results' && <ResultPage links={quiz.metadata.links} reviewBoxes={isReplay ? reviewBoxes : undefined} questions={sessionQuestions} answers={answers} themes={quiz.categories} elapsedSeconds={elapsedSeconds} onRestartSame={isReplay ? undefined : restartQuiz} onBackToSettings={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} />}
-    {view === 'streak' && <StreakQuizPage quiz={quiz} pool={filteredQuestions} timeboxed={timeboxed} onFinish={finishStreak} onCancel={backToStart} />}
+    {view === 'streak' && <StreakQuizPage quiz={quiz} pool={filteredQuestions} seenIds={unseenSeenIds} timeboxed={timeboxed} onFinish={finishStreak} onCancel={backToStart} />}
     {view === 'streakResults' && streakResult && <StreakResultPage links={quiz.metadata.links} {...streakResult} onRestartSame={restartStreak} onBackToSettings={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} />}
-    {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
+    {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} seenIds={unseenSeenIds} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
     {view === 'timedResults' && timedResult && <TimedResultPage links={quiz.metadata.links} {...timedResult} onRestartSame={restartTimed} onBackToSettings={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} />}
     {view === 'quizzes' && <QuizListPage hostedQuizzes={hostedQuizzes} isAdmin={profile?.isAdmin ?? false} onBack={() => navigate('start')} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} publishWarning={publishWarning} />}
     {view === 'quizDetail' && <QuizDetailPage quiz={quiz} hostedQuizId={selectedHostedQuizId} isPublic={hostedQuizzes.find((hosted) => hosted.id === selectedHostedQuizId)?.is_public ?? false} onTogglePublic={(isPublic) => togglePublicLocally(selectedHostedQuizId, isPublic)} onBack={() => navigate('quizzes')} onExport={exportQuiz} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onAddTheme={addTheme} quizLoadError={quizLoadError} onUpdateQuizMeta={updateQuizMeta} onDeleteQuiz={deleteHostedQuiz} deleteQuizError={deleteQuizError} />}

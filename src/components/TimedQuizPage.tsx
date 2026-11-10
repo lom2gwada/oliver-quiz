@@ -3,6 +3,7 @@ import type { Question, QuestionAttempt, Quiz, UserAnswer } from '../types/quiz'
 import { useTranslation } from '../i18n'
 import { formatDuration } from '@engine/utils/time'
 import { shuffle } from '../utils/shuffle'
+import { orderUnseenFirst } from '../utils/pickUnseenQuestions'
 import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
 import { confirmDialog } from '../utils/confirmDialog'
 import { abandonGameConfirm } from '../utils/confirmPresets'
@@ -21,6 +22,8 @@ export interface TimedResult {
 interface TimedQuizPageProps {
   quiz: Quiz
   pool: Question[]
+  /** Questions déjà vues, quand le joueur a choisi de découvrir d'abord les nouvelles : elles passent en premier. */
+  seenIds?: ReadonlySet<string> | null
   durationSeconds: number
   /** Si vrai, chaque question a un temps limite (le sien, sinon le barème par défaut) — voir `questionTimeLimits.ts`. */
   timeboxed: boolean
@@ -28,9 +31,9 @@ interface TimedQuizPageProps {
   onCancel: () => void
 }
 
-export function TimedQuizPage({ quiz, pool, durationSeconds, timeboxed, onFinish, onCancel }: TimedQuizPageProps) {
+export function TimedQuizPage({ quiz, pool, seenIds, durationSeconds, timeboxed, onFinish, onCancel }: TimedQuizPageProps) {
   const { t } = useTranslation()
-  const [order, setOrder] = useState<Question[]>(() => shuffle(pool).map(withShuffledAnswers))
+  const [order, setOrder] = useState<Question[]>(() => orderUnseenFirst(pool, seenIds).map(withShuffledAnswers))
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState<UserAnswer | undefined>(undefined)
   const [attempts, setAttempts] = useState<QuestionAttempt[]>([])
