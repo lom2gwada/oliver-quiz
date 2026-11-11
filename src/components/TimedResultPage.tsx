@@ -11,6 +11,7 @@ import { QuestionTable } from './QuestionTable'
 import { QuestionImage } from '@engine/components/QuestionImage'
 import { FurtherReading } from './FurtherReading'
 import { ResultActions } from './ResultActions'
+import { ResultNavLinks } from './ResultNavLinks'
 import { correctAnswer, isCorrect, userAnswer } from './ResultPage'
 
 interface TimedResultPageProps {
@@ -23,9 +24,10 @@ interface TimedResultPageProps {
   onBackToSettings: () => void
   onViewHistory: () => void
   onViewLeaderboard: () => void
+  onViewOverview: () => void
 }
 
-export function TimedResultPage({ links, attempts, elapsedSeconds, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard }: TimedResultPageProps) {
+export function TimedResultPage({ links, attempts, elapsedSeconds, onRestartSame, onBackToSettings, onViewHistory, onViewLeaderboard, onViewOverview }: TimedResultPageProps) {
   const { t } = useTranslation()
   const correctCount = attempts.filter((attempt) => isCorrect(attempt.question, attempt.answer)).length
   const perfect = attempts.length > 0 && correctCount === attempts.length
@@ -39,10 +41,7 @@ export function TimedResultPage({ links, attempts, elapsedSeconds, onRestartSame
       <p className="duration">{t('result.duration', formatDuration(elapsedSeconds))}</p>
     </div>
     <ResultActions onRestartSame={onRestartSame} onBackToSettings={onBackToSettings} />
-    <div className="nav-links">
-      <button type="button" className="secondary" onClick={onViewHistory}>{t('common.viewHistory')}</button>
-      <button type="button" className="secondary" onClick={onViewLeaderboard}>{t('common.viewLeaderboard')}</button>
-    </div>
+    <ResultNavLinks onViewHistory={onViewHistory} onViewLeaderboard={onViewLeaderboard} onViewOverview={onViewOverview} />
     <FurtherReading links={links} />
     <div className="corrections">{attempts.map(({ question, answer }, index) => {
       const correct = isCorrect(question, answer)
