@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { EPHEMERAL_VIEWS, hashToRoute, isEphemeralView, routeToHash, type View } from './routes'
 
-const ALL_VIEWS: View[] = ['start', 'quiz', 'results', 'streak', 'streakResults', 'timed', 'timedResults', 'quizzes', 'quizDetail', 'overview', 'history', 'leaderboard', 'profile', 'about']
+const ALL_VIEWS: View[] = ['start', 'quiz', 'results', 'streak', 'streakResults', 'timed', 'timedResults', 'quizzes', 'quizDetail', 'overview', 'history', 'leaderboard', 'profile', 'about', 'users']
 const QUIZ_ID = '6f1c1c2a-3b2e-4d57-9d38-0a1b2c3d4e5f'
+const USER_ID = '0d9e8c7b-6a5f-4e3d-8c2b-1a0f9e8d7c6b'
 
 describe('routeToHash', () => {
   it('gives each page its own readable URL', () => {
@@ -16,6 +17,8 @@ describe('routeToHash', () => {
     expect(routeToHash('about', null)).toBe('#/a-propos')
     expect(routeToHash('quizzes', null)).toBe('#/admin')
     expect(routeToHash('quizDetail', QUIZ_ID)).toBe(`#/admin/${QUIZ_ID}`)
+    expect(routeToHash('users', null)).toBe('#/admin/utilisateurs')
+    expect(routeToHash('userDetail', null, USER_ID)).toBe(`#/admin/utilisateurs/${USER_ID}`)
   })
 
   it('ignores the quiz for pages that do not belong to one', () => {
@@ -37,7 +40,7 @@ describe('routeToHash', () => {
 describe('hashToRoute', () => {
   it.each(ALL_VIEWS)('reads back the URL of the %s page', (view) => {
     const withQuiz = hashToRoute(routeToHash(view, QUIZ_ID))
-    const expectedQuiz = ['overview', 'profile', 'about', 'quizzes'].includes(view) ? null : QUIZ_ID
+    const expectedQuiz = ['overview', 'profile', 'about', 'quizzes', 'users'].includes(view) ? null : QUIZ_ID
     expect(withQuiz).toEqual({ view, quizId: expectedQuiz })
     const withoutQuiz = hashToRoute(routeToHash(view, null))
     expect(withoutQuiz?.view).toBe(view === 'quizDetail' ? 'quizzes' : view)
@@ -67,6 +70,32 @@ describe('hashToRoute', () => {
     expect(hashToRoute(`#/quiz/${QUIZ_ID}/historique/extra`)).toBeNull()
     expect(hashToRoute('#/quiz/%E0%A4%A')).toBeNull()
     expect(hashToRoute('#/admin/')).toEqual({ view: 'quizzes', quizId: null })
+  })
+})
+
+describe('the users pages of the administration', () => {
+  it('has its own URLs, distinct from a quiz page of the administration', () => {
+    expect(routeToHash('users', QUIZ_ID, USER_ID)).toBe('#/admin/utilisateurs')
+    expect(routeToHash('userDetail', QUIZ_ID, USER_ID)).toBe(`#/admin/utilisateurs/${USER_ID}`)
+    expect(routeToHash('userDetail', null, null)).toBe('#/admin/utilisateurs')
+    expect(routeToHash('quizDetail', QUIZ_ID)).not.toBe(routeToHash('users', null))
+  })
+
+  it('reads them back, and still reads a quiz of the administration', () => {
+    expect(hashToRoute('#/admin/utilisateurs')).toEqual({ view: 'users', quizId: null })
+    expect(hashToRoute('#/admin/utilisateurs/')).toEqual({ view: 'users', quizId: null })
+    expect(hashToRoute(`#/admin/utilisateurs/${USER_ID}`)).toEqual({ view: 'userDetail', quizId: null, userId: USER_ID })
+    expect(hashToRoute(`#/admin/${QUIZ_ID}`)).toEqual({ view: 'quizDetail', quizId: QUIZ_ID })
+    expect(hashToRoute('#/admin/')).toEqual({ view: 'quizzes', quizId: null })
+  })
+
+  it('round-trips an id that is not URL-safe', () => {
+    expect(hashToRoute(routeToHash('userDetail', null, 'a/b c'))).toEqual({ view: 'userDetail', quizId: null, userId: 'a/b c' })
+  })
+
+  it('rejects a malformed users URL', () => {
+    expect(hashToRoute(`#/admin/utilisateurs/${USER_ID}/extra`)).toBeNull()
+    expect(hashToRoute('#/admin/utilisateurs/%E0%A4%A')).toBeNull()
   })
 })
 

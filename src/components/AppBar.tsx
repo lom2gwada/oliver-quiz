@@ -15,16 +15,18 @@ interface AppBarProps {
   onHome: () => void
   onProfile: () => void
   onAdmin: () => void
+  onUsers: () => void
   onLogout: () => void
 }
 
 /** Barre supérieure, la même sur toutes les pages : nom de l'appli (retour à l'accueil), langue, son, profil,
- * administration (comptes admin), déconnexion. La page courante est signalée sur Profil et Administration.
+ * administration et utilisateurs (comptes admin), déconnexion. La page courante est signalée sur Profil, Quiz et Utilisateurs.
  * Sur téléphone, la barre tient sur une ligne : les commandes passent derrière un bouton ☰ (voir `styles.css`) ; ce
  * menu se referme après un choix, avec Échap, en touchant ailleurs ou en changeant de page. */
-export function AppBar({ view, muted, profile, onLanguageChange, onToggleSound, onHome, onProfile, onAdmin, onLogout }: AppBarProps) {
+export function AppBar({ view, muted, profile, onLanguageChange, onToggleSound, onHome, onProfile, onAdmin, onUsers, onLogout }: AppBarProps) {
   const { t, language } = useTranslation()
   const onAdminPage = view === 'quizzes' || view === 'quizDetail'
+  const onUsersPage = view === 'users' || view === 'userDetail'
   const [menuOpen, setMenuOpen] = useState(false)
   const barRef = useRef<HTMLDivElement>(null)
 
@@ -48,6 +50,7 @@ export function AppBar({ view, muted, profile, onLanguageChange, onToggleSound, 
       <button type="button" className="secondary" onClick={thenClose(onToggleSound)} aria-label={muted ? t('nav.unmuteSound') : t('nav.muteSound')}><SoundIcon muted={muted} /></button>
       <button type="button" className="secondary" onClick={thenClose(onProfile)} aria-current={view === 'profile' ? 'page' : undefined}>{profile ? `${profile.avatar} ${profile.pseudo}` : t('nav.profile')}</button>
       {profile?.isAdmin && <button type="button" className="secondary" onClick={thenClose(onAdmin)} aria-current={onAdminPage ? 'page' : undefined}>{t('nav.quiz')}</button>}
+      {profile?.isAdmin && <button type="button" className="secondary" onClick={thenClose(onUsers)} aria-current={onUsersPage ? 'page' : undefined}>{t('nav.users')}</button>}
       <button type="button" className="secondary" onClick={thenClose(onLogout)}>{t('common.logout')}</button>
     </div>
   </div>

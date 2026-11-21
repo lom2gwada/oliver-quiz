@@ -5,6 +5,8 @@ import { UnseenOnlyOption } from './components/UnseenOnlyOption'
 import { HistoryPage } from './components/HistoryPage'
 import { LeaderboardPage } from './components/LeaderboardPage'
 import { AppBar } from './components/AppBar'
+import { UsersPage } from './components/UsersPage'
+import { UserDetailPage } from './components/UserDetailPage'
 import { Breadcrumb } from './components/Breadcrumb'
 import { CoverageBar } from './components/CoverageBar'
 import { SaveStatusNotice } from './components/SaveStatusNotice'
@@ -292,7 +294,13 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const selectHostedQuizRef = useRef<(id: string) => Promise<unknown>>(async () => {})
   const tRef = useRef(t)
   tRef.current = t
-  const urlForView = (target: View, quizId: string | null = selectedIdRef.current || null) => `${window.location.pathname}${window.location.search}${routeToHash(target, quizId)}`
+  // Administration : l'utilisateur dont la fiche est ouverte (dans l'URL : `#/admin/utilisateurs/<id>`) et son pseudo, connu une fois
+  // la fiche chargée (fil d'Ariane).
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(initialRoute.current?.userId ?? null)
+  const [selectedUserName, setSelectedUserName] = useState('')
+  const selectedUserIdRef = useRef(selectedUserId)
+  selectedUserIdRef.current = selectedUserId
+  const urlForView = (target: View, quizId: string | null = selectedIdRef.current || null) => `${window.location.pathname}${window.location.search}${routeToHash(target, quizId, selectedUserIdRef.current)}`
   useEffect(() => {
     // Une URL de partie ou de résultats, qu'on ne peut pas rouvrir, est ramenée à l'accueil du quiz demandé.
     const route = initialRoute.current
@@ -300,6 +308,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     window.history.replaceState({ view: restoredView }, '', route && isEphemeralView(route.view) ? urlForView('start', route.quizId) : undefined)
     const onPopState = () => {
       const target = hashToRoute(window.location.hash)
+      if (target?.view === 'userDetail' && target.userId && target.userId !== selectedUserIdRef.current) { selectedUserIdRef.current = target.userId; setSelectedUserId(target.userId); setSelectedUserName('') }
       let nextView: View = target?.view ?? 'start'
       // Une partie ou un écran de résultat n'est rouvrable que si ses données sont encore en mémoire (retour de
       // l'historique vers les résultats qu'on venait de voir, par exemple).
@@ -347,10 +356,18 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const replace = (next: View) => { setView(next); window.history.replaceState({ view: next }, '', urlForView(next)) }
   // Les pages d'administration ne sont pas pour les autres comptes (leur bouton est déjà masqué) : une URL tapée à la main
   // les ramène à l'accueil dès que le profil est chargé.
-  useEffect(() => { if (profile && !profile.isAdmin && (view === 'quizzes' || view === 'quizDetail')) replace('start') }, [profile, view])
+  useEffect(() => { if (profile && !profile.isAdmin && (view === 'quizzes' || view === 'quizDetail' || view === 'users' || view === 'userDetail')) replace('start') }, [profile, view])
   // Navigation depuis la barre supérieure, présente sur toutes les pages : quitter une partie en cours en abandonne la
   // progression, comme le bouton « Annuler » et le retour du navigateur, et demande donc confirmation.
   const confirmLeaveProfile = async () => !profileDirtyRef.current || await confirmDialog(leaveProfileConfirm(t))
+  /** Depuis la liste des utilisateurs : ouvre la fiche de l'un d'eux. */
+  const openUser = (userId: string) => {
+    playClick()
+    selectedUserIdRef.current = userId
+    setSelectedUserId(userId)
+    setSelectedUserName('')
+    navigate('userDetail')
+  }
   const goTo = async (next: View) => {
     if (viewRef.current === next) return
     playClick()
@@ -726,13 +743,13 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   }
 
   const breadcrumb = breadcrumbFor(view, {
-    home: t('nav.home'), overview: t('crumb.overview'), profile: t('crumb.profile'), about: t('crumb.about'), admin: t('nav.admin'),
+    home: t('nav.home'), overview: t('crumb.overview'), profile: t('crumb.profile'), about: t('crumb.about'), admin: t('nav.admin'), users: t('crumb.users'), userName: selectedUserName || t('crumb.userDetail'),
     history: t('crumb.history'), leaderboard: t('crumb.leaderboard'), quizTitle: quiz.metadata.title,
   }, selectedHostedQuizId || null)
 
   return <LanguageProvider language={language}><QuizLanguageProvider language={quiz.metadata.language}><main className="app-shell">
     <header className="app-header">
-      <AppBar view={view} muted={muted} profile={profile} onLanguageChange={changeLanguage} onToggleSound={toggleSound} onHome={() => goTo('start')} onProfile={() => goTo('profile')} onAdmin={() => goTo('quizzes')} onLogout={onLogout} />
+      <AppBar view={view} muted={muted} profile={profile} onLanguageChange={changeLanguage} onToggleSound={toggleSound} onHome={() => goTo('start')} onProfile={() => goTo('profile')} onAdmin={() => goTo('quizzes')} onUsers={() => goTo('users')} onLogout={onLogout} />
       {breadcrumb.length > 0 && <Breadcrumb items={breadcrumb} label={t('nav.breadcrumb')} />}
       {/* Le quiz actif (titre, auteur, langue) n'est présenté que sur les pages qui le concernent. */}
       {isQuizPage(view) && <div className="quiz-context">
@@ -795,7 +812,9 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'streakResults' && streakResult && <StreakResultPage links={quiz.metadata.links} {...streakResult} onRestartSame={restartStreak} onBackToSettings={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} onViewOverview={() => viewOverview('streakResults')} />}
     {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} seenIds={unseenSeenIds} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
     {view === 'timedResults' && timedResult && <TimedResultPage links={quiz.metadata.links} {...timedResult} onRestartSame={restartTimed} onBackToSettings={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} onViewOverview={() => viewOverview('timedResults')} />}
-    {view === 'quizzes' && <QuizListPage hostedQuizzes={hostedQuizzes} isAdmin={profile?.isAdmin ?? false} onBack={() => navigate('start')} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} publishWarning={publishWarning} />}
+    {view === 'quizzes' && <QuizListPage hostedQuizzes={hostedQuizzes} isAdmin={profile?.isAdmin ?? false} onBack={() => navigate('start')} onViewUsers={() => { playClick(); navigate('users') }} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} publishWarning={publishWarning} />}
+    {view === 'users' && profile?.isAdmin && <UsersPage onBack={() => navigate('quizzes')} onOpenUser={openUser} />}
+    {view === 'userDetail' && profile?.isAdmin && selectedUserId && <UserDetailPage userId={selectedUserId} onBack={() => navigate('users')} onLoaded={setSelectedUserName} />}
     {view === 'quizDetail' && <QuizDetailPage quiz={quiz} hostedQuizId={selectedHostedQuizId} isPublic={hostedQuizzes.find((hosted) => hosted.id === selectedHostedQuizId)?.is_public ?? false} onTogglePublic={(isPublic) => togglePublicLocally(selectedHostedQuizId, isPublic)} onBack={() => navigate('quizzes')} onExport={exportQuiz} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onAddTheme={addTheme} quizLoadError={quizLoadError} onUpdateQuizMeta={updateQuizMeta} onDeleteQuiz={deleteHostedQuiz} deleteQuizError={deleteQuizError} />}
     {view === 'overview' && <OverviewPage activeQuizId={selectedHostedQuizId} onReviewQuiz={reviewQuizDue} onViewHistory={async (id) => { playClick(); await selectHostedQuiz(id); viewHistory('overview') }} onViewLeaderboard={async (id) => { playClick(); await selectHostedQuiz(id); viewLeaderboard('overview') }} onBack={() => navigate(overviewBack)} onSelectQuiz={async (id) => { playClick(); await selectHostedQuiz(id); navigate('start') }} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} hostedQuizId={selectedHostedQuizId} hostedQuizzes={hostedQuizzes} onReviewDue={reviewDue} onViewLeaderboard={(key, label) => { playClick(); viewLeaderboard('history', 'classic', { key, label }) }} onPlayTheme={playTheme} />}

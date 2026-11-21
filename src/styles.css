@@ -276,6 +276,18 @@ header.app-header { display: block; padding-bottom: 1.4rem; margin-bottom: 2rem;
 .overview-card-active { border-color: var(--accent); background: var(--surface-selected); }
 .overview-badge { margin-left: .6rem; padding: .1rem .55rem; border-radius: 999px; background: var(--accent); color: var(--text-on-accent); font-size: .7rem; font-weight: 800; vertical-align: middle; }
 .overview-item-action { justify-self: start; color: var(--accent-text); font-size: .85rem; font-weight: 700; }
+.users-controls { display: flex; flex-wrap: wrap; gap: .8rem; margin: .4rem 0 .8rem; }
+.users-controls label { display: grid; gap: .3rem; flex: 1 1 12rem; color: var(--text-soft); }
+.users-avatar { font-size: 1.5rem; line-height: 1; }
+.users-badge-disabled { background: var(--danger-bg); color: var(--danger-text); }
+.users-badge-never { background: var(--surface-solid); color: var(--text-soft); border: 1px solid var(--border); }
+.users-badge-info { background: var(--surface-solid); color: var(--accent-text); border: 1px solid var(--border); }
+.users-info { display: grid; grid-template-columns: max-content 1fr; gap: .45rem 1.2rem; margin: 0 0 1.5rem; padding: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: .6rem; }
+.users-info dt { color: var(--text-muted); font-size: .82rem; }
+.users-info dd { margin: 0; overflow-wrap: anywhere; color: var(--ink); }
+.users-quiz-card:hover { border-color: var(--border); }
+.users-detail-head { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin: 0 0 1rem; }
+.users-detail-head .overview-badge { margin-left: 0; }
 .overview-item-description { color: var(--text-soft); font-size: .85rem; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .overview-subtitle { margin: 1.5rem 0 .8rem; color: var(--text-soft); font-size: 1rem; }
 .leaderboard-date { font-weight: 400; font-size: .8rem; color: var(--text-muted); white-space: nowrap; }
