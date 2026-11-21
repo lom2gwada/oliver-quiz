@@ -1,4 +1,9 @@
 import type { GameMode } from '../types/quiz'
+import { ALL_APPS, listApps, OTHER_APPS, THIS_APP } from '../config/sharedApps'
+
+/** Les noms des applications qui partagent le compte, en français courant (voir `config/sharedApps.ts`). */
+const OTHER_APPS_FR = listApps(OTHER_APPS, 'fr')
+const ALL_APPS_FR = listApps(ALL_APPS, 'fr')
 
 /** Dictionnaire français — source de vérité : ses clés définissent `TranslationKey` (voir `index.tsx`).
  * Chaque valeur est soit une chaîne statique, soit une fonction pour les chaînes interpolées/pluralisées. */
@@ -152,7 +157,7 @@ export const fr = {
   'userActions.disableButton': 'Désactiver le compte',
   'userActions.enableButton': 'Réactiver le compte',
   'userActions.disableConfirmTitle': 'Désactiver ce compte ?',
-  'userActions.disableConfirm': (pseudo: string) => `Désactiver le compte de ${pseudo} ? Il ne pourra plus se connecter, ni à Oliver Quiz ni à Quiz Forge et Periodic Quiz (le compte est commun aux trois), et ses sessions sont fermées. Son historique et ses données sont conservés, et vous pouvez le réactiver à tout moment. S'il est connecté en ce moment, la coupure peut prendre jusqu'à une heure.`,
+  'userActions.disableConfirm': (pseudo: string) => `Désactiver le compte de ${pseudo} ? Il ne pourra plus se connecter, ni à ${THIS_APP} ni à ${OTHER_APPS_FR} (le compte est commun aux trois), et ses sessions sont fermées. Son historique et ses données sont conservés, et vous pouvez le réactiver à tout moment. S'il est connecté en ce moment, la coupure peut prendre jusqu'à une heure.`,
   'userActions.disableConfirmLabel': 'Désactiver',
   'userActions.disabledNotice': 'Compte désactivé.',
   'userActions.enabledNotice': 'Compte réactivé.',
@@ -182,7 +187,7 @@ export const fr = {
   'userActions.resetDone': (games: number, answers: number) => `Progression réinitialisée : ${games} partie${games > 1 ? 's' : ''} et ${answers} réponse${answers > 1 ? 's' : ''} effacée${answers > 1 ? 's' : ''}.`,
   'userActions.resetNothing': 'Rien à effacer : aucune partie enregistrée.',
   'userActions.deleteTitle': 'Supprimer le compte',
-  'userActions.deleteWarning': "Suppression définitive : son profil, ses parties de tous les modes, son journal de questions, sa progression de révision et ses accès aux quiz disparaissent. Le compte est commun à Oliver Quiz, Quiz Forge et Periodic Quiz : ses données dans ces deux applications sont supprimées aussi. Les quiz et les liens invités qu'il a créés restent, sans auteur. Pour une mesure réversible, désactivez plutôt le compte.",
+  'userActions.deleteWarning': `Suppression définitive : son profil, ses parties de tous les modes, son journal de questions, sa progression de révision et ses accès aux quiz disparaissent. Le compte est commun à ${ALL_APPS_FR} : ses données dans ces deux applications sont supprimées aussi. Les quiz et les liens invités qu'il a créés restent, sans auteur. Pour une mesure réversible, désactivez plutôt le compte.`,
   'userActions.deleteButton': '🗑️ Supprimer définitivement ce compte',
   'userActions.confirmPrompt': 'Pour confirmer, retapez son pseudo :',
   'userActions.confirmPlaceholder': 'Pseudo',
@@ -463,10 +468,10 @@ export const fr = {
   'profile.currentPasswordLabel': 'Mot de passe actuel',
   'profile.currentPasswordWrong': 'Mot de passe actuel incorrect.',
   'profile.deleteTitle': 'Supprimer mon compte',
-  'profile.deleteWarning': "Cette action est définitive : ton compte, ton profil, ton historique, tes réponses et ta progression de révision sont supprimés. Les quiz que tu as créés (administration) sont conservés, sans ton nom.",
+  'profile.deleteWarning': `Cette action est définitive : ton compte, ton profil, ton historique, tes réponses et ta progression de révision sont supprimés. Ton compte est commun à ${ALL_APPS_FR} : tes données dans ${OTHER_APPS_FR} sont supprimées aussi. Les quiz que tu as créés (administration) sont conservés, sans ton nom.`,
   'profile.deleteButton': '🗑️ Supprimer définitivement mon compte',
   'profile.deleting': 'Suppression…',
-  'profile.deleteConfirm': 'Supprimer définitivement ton compte et toutes tes données ? Cette action est irréversible.',
+  'profile.deleteConfirm': `Supprimer définitivement ton compte et toutes tes données, y compris dans ${OTHER_APPS_FR} (le compte est commun aux trois applications) ? Cette action est irréversible.`,
   'profile.deleteErrorLastAdmin': 'Tu es le seul administrateur : nomme-en un autre avant de supprimer ton compte.',
   'profile.deleteError': 'Impossible de supprimer le compte. Réessaie plus tard.',
   'profile.passwordTitle': 'Mot de passe',
