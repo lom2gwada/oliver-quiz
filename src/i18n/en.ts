@@ -500,6 +500,8 @@ export const en = {
   'history.themeSeenColumn': 'Discovered',
   'history.themeMasteredColumn': 'Mastered',
   'history.themeSuccessColumn': 'Success',
+  'history.themePlayButton': '▶ Play',
+  'history.themePlayLabel': (theme: string) => `Play the ${theme} theme`,
   'history.themeNeverPlayed': 'Never played',
   'history.byType': 'By question type',
   'history.typeRadarTitle': 'Success rate by question type',

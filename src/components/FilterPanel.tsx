@@ -9,6 +9,8 @@ interface FilterPanelProps {
   difficulty: Difficulty | ''
   onThemeToggle: (themeId: string) => void
   onDifficultyChange: (value: Difficulty | '') => void
+  /** Déplié dès l'arrivée, même sur téléphone (où il est replié par défaut) : on arrive avec un thème déjà coché, à montrer. */
+  initiallyOpen?: boolean
 }
 
 /** Sur téléphone, les filtres sont repliés par défaut : la liste des thèmes rallonge beaucoup l'accueil (quiz à
@@ -16,9 +18,9 @@ interface FilterPanelProps {
  * filtres sont actifs ; sur grand écran le panneau reste ouvert et le résumé masqué (voir `styles.css`). */
 const startsCollapsed = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 550px)').matches
 
-export function FilterPanel({ themes, selectedThemes, difficulty, onThemeToggle, onDifficultyChange }: FilterPanelProps) {
+export function FilterPanel({ themes, selectedThemes, difficulty, onThemeToggle, onDifficultyChange, initiallyOpen = false }: FilterPanelProps) {
   const { t } = useTranslation()
-  const [open, setOpen] = useState(() => !startsCollapsed())
+  const [open, setOpen] = useState(() => initiallyOpen || !startsCollapsed())
   const activeFilters = selectedThemes.length + (difficulty ? 1 : 0)
   return <details className="filter-details" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
     <summary className="filter-summary">{t('filter.summary', activeFilters)}</summary>
