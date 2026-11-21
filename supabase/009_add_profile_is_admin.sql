@@ -4,8 +4,10 @@
 -- de jouer et fausser le classement.
 --
 -- Pas de policy dédiée : le client (ProfilePage/saveProfile) n'inclut jamais `is_admin` dans le
--- payload d'upsert du formulaire profil, donc la colonne n'est jamais modifiée par un utilisateur
--- via l'app — la seule façon de la changer est une requête SQL manuelle (ex. celle ci-dessous).
+-- payload d'upsert du formulaire profil. ATTENTION : cela ne suffisait PAS — les politiques RLS (004) ne portent que
+-- sur les lignes, et `authenticated` pouvait écrire toutes les colonnes de sa propre ligne, `is_admin` comprise, en
+-- appelant l'API directement. Corrigé par 046_profiles_column_privileges.sql (droits par colonne) : depuis, la seule façon
+-- de changer `is_admin` est une fonction `security definer` d'administration ou une requête SQL manuelle (ex. ci-dessous).
 
 alter table public.profiles
   add column is_admin boolean not null default false;
