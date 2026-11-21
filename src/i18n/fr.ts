@@ -498,6 +498,8 @@ export const fr = {
   'history.themeSeenColumn': 'Découvertes',
   'history.themeMasteredColumn': 'Maîtrisées',
   'history.themeSuccessColumn': 'Réussite',
+  'history.themePlayButton': '▶ Jouer',
+  'history.themePlayLabel': (theme: string) => `Jouer le thème ${theme}`,
   'history.themeNeverPlayed': 'Jamais joué',
   'history.byType': 'Par type de question',
   'history.typeRadarTitle': 'Taux de réussite par type de question',

@@ -37,6 +37,8 @@ interface HistoryPageProps {
   /** Ouvre le classement du quiz affiché ici (pas forcément le quiz actif de l'appli : le sélecteur de cette page
    * ne change que l'affichage) — `key`/`label` sont ceux de ce quiz dans le sélecteur. */
   onViewLeaderboard: (key: string, label: string) => void
+  /** Lance la configuration d'une partie sur un thème du quiz affiché ici (là encore pas forcément le quiz actif de l'appli). */
+  onPlayTheme: (quizId: string, themeId: string) => void
 }
 
 /** Une ligne d'historique "appartient" à `quiz_id` si connu, ou à son titre figé sinon (parties d'avant cette
@@ -78,7 +80,7 @@ function gameSummary(game: HistoryGame, t: Translate, language: Language) {
   </>
 }
 
-export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onReviewDue, onViewLeaderboard }: HistoryPageProps) {
+export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onReviewDue, onViewLeaderboard, onPlayTheme }: HistoryPageProps) {
   const { t, language } = useTranslation()
   const [rows, setRows] = useState<QuizResultRow[] | null>(null)
   const [streakRows, setStreakRows] = useState<StreakResultRow[]>([])
@@ -219,7 +221,7 @@ export function HistoryPage({ onBack, quiz, hostedQuizId, hostedQuizzes, onRevie
           />}
           <RadarChart title={t('history.typeRadarTitle')} axes={typeAxes} />
         </>}
-        {activeTab === 'themes' && <ThemeProgressTable themes={themeViews} />}
+        {activeTab === 'themes' && <ThemeProgressTable themes={themeViews} onPlayTheme={(themeId) => onPlayTheme(activeQuiz, themeId)} />}
         {activeTab === 'modes' && <>
           <p className="mode-hint games-hint">{t('history.modesHint')}</p>
           {quizStreakRows.length > 0 && <div className="stats-group">

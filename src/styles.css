@@ -373,3 +373,4 @@ header.app-header { display: block; padding-bottom: 1.4rem; margin-bottom: 2rem;
 .theme-progress .quiz-progress { margin-top: .3rem; height: .45rem; }
 .theme-progress-count { color: var(--text-soft); font-variant-numeric: tabular-nums; }
 .theme-progress-success { font-weight: 700; color: var(--ink); white-space: nowrap; }
+.theme-progress-play { display: block; width: auto; margin-top: .35rem; padding: .25rem .65rem; font-size: .78rem; white-space: nowrap; }

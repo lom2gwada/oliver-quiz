@@ -268,6 +268,10 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     fetchSeenQuestionIds(unseenQuizId).then((ids) => { if (!cancelled) setSeenIds(ids) }).catch(() => { if (!cancelled) setSeenIds(null) })
     return () => { cancelled = true }
   }, [unseenQuizId, activeCoverage])
+  // Arrivé sur l'accueil avec un thème déjà coché (voir `playTheme`) : le panneau de filtres s'ouvre, même sur téléphone. Le
+  // réglage ne vaut que pour cette arrivée : il retombe dès qu'on quitte l'accueil.
+  const [filtersOpenOnArrival, setFiltersOpenOnArrival] = useState(false)
+  useEffect(() => { if (view !== 'start') setFiltersOpenOnArrival(false) }, [view])
   const [overviewBack, setOverviewBack] = useState<View>('start')
   const viewOverview = (from: View) => { setOverviewBack(from); navigate('overview') }
   const [historyBack, setHistoryBack] = useState<View>('start')
@@ -285,7 +289,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const timedResultRef = useRef(timedResult)
   timedResultRef.current = timedResult
   // Le gestionnaire de popstate est posé une seule fois : il lit ces références pour toujours utiliser les versions à jour.
-  const selectHostedQuizRef = useRef<(id: string) => Promise<void>>(async () => {})
+  const selectHostedQuizRef = useRef<(id: string) => Promise<unknown>>(async () => {})
   const tRef = useRef(t)
   tRef.current = t
   const urlForView = (target: View, quizId: string | null = selectedIdRef.current || null) => `${window.location.pathname}${window.location.search}${routeToHash(target, quizId)}`
@@ -386,15 +390,27 @@ export default function App({ onLogout }: { onLogout: () => void }) {
 
   const selectHostedQuiz = async (id: string, keepLanguage = false) => {
     selectId(id)
-    if (!id) { setQuiz(initialQuiz); setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setQuizLoadError(''); return }
+    if (!id) { setQuiz(initialQuiz); setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setQuizLoadError(''); return true }
     try {
       const loaded = parseQuiz(await fetchQuizContent(id))
       setQuiz(loaded)
       if (!keepLanguage) applyQuizLanguage(loaded)
       setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setQuizLoadError('')
+      return true
     } catch (error) {
       setQuizLoadError(error instanceof Error ? error.message : t('admin.errorLoadQuiz'))
+      return false
     }
+  }
+
+  /** Depuis l'onglet « Thèmes » de l'historique : ouvre l'accueil du quiz affiché là (pas forcément le quiz actif) avec ce seul
+   * thème coché, prêt à démarrer. Si le quiz ne se charge pas, l'accueil montre l'erreur et son bouton « Réessayer ». */
+  const playTheme = async (quizId: string, themeId: string) => {
+    playClick()
+    if (quizId !== selectedHostedQuizId && !(await selectHostedQuiz(quizId))) { navigate('start'); return }
+    setSelectedThemes([themeId]); setDifficulty('')
+    setFiltersOpenOnArrival(true)
+    navigate('start')
   }
 
   /** Depuis la liste des quiz hébergés : sélectionne le quiz cliqué comme quiz actif puis ouvre sa page de détail. */
@@ -749,7 +765,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       {quizListState === 'loading' && <p className="mode-hint">{t('start.quizListLoading')}</p>}
       {(quizListState === 'error' || quizLoadError) && <p className="alert" role="alert">{quizListState === 'error' ? t('start.quizListError') : quizLoadError} <button type="button" className="secondary alert-retry" onClick={retryQuizLoad}>{t('start.retry')}</button></p>}
       <ModePicker value={gameMode} onChange={(mode) => { playClick(); setGameMode(mode) }} />
-      <FilterPanel themes={quiz.categories} selectedThemes={selectedThemes} difficulty={difficulty} onThemeToggle={toggleTheme} onDifficultyChange={setDifficulty} />
+      <FilterPanel initiallyOpen={filtersOpenOnArrival} themes={quiz.categories} selectedThemes={selectedThemes} difficulty={difficulty} onThemeToggle={toggleTheme} onDifficultyChange={setDifficulty} />
       {gameMode === 'classic' && <label className="question-count">{t('start.questionCountLabel')}<select value={questionCount} onChange={(event) => { playClick(); setQuestionCount(Number(event.target.value)) }}>{questionCounts.map((count) => <option key={count} value={count} disabled={count > filteredQuestions.length}>{t('start.questionCountOption', count, count > filteredQuestions.length)}</option>)}<option value={filteredQuestions.length}>{t('start.allQuestionsOption', filteredQuestions.length)}</option></select></label>}
       {offeredSeenIds && <UnseenOnlyOption mode={gameMode} checked={onlyUnseen} onChange={setOnlyUnseen} unseenCount={unseenCount} drawnCount={Math.min(questionCount, filteredQuestions.length)} />}
       {gameMode === 'timed' && <label className="question-count">{t('start.durationLabel')}<select value={durationMinutes} onChange={(event) => { playClick(); setDurationMinutes(Number(event.target.value)) }}>{durationOptions.map((minutes) => <option key={minutes} value={minutes}>{t('start.durationOption', minutes)}</option>)}</select></label>}
@@ -782,7 +798,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'quizzes' && <QuizListPage hostedQuizzes={hostedQuizzes} isAdmin={profile?.isAdmin ?? false} onBack={() => navigate('start')} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} publishWarning={publishWarning} />}
     {view === 'quizDetail' && <QuizDetailPage quiz={quiz} hostedQuizId={selectedHostedQuizId} isPublic={hostedQuizzes.find((hosted) => hosted.id === selectedHostedQuizId)?.is_public ?? false} onTogglePublic={(isPublic) => togglePublicLocally(selectedHostedQuizId, isPublic)} onBack={() => navigate('quizzes')} onExport={exportQuiz} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onAddTheme={addTheme} quizLoadError={quizLoadError} onUpdateQuizMeta={updateQuizMeta} onDeleteQuiz={deleteHostedQuiz} deleteQuizError={deleteQuizError} />}
     {view === 'overview' && <OverviewPage activeQuizId={selectedHostedQuizId} onReviewQuiz={reviewQuizDue} onViewHistory={async (id) => { playClick(); await selectHostedQuiz(id); viewHistory('overview') }} onViewLeaderboard={async (id) => { playClick(); await selectHostedQuiz(id); viewLeaderboard('overview') }} onBack={() => navigate(overviewBack)} onSelectQuiz={async (id) => { playClick(); await selectHostedQuiz(id); navigate('start') }} />}
-    {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} hostedQuizId={selectedHostedQuizId} hostedQuizzes={hostedQuizzes} onReviewDue={reviewDue} onViewLeaderboard={(key, label) => { playClick(); viewLeaderboard('history', 'classic', { key, label }) }} />}
+    {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} hostedQuizId={selectedHostedQuizId} hostedQuizzes={hostedQuizzes} onReviewDue={reviewDue} onViewLeaderboard={(key, label) => { playClick(); viewLeaderboard('history', 'classic', { key, label }) }} onPlayTheme={playTheme} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} hostedQuizId={selectedHostedQuizId} hostedQuizzes={hostedQuizzes} initialMode={leaderboardMode} focusQuiz={leaderboardFocus} onViewOverview={() => viewOverview('leaderboard')} onBack={() => navigate(leaderboardBack)} />}
     {view === 'about' && <AboutPage onBack={() => navigate('start')} />}
     {view === 'profile' && <ProfilePage key={profile ? 'loaded' : 'loading'} profile={profile} onDirtyChange={(dirty) => { profileDirtyRef.current = dirty }} onBack={async () => { if (await confirmLeaveProfile()) navigate('start') }} onSave={async (next) => { await saveProfile(next); setProfile((current) => ({ ...current, ...next })) }} />}
