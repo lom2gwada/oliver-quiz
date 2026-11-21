@@ -1,5 +1,10 @@
+import { ALL_APPS, listApps, OTHER_APPS, THIS_APP } from '../config/sharedApps'
 import type { GameMode } from '../types/quiz'
 import type { TranslationKey } from './index'
+
+/** The names of the applications that share the account, in plain English (see `config/sharedApps.ts`). */
+const OTHER_APPS_EN = listApps(OTHER_APPS, 'en')
+const ALL_APPS_EN = listApps(ALL_APPS, 'en')
 
 /** Dictionnaire anglais. `satisfies` garantit à la compilation qu'aucune clé de `fr.ts` n'est oubliée ici
  * (et qu'aucune clé en trop n'y traîne). Les fonctions reproduisent le sens dans un anglais idiomatique,
@@ -154,7 +159,7 @@ export const en = {
   'userActions.disableButton': 'Disable the account',
   'userActions.enableButton': 'Re-enable the account',
   'userActions.disableConfirmTitle': 'Disable this account?',
-  'userActions.disableConfirm': (pseudo: string) => `Disable ${pseudo}'s account? They will no longer be able to sign in, neither to Oliver Quiz nor to Quiz Forge and Periodic Quiz (the account is shared by all three), and their sessions are closed. Their history and data are kept, and you can re-enable the account at any time. If they are signed in right now, it may take up to an hour to cut them off.`,
+  'userActions.disableConfirm': (pseudo: string) => `Disable ${pseudo}'s account? They will no longer be able to sign in, neither to ${THIS_APP} nor to ${OTHER_APPS_EN} (the account is shared by all three), and their sessions are closed. Their history and data are kept, and you can re-enable the account at any time. If they are signed in right now, it may take up to an hour to cut them off.`,
   'userActions.disableConfirmLabel': 'Disable',
   'userActions.disabledNotice': 'Account disabled.',
   'userActions.enabledNotice': 'Account re-enabled.',
@@ -184,7 +189,7 @@ export const en = {
   'userActions.resetDone': (games: number, answers: number) => `Progress reset: ${games} game${games !== 1 ? 's' : ''} and ${answers} answer${answers !== 1 ? 's' : ''} erased.`,
   'userActions.resetNothing': 'Nothing to erase: no game recorded.',
   'userActions.deleteTitle': 'Delete the account',
-  'userActions.deleteWarning': 'Permanent deletion: their profile, games in every mode, question log, review progress and quiz access disappear. The account is shared by Oliver Quiz, Quiz Forge and Periodic Quiz: their data in those two applications is deleted too. The quizzes and guest links they created stay, without an author. For a reversible measure, disable the account instead.',
+  'userActions.deleteWarning': `Permanent deletion: their profile, games in every mode, question log, review progress and quiz access disappear. The account is shared by ${ALL_APPS_EN}: their data in those two applications is deleted too. The quizzes and guest links they created stay, without an author. For a reversible measure, disable the account instead.`,
   'userActions.deleteButton': '🗑️ Permanently delete this account',
   'userActions.confirmPrompt': 'To confirm, retype their nickname:',
   'userActions.confirmPlaceholder': 'Nickname',
@@ -465,10 +470,10 @@ export const en = {
   'profile.currentPasswordLabel': 'Current password',
   'profile.currentPasswordWrong': 'Wrong current password.',
   'profile.deleteTitle': 'Delete my account',
-  'profile.deleteWarning': 'This cannot be undone: your account, profile, history, answers and review progress are deleted. Quizzes you created (administration) are kept, without your name.',
+  'profile.deleteWarning': `This cannot be undone: your account, profile, history, answers and review progress are deleted. Your account is shared by ${ALL_APPS_EN}: your data in ${OTHER_APPS_EN} is deleted too. Quizzes you created (administration) are kept, without your name.`,
   'profile.deleteButton': '🗑️ Permanently delete my account',
   'profile.deleting': 'Deleting…',
-  'profile.deleteConfirm': 'Permanently delete your account and all your data? This cannot be undone.',
+  'profile.deleteConfirm': `Permanently delete your account and all your data, including in ${OTHER_APPS_EN} (the account is shared by all three applications)? This cannot be undone.`,
   'profile.deleteErrorLastAdmin': 'You are the only administrator: name another one before deleting your account.',
   'profile.deleteError': "Couldn't delete the account. Please try again later.",
   'profile.passwordTitle': 'Password',
