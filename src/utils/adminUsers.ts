@@ -9,6 +9,8 @@ export interface AdminUser {
   avatar: string
   email: string | null
   is_admin: boolean
+  /** C'est le compte de l'administrateur qui regarde : les garde-fous lui interdisent de se désactiver, se supprimer ou se rétrograder. */
+  is_self: boolean
   /** Création du compte. */
   created_at: string
   last_sign_in_at: string | null

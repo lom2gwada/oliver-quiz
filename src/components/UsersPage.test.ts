@@ -12,7 +12,7 @@ import { UserListView } from './UsersPage'
 import { UserDetailView } from './UserDetailPage'
 
 const user = (pseudo: string, overrides: Partial<AdminUser> = {}): AdminUser => ({
-  user_id: `id-${pseudo}`, pseudo, avatar: '🦊', email: `${pseudo.toLowerCase()}@example.com`, is_admin: false,
+  user_id: `id-${pseudo}`, pseudo, avatar: '🦊', email: `${pseudo.toLowerCase()}@example.com`, is_admin: false, is_self: false,
   created_at: '2026-08-26T12:00:00Z', last_sign_in_at: '2026-10-26T12:00:00Z', disabled: false, games_played: 0, last_played_at: null,
   ...overrides,
 })

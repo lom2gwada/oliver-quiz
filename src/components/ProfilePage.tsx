@@ -8,8 +8,9 @@ import { deleteMyAccount, verifyPassword } from '../utils/account'
 import { confirmDialog } from '../utils/confirmDialog'
 import { deleteAccountConfirm } from '../utils/confirmPresets'
 import { isPseudoDirty } from '../utils/profileDraft'
+import { AVATAR_OPTIONS } from '../utils/avatars'
 
-export const AVATAR_OPTIONS = ['🙂', '😎', '🤓', '🦊', '🐱', '🐶', '🦁', '🐼', '🚀', '🎯', '⭐', '🔥']
+export { AVATAR_OPTIONS }
 
 interface ProfilePageProps {
   profile: Profile | null

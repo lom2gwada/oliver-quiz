@@ -11,6 +11,10 @@ export function normalizeTitleForConfirmation(value: string): string {
     .toLowerCase()
 }
 
+/** Vrai si `typed` est le nom attendu (titre d'un quiz, pseudo d'un utilisateur…) au sens de `normalizeTitleForConfirmation` : il faut
+ * toujours l'avoir lu et retapé. Un champ vide ne correspond jamais. */
+export const matchesTypedName = (typed: string, expected: string): boolean => matchesQuizTitle(typed, expected)
+
 /** Vrai si `typed` est le titre du quiz (au sens de `normalizeTitleForConfirmation`). Un champ vide ne correspond
  * jamais, même pour un quiz dont le titre serait vide. */
 export function matchesQuizTitle(typed: string, title: string): boolean {

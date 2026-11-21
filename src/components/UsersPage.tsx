@@ -51,6 +51,7 @@ export function UserListView({ users, search, filter, sort, onSearchChange, onFi
                 <span className="users-avatar" aria-hidden="true">{user.avatar}</span>
                 <span className="overview-item-title">
                   {user.pseudo}
+                  {user.is_self && <span className="overview-badge users-badge-info">{t('users.badgeSelf')}</span>}
                   {user.is_admin && <span className="overview-badge">{t('users.badgeAdmin')}</span>}
                   {status === 'disabled' && <span className="overview-badge users-badge-disabled">{t('users.badgeDisabled')}</span>}
                   {status === 'never' && <span className="overview-badge users-badge-never">{t('users.badgeNever')}</span>}

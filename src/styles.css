@@ -288,6 +288,20 @@ header.app-header { display: block; padding-bottom: 1.4rem; margin-bottom: 2rem;
 .users-quiz-card:hover { border-color: var(--border); }
 .users-detail-head { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin: 0 0 1rem; }
 .users-detail-head .overview-badge { margin-left: 0; }
+.users-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin: 0 0 1rem; }
+.users-actions button { width: auto; }
+.users-edit-form { margin: 0 0 1.5rem; }
+.users-edit-form > button { justify-self: start; width: auto; }
+.users-access { display: grid; gap: .5rem; margin: 0 0 1.5rem; }
+.users-audit { display: grid; gap: .5rem; list-style: none; margin: 0 0 1.5rem; padding: 0; }
+.users-audit li { padding: .6rem .9rem; background: var(--surface); border: 1px solid var(--border); border-radius: .5rem; font-size: .88rem; }
+.users-audit time { display: block; color: var(--text-muted); font-size: .75rem; }
+.users-danger-block { display: grid; gap: .8rem; }
+.users-danger-block h4 { margin: 0; color: var(--danger-text); }
+.users-danger-block p { margin: 0; }
+.users-danger-block > button.danger { justify-self: start; width: auto; }
+.users-danger-block > button.danger:disabled { opacity: .45; cursor: not-allowed; }
+.users-danger-block + .users-danger-block { padding-top: 1rem; border-top: 1px solid var(--border); }
 .overview-item-description { color: var(--text-soft); font-size: .85rem; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .overview-subtitle { margin: 1.5rem 0 .8rem; color: var(--text-soft); font-size: 1rem; }
 .leaderboard-date { font-weight: 400; font-size: .8rem; color: var(--text-muted); white-space: nowrap; }

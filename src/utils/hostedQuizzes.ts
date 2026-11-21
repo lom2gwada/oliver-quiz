@@ -81,12 +81,13 @@ export async function fetchAccessGrants(quizId: string): Promise<string[]> {
   return (data ?? []).map((row) => row.user_id)
 }
 
+/** Accorde l'accès via `admin_set_user_quiz_access` (048) : l'action est inscrite au journal d'audit et reste sans effet si l'accès existe déjà. */
 export async function grantAccess(quizId: string, userId: string): Promise<void> {
-  const { error } = await supabase.from('quiz_access').insert({ quiz_id: quizId, user_id: userId })
+  const { error } = await supabase.rpc('admin_set_user_quiz_access', { p_user_id: userId, p_quiz_id: quizId, p_granted: true })
   if (error) throw error
 }
 
 export async function revokeAccess(quizId: string, userId: string): Promise<void> {
-  const { error } = await supabase.from('quiz_access').delete().eq('quiz_id', quizId).eq('user_id', userId)
+  const { error } = await supabase.rpc('admin_set_user_quiz_access', { p_user_id: userId, p_quiz_id: quizId, p_granted: false })
   if (error) throw error
 }

@@ -5,6 +5,7 @@ import { longDate } from '../utils/dateFormat'
 import { fetchAdminUserDetail, userStatus, visibleUserQuizzes, type AdminUserDetail, type UserDetailFailure } from '../utils/adminUsers'
 import { formatPercent } from '../utils/format'
 import { CoverageBar } from './CoverageBar'
+import { UserActionsPanel } from './UserActionsPanel'
 
 /** Le contenu d'une fiche utilisateur : informations, parties par mode et quiz. Sans état ni appel réseau. */
 export function UserDetailView({ detail }: { detail: AdminUserDetail }) {
@@ -16,6 +17,7 @@ export function UserDetailView({ detail }: { detail: AdminUserDetail }) {
 
   return <>
     <div className="users-detail-head">
+      {detail.is_self && <span className="overview-badge users-badge-info">{t('users.badgeSelf')}</span>}
       {detail.is_admin && <span className="overview-badge">{t('users.badgeAdmin')}</span>}
       {status === 'disabled' && <span className="overview-badge users-badge-disabled">{t('users.badgeDisabled')}</span>}
       {status === 'never' && <span className="overview-badge users-badge-never">{t('users.badgeNever')}</span>}
@@ -73,10 +75,12 @@ interface UserDetailPageProps {
   onBack: () => void
   /** Prévient l'appelant du pseudo dès que la fiche est chargée (fil d'Ariane). */
   onLoaded: (pseudo: string) => void
+  /** Le compte vient d'être supprimé : il n'y a plus de fiche à montrer. */
+  onDeleted: () => void
 }
 
 /** Administration : la fiche d'un utilisateur (`#/admin/utilisateurs/<id>`), en lecture seule. */
-export function UserDetailPage({ userId, onBack, onLoaded }: UserDetailPageProps) {
+export function UserDetailPage({ userId, onBack, onLoaded, onDeleted }: UserDetailPageProps) {
   const { t } = useTranslation()
   const [detail, setDetail] = useState<AdminUserDetail | null>(null)
   const [failure, setFailure] = useState<UserDetailFailure | null>(null)
@@ -91,6 +95,12 @@ export function UserDetailPage({ userId, onBack, onLoaded }: UserDetailPageProps
     return () => { current = false }
   }
   useEffect(load, [userId])
+  // Après une action : recharge la fiche sans la vider, pour ne pas perdre ce que le panneau d'actions est en train d'afficher.
+  const refresh = async () => {
+    const loaded = await fetchAdminUserDetail(userId)
+    setDetail(loaded)
+    onLoaded(loaded.pseudo)
+  }
 
   return <section className="stats-page">
     <div className="stats-header">
@@ -101,5 +111,6 @@ export function UserDetailPage({ userId, onBack, onLoaded }: UserDetailPageProps
     {failure === 'failed' && <p className="alert" role="alert">{t('userDetail.errorLoad')} <button type="button" className="secondary alert-retry" onClick={load}>{t('start.retry')}</button></p>}
     {!detail && !failure && <p>{t('common.loading')}</p>}
     {detail && <UserDetailView detail={detail} />}
+    {detail && <UserActionsPanel detail={detail} onChanged={refresh} onDeleted={onDeleted} />}
   </section>
 }
