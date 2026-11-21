@@ -1,11 +1,13 @@
 /** Pages de l'appli. Chacune a une URL (`#/…`, compatible GitHub Pages : seul le fragment change, le serveur ne voit
  * jamais le chemin) — voir `routeToHash` / `hashToRoute`. */
-export type View = 'start' | 'quiz' | 'results' | 'streak' | 'streakResults' | 'timed' | 'timedResults' | 'quizzes' | 'quizDetail' | 'overview' | 'history' | 'leaderboard' | 'profile' | 'about'
+export type View = 'start' | 'quiz' | 'results' | 'streak' | 'streakResults' | 'timed' | 'timedResults' | 'quizzes' | 'quizDetail' | 'overview' | 'history' | 'leaderboard' | 'profile' | 'about' | 'users' | 'userDetail'
 
 export interface Route {
   view: View
   /** Quiz hébergé concerné par la page, `null` si l'URL n'en désigne pas (le quiz actif est alors conservé). */
   quizId: string | null
+  /** Utilisateur concerné, seulement pour la fiche d'un utilisateur (`userDetail`, administration). */
+  userId?: string
 }
 
 /** Pages dont l'état n'existe qu'en mémoire : une partie en cours et les écrans de résultat (réponses, questions
@@ -31,11 +33,14 @@ const VIEW_BY_SEGMENT = new Map<string, View>(Object.entries(QUIZ_SEGMENTS).map(
 const encode = (id: string) => encodeURIComponent(id)
 
 /** L'URL d'une page : `#/` (accueil), `#/quiz/<id>` (accueil d'un quiz), `#/quiz/<id>/historique`, `#/classement`,
- * `#/mes-quiz`, `#/profil`, `#/a-propos`, `#/admin` et `#/admin/<id>`. `quizId` est ignoré pour les pages qui n'en ont pas. */
-export function routeToHash(view: View, quizId: string | null): string {
+ * `#/mes-quiz`, `#/profil`, `#/a-propos`, `#/admin`, `#/admin/<id>`, `#/admin/utilisateurs` et `#/admin/utilisateurs/<id>`. `quizId` est
+ * ignoré pour les pages qui n'en ont pas, `userId` pour toutes sauf la fiche d'un utilisateur. */
+export function routeToHash(view: View, quizId: string | null, userId: string | null = null): string {
   if (view === 'overview') return '#/mes-quiz'
   if (view === 'profile') return '#/profil'
   if (view === 'about') return '#/a-propos'
+  if (view === 'users') return '#/admin/utilisateurs'
+  if (view === 'userDetail') return userId ? `#/admin/utilisateurs/${encode(userId)}` : '#/admin/utilisateurs'
   if (view === 'quizzes') return '#/admin'
   if (view === 'quizDetail') return quizId ? `#/admin/${encode(quizId)}` : '#/admin'
   if (view === 'start') return quizId ? `#/quiz/${encode(quizId)}` : '#/'
@@ -61,6 +66,12 @@ export function hashToRoute(hash: string): Route | null {
     if (first === 'admin') return { view: 'quizzes', quizId: null }
     const view = VIEW_BY_SEGMENT.get(first)
     return view ? { view, quizId: null } : null
+  }
+  // « utilisateurs » avant l'identifiant d'un quiz : `#/admin/<id>` est la page d'un quiz, `#/admin/utilisateurs[/<id>]` celle des utilisateurs.
+  if (first === 'admin' && second === 'utilisateurs') {
+    if (parts.length === 2) return { view: 'users', quizId: null }
+    const userId = parts.length === 3 ? decode(third) : null
+    return userId ? { view: 'userDetail', quizId: null, userId } : null
   }
   const id = decode(second)
   if (id === null || id === '') return null

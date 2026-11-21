@@ -8,6 +8,8 @@ interface QuizListPageProps {
   hostedQuizzes: HostedQuizSummary[]
   isAdmin: boolean
   onBack: () => void
+  /** Administration des utilisateurs (liste et fiches). */
+  onViewUsers: () => void
   onSelectQuiz: (id: string) => void
   onCreateQuiz: (title: string, author: string, description: string, themeLabels: string[], language: string) => Promise<void>
   createError: string
@@ -33,12 +35,15 @@ function downloadTemplate(language: Parameters<typeof buildQuizTemplate>[0]): vo
 
 /** Page générale : liste (tuiles) des quiz hébergés, création et import/mise à jour par JSON.
  * Cliquer une tuile sélectionne ce quiz comme quiz actif puis navigue vers `QuizDetailPage`. */
-export function QuizListPage({ hostedQuizzes, isAdmin, onBack, onSelectQuiz, onCreateQuiz, createError, onPublish, publishError, publishSuccess, publishWarning }: QuizListPageProps) {
+export function QuizListPage({ hostedQuizzes, isAdmin, onBack, onViewUsers, onSelectQuiz, onCreateQuiz, createError, onPublish, publishError, publishSuccess, publishWarning }: QuizListPageProps) {
   const { t, language } = useTranslation()
   return <section className="stats-page">
     <div className="stats-header">
       <h2>{t('nav.admin')}</h2>
-      <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
+      <div className="stats-header-actions">
+        {isAdmin && <button type="button" className="secondary" onClick={onViewUsers}>{t('nav.users')}</button>}
+        <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
+      </div>
     </div>
     <h3 className="stats-group-title">{t('admin.hostedQuizzesTitle')}</h3>
     {hostedQuizzes.length === 0

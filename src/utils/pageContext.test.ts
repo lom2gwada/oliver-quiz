@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { breadcrumbFor, isPlayingView, isQuizPage, type CrumbLabels } from './pageContext'
 import type { View } from './routes'
 
-const labels: CrumbLabels = { home: 'Accueil', overview: 'Mes quiz', profile: 'Profil', about: 'À propos', admin: 'Administration', history: 'Historique', leaderboard: 'Classement', quizTitle: 'Java — Niveau Expert' }
-const ALL_VIEWS: View[] = ['start', 'quiz', 'results', 'streak', 'streakResults', 'timed', 'timedResults', 'quizzes', 'quizDetail', 'overview', 'history', 'leaderboard', 'profile']
+const labels: CrumbLabels = { home: 'Accueil', overview: 'Mes quiz', profile: 'Profil', about: 'À propos', admin: 'Administration', users: 'Utilisateurs', userName: 'Alice', history: 'Historique', leaderboard: 'Classement', quizTitle: 'Java — Niveau Expert' }
+const ALL_VIEWS: View[] = ['start', 'quiz', 'results', 'streak', 'streakResults', 'timed', 'timedResults', 'quizzes', 'quizDetail', 'overview', 'history', 'leaderboard', 'profile', 'users', 'userDetail']
 
 describe('isQuizPage', () => {
   it('is true only for the pages tied to the active quiz', () => {
@@ -11,7 +11,7 @@ describe('isQuizPage', () => {
   })
 
   it('is false for the pages that are not about a quiz', () => {
-    for (const view of ['overview', 'profile', 'quizzes', 'quizDetail'] as View[]) expect(isQuizPage(view)).toBe(false)
+    for (const view of ['overview', 'profile', 'quizzes', 'quizDetail', 'users', 'userDetail'] as View[]) expect(isQuizPage(view)).toBe(false)
   })
 })
 
@@ -41,6 +41,20 @@ describe('breadcrumbFor', () => {
       { label: 'Java — Niveau Expert' },
     ])
     expect(breadcrumbFor('quizzes', labels, 'q1')).toEqual([{ label: 'Accueil', href: '#/quiz/q1' }, { label: 'Administration' }])
+  })
+
+  it('puts the users pages under the administration', () => {
+    expect(breadcrumbFor('users', labels, 'q1')).toEqual([
+      { label: 'Accueil', href: '#/quiz/q1' },
+      { label: 'Administration', href: '#/admin' },
+      { label: 'Utilisateurs' },
+    ])
+    expect(breadcrumbFor('userDetail', labels, 'q1')).toEqual([
+      { label: 'Accueil', href: '#/quiz/q1' },
+      { label: 'Administration', href: '#/admin' },
+      { label: 'Utilisateurs', href: '#/admin/utilisateurs' },
+      { label: 'Alice' },
+    ])
   })
 
   it('never makes the current page a link', () => {

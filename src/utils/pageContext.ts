@@ -21,6 +21,10 @@ export interface CrumbLabels {
   profile: string
   about: string
   admin: string
+  /** Liste des utilisateurs, dans l'administration. */
+  users: string
+  /** Nom de l'utilisateur dont la fiche est ouverte. */
+  userName: string
   history: string
   leaderboard: string
   /** Titre du quiz actif, pour la page de détail d'un quiz dans l'administration. */
@@ -37,6 +41,8 @@ export function breadcrumbFor(view: View, labels: CrumbLabels, quizId: string | 
     case 'profile': return [home, { label: labels.profile }]
     case 'about': return [home, { label: labels.about }]
     case 'quizzes': return [home, { label: labels.admin }]
+    case 'users': return [home, { label: labels.admin, href: routeToHash('quizzes', null) }, { label: labels.users }]
+    case 'userDetail': return [home, { label: labels.admin, href: routeToHash('quizzes', null) }, { label: labels.users, href: routeToHash('users', null) }, { label: labels.userName }]
     case 'quizDetail': return [home, { label: labels.admin, href: routeToHash('quizzes', null) }, { label: labels.quizTitle }]
     case 'history': return [home, { label: labels.history }]
     case 'leaderboard': return [home, { label: labels.leaderboard }]
