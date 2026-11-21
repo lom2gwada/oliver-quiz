@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { classifyUserDetailError, filterUsers, sortUsers, summarizeUsers, userStatus, visibleUserQuizzes, type AdminUser, type AdminUserQuiz } from './adminUsers'
 
 const user = (pseudo: string, overrides: Partial<AdminUser> = {}): AdminUser => ({
-  user_id: `id-${pseudo}`, pseudo, avatar: '🙂', email: `${pseudo.toLowerCase()}@example.com`, is_admin: false,
+  user_id: `id-${pseudo}`, pseudo, avatar: '🙂', email: `${pseudo.toLowerCase()}@example.com`, is_admin: false, is_self: false,
   created_at: '2026-08-01T10:00:00Z', last_sign_in_at: '2026-10-01T10:00:00Z', disabled: false, games_played: 0, last_played_at: null,
   ...overrides,
 })

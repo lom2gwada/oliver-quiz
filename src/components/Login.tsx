@@ -17,7 +17,8 @@ export function Login({ inviteLinkError = false }: { inviteLinkError?: boolean }
     setLoading(true)
     setErrorKey(null)
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-    if (signInError) setErrorKey('auth.emailOrPasswordError')
+    // Le serveur n'indique un compte désactivé qu'une fois le mot de passe vérifié : ce message ne révèle rien à qui ne le connaît pas.
+    if (signInError) setErrorKey(signInError.code === 'user_banned' ? 'auth.accountDisabled' : 'auth.emailOrPasswordError')
     setLoading(false)
   }
 
