@@ -3,7 +3,10 @@ import { supabase } from './supabase'
 
 /** Pourquoi une action d'administration a été refusée (voir `048_admin_user_actions.sql`) : les garde-fous sont en base, ce
  * sont leurs messages qu'on reconnaît ici. */
-export type UserActionFailure = 'forbidden' | 'notFound' | 'self' | 'lastAdmin' | 'invalidPseudo' | 'invalidAvatar' | 'failed'
+export type UserActionFailure =
+  | 'forbidden' | 'notFound' | 'self' | 'lastAdmin' | 'invalidPseudo' | 'invalidAvatar' | 'failed'
+  // Refus de la fonction Edge `admin-users` (inviter, renvoyer, réinitialiser, changer l'email) :
+  | 'invalidEmail' | 'emailExists' | 'rateLimited' | 'notPending' | 'notActive' | 'disabled' | 'noEmail' | 'sendFailed' | 'unavailable'
 
 export function classifyUserActionError(message: string | undefined): UserActionFailure {
   const text = message ?? ''
@@ -25,6 +28,15 @@ export const USER_ACTION_ERROR_KEYS: Record<UserActionFailure, TranslationKey> =
   invalidPseudo: 'userActions.errorPseudo',
   invalidAvatar: 'userActions.errorAvatar',
   failed: 'userActions.errorFailed',
+  invalidEmail: 'userAccounts.errorInvalidEmail',
+  emailExists: 'userAccounts.errorEmailExists',
+  rateLimited: 'userAccounts.errorRateLimited',
+  notPending: 'userAccounts.errorNotPending',
+  notActive: 'userAccounts.errorNotActive',
+  disabled: 'userAccounts.errorDisabled',
+  noEmail: 'userAccounts.errorNoEmail',
+  sendFailed: 'userAccounts.errorSendFailed',
+  unavailable: 'userAccounts.errorUnavailable',
 }
 
 /** Erreur d'une action : `failure` dit pourquoi, pour choisir le message. */
@@ -65,7 +77,56 @@ export const resetUserProgress = async (userId: string): Promise<ResetCounts | n
 /** Suppression définitive du compte (et de ses données dans toutes les applications du projet). */
 export const deleteUser = (userId: string) => call<void>('admin_delete_user', { p_user_id: userId })
 
-export type AuditAction = 'disable' | 'enable' | 'update_profile' | 'set_admin' | 'reset_progress' | 'delete_user' | 'grant_access' | 'revoke_access'
+/** Le code `{ error }` d'un refus de la fonction Edge, ou, faute de code (le serveur n'a pas trouvé la fonction : 404 sans corps
+ * de la nôtre), « indisponible » — typiquement parce qu'elle n'est pas déployée. */
+export function classifyAccountCode(code: unknown, status?: number): UserActionFailure {
+  switch (code) {
+    case 'invalid_email': return 'invalidEmail'
+    case 'email_exists': return 'emailExists'
+    case 'rate_limited': return 'rateLimited'
+    case 'not_pending': return 'notPending'
+    case 'not_active': return 'notActive'
+    case 'disabled': return 'disabled'
+    case 'no_email': return 'noEmail'
+    case 'not_found': return 'notFound'
+    case 'self_forbidden': return 'self'
+    case 'unauthorized': case 'forbidden': case 'forbidden_origin': return 'forbidden'
+    case 'send_failed': return 'sendFailed'
+    default: return status === 404 ? 'unavailable' : 'failed'
+  }
+}
+
+/** Lit le refus d'un appel à la fonction Edge : le corps JSON de la réponse HTTP s'il y en a un, sinon la fonction est injoignable. */
+export async function readFunctionError(error: unknown): Promise<UserActionFailure> {
+  const context = (error as { context?: { status?: number; json?: () => Promise<unknown> } } | null)?.context
+  if (!context || typeof context.json !== 'function') return 'unavailable'
+  let payload: unknown = null
+  try { payload = await context.json() } catch { /* corps absent ou illisible : on s'en tient au statut */ }
+  return classifyAccountCode((payload as { error?: unknown } | null)?.error, context.status)
+}
+
+/** Appelle la fonction Edge `admin-users` (`supabase/functions/admin-users`, #231) : inviter, renvoyer une invitation, envoyer un
+ * lien de réinitialisation, changer l'email. Elle seule détient la clé de service. Jamais rejouée toute seule : un email part. */
+async function callAccountFunction(body: Record<string, unknown>): Promise<void> {
+  const { error } = await supabase.functions.invoke('admin-users', { body })
+  if (error) throw new UserActionError(await readFunctionError(error))
+}
+
+/** Invite une adresse : le compte est créé et l'invitation partie par email ; la personne choisit son mot de passe. */
+export const inviteUser = (email: string) => callAccountFunction({ action: 'invite_user', email })
+
+/** Renvoie l'invitation d'un compte qui ne l'a pas encore acceptée. */
+export const resendInvite = (userId: string) => callAccountFunction({ action: 'resend_invite', userId })
+
+/** Envoie à un compte actif un lien pour choisir un nouveau mot de passe. */
+export const sendPasswordReset = (userId: string) => callAccountFunction({ action: 'send_password_reset', userId })
+
+/** Change l'adresse de connexion d'un compte (jamais le sien) ; effective tout de suite. */
+export const changeUserEmail = (userId: string, email: string) => callAccountFunction({ action: 'change_email', userId, email })
+
+export type AuditAction =
+  | 'disable' | 'enable' | 'update_profile' | 'set_admin' | 'reset_progress' | 'delete_user' | 'grant_access' | 'revoke_access'
+  | 'invite_user' | 'resend_invite' | 'send_password_reset' | 'change_email'
 
 /** Une ligne du journal d'audit : qui a fait quoi, sur qui, quand — avec les pseudos de l'époque, jamais d'email. */
 export interface AuditEntry {
@@ -106,6 +167,10 @@ export function describeAuditEntry(entry: AuditEntry, t: Translate): string {
     case 'revoke_access': return t('audit.revokeAccess', admin, asText(details.quiz_title))
     case 'reset_progress': return t('audit.resetProgress', admin, asNumber(details.quiz_results) + asNumber(details.streak_results) + asNumber(details.timed_results), asNumber(details.question_results))
     case 'delete_user': return t('audit.deleteUser', admin)
+    case 'invite_user': return t('audit.invite', admin)
+    case 'resend_invite': return t('audit.resendInvite', admin)
+    case 'send_password_reset': return t('audit.sendReset', admin)
+    case 'change_email': return t('audit.changeEmail', admin)
     case 'update_profile': {
       const pseudo = asChange(details.pseudo)
       const avatar = asChange(details.avatar)

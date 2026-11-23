@@ -8,10 +8,11 @@ const order = vi.hoisted(() => vi.fn(() => ({ limit })))
 const eq = vi.hoisted(() => vi.fn(() => ({ order })))
 const select = vi.hoisted(() => vi.fn(() => ({ eq })))
 const from = vi.hoisted(() => vi.fn(() => ({ select })))
-vi.mock('./supabase', () => ({ supabase: { rpc, from } }))
+const invoke = vi.hoisted(() => vi.fn())
+vi.mock('./supabase', () => ({ supabase: { rpc, from, functions: { invoke } } }))
 
 import {
-  classifyUserActionError, deleteUser, describeAuditEntry, fetchUserAuditLog, resetUserProgress, setUserAdmin, setUserDisabled, setUserQuizAccess, updateUserProfile,
+  changeUserEmail, classifyAccountCode, classifyUserActionError, deleteUser, describeAuditEntry, fetchUserAuditLog, inviteUser, readFunctionError, resendInvite, resetUserProgress, sendPasswordReset, setUserAdmin, setUserDisabled, setUserQuizAccess, updateUserProfile,
   UserActionError, USER_ACTION_ERROR_KEYS, type AuditEntry, type UserActionFailure,
 } from './adminUserActions'
 
@@ -51,7 +52,7 @@ describe('USER_ACTION_ERROR_KEYS', () => {
       expect(typeof (fr as Record<string, unknown>)[key]).toBe('string')
       expect(typeof (en as Record<string, unknown>)[key]).toBe('string')
     }
-    expect(Object.keys(USER_ACTION_ERROR_KEYS).sort()).toEqual(['failed', 'forbidden', 'invalidAvatar', 'invalidPseudo', 'lastAdmin', 'notFound', 'self'])
+    expect(Object.keys(USER_ACTION_ERROR_KEYS).sort()).toEqual(['disabled', 'emailExists', 'failed', 'forbidden', 'invalidAvatar', 'invalidEmail', 'invalidPseudo', 'lastAdmin', 'noEmail', 'notActive', 'notFound', 'notPending', 'rateLimited', 'self', 'sendFailed', 'unavailable'])
   })
 })
 
@@ -90,6 +91,86 @@ describe('the actions call the right database function', () => {
     rpc.mockResolvedValue({ data: null, error: { message: 'Failed to fetch' } })
     await expect(deleteUser('u1')).rejects.toBeInstanceOf(UserActionError)
     expect(rpc).toHaveBeenCalledTimes(1)
+  })
+})
+
+/** Une réponse HTTP d'erreur de la fonction Edge, telle que la présente le client Supabase (`FunctionsHttpError.context`). */
+const httpError = (status: number, payload: unknown, readable = true) => ({ context: { status, json: readable ? async () => payload : async () => { throw new Error('no body') } } })
+
+describe('classifyAccountCode', () => {
+  it.each([
+    ['invalid_email', undefined, 'invalidEmail'],
+    ['email_exists', 409, 'emailExists'],
+    ['rate_limited', 429, 'rateLimited'],
+    ['not_pending', 409, 'notPending'],
+    ['not_active', 409, 'notActive'],
+    ['disabled', 409, 'disabled'],
+    ['no_email', 409, 'noEmail'],
+    ['not_found', 404, 'notFound'],
+    ['self_forbidden', 403, 'self'],
+    ['forbidden', 403, 'forbidden'],
+    ['unauthorized', 401, 'forbidden'],
+    ['forbidden_origin', 403, 'forbidden'],
+    ['send_failed', 502, 'sendFailed'],
+    ['internal', 500, 'failed'],
+    [undefined, 500, 'failed'],
+    [undefined, 404, 'unavailable'],
+  ] as [unknown, number | undefined, UserActionFailure][])('reads %s (status %s) as %s', (code, status, expected) => {
+    expect(classifyAccountCode(code, status)).toBe(expected)
+  })
+
+  it('prefers the code of the function over the status: a 404 that carries our own code is not « unavailable »', () => {
+    expect(classifyAccountCode('not_found', 404)).toBe('notFound')
+  })
+})
+
+describe('readFunctionError', () => {
+  it('reads the error code in the body of the response', async () => {
+    expect(await readFunctionError(httpError(409, { error: 'email_exists' }))).toBe('emailExists')
+  })
+
+  it('says the function is unavailable when the server did not find it (404 without our code)', async () => {
+    expect(await readFunctionError(httpError(404, { code: 'NOT_FOUND', message: 'Requested function was not found' }))).toBe('unavailable')
+  })
+
+  it('falls back on the status when the body cannot be read', async () => {
+    expect(await readFunctionError(httpError(404, null, false))).toBe('unavailable')
+    expect(await readFunctionError(httpError(500, null, false))).toBe('failed')
+  })
+
+  it('says it is unavailable when there was no response at all (network, relay)', async () => {
+    expect(await readFunctionError(new Error('Failed to send a request to the Edge Function'))).toBe('unavailable')
+    expect(await readFunctionError(null)).toBe('unavailable')
+  })
+})
+
+describe('the account actions call the Edge function', () => {
+  beforeEach(() => { invoke.mockReset(); invoke.mockResolvedValue({ data: { ok: true }, error: null }) })
+
+  it('with the action and its arguments', async () => {
+    await inviteUser('new@example.com')
+    await resendInvite('u1')
+    await sendPasswordReset('u1')
+    await changeUserEmail('u1', 'new@example.com')
+    expect(invoke.mock.calls).toEqual([
+      ['admin-users', { body: { action: 'invite_user', email: 'new@example.com' } }],
+      ['admin-users', { body: { action: 'resend_invite', userId: 'u1' } }],
+      ['admin-users', { body: { action: 'send_password_reset', userId: 'u1' } }],
+      ['admin-users', { body: { action: 'change_email', userId: 'u1', email: 'new@example.com' } }],
+    ])
+  })
+
+  it('raise a UserActionError that says why the function refused', async () => {
+    invoke.mockResolvedValue({ data: null, error: httpError(409, { error: 'email_exists' }) })
+    const failure = await inviteUser('taken@example.com').catch((error: unknown) => error)
+    expect(failure).toBeInstanceOf(UserActionError)
+    expect((failure as UserActionError).failure).toBe('emailExists')
+  })
+
+  it('are never retried by themselves: an email must not leave twice', async () => {
+    invoke.mockResolvedValue({ data: null, error: httpError(502, { error: 'send_failed' }) })
+    await expect(inviteUser('a@b.fr')).rejects.toBeInstanceOf(UserActionError)
+    expect(invoke).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -144,6 +225,15 @@ describe('describeAuditEntry', () => {
     const both = { pseudo: { from: 'lom2gwada', to: 'Zoé' }, avatar: { from: '😎', to: '🦊' } }
     expect(describeAuditEntry(entry('update_profile', both), tFr)).toBe('Olivier a modifié le profil : pseudo « lom2gwada » → « Zoé », avatar 😎 → 🦊')
     expect(describeAuditEntry(entry('update_profile', { avatar: { from: '😎', to: '🦊' } }), tFr)).toBe('Olivier a modifié le profil : avatar 😎 → 🦊')
+  })
+
+  it('names the account actions of the Edge function', () => {
+    expect(describeAuditEntry(entry('invite_user'), tFr)).toBe("Olivier a invité l'utilisateur")
+    expect(describeAuditEntry(entry('resend_invite'), tFr)).toBe("Olivier a renvoyé l'invitation")
+    expect(describeAuditEntry(entry('send_password_reset'), tFr)).toBe('Olivier a envoyé un lien de réinitialisation du mot de passe')
+    expect(describeAuditEntry(entry('change_email'), tFr)).toBe("Olivier a changé l'adresse email du compte")
+    expect(describeAuditEntry(entry('invite_user'), tEn)).toBe('Olivier invited the user')
+    expect(describeAuditEntry(entry('change_email'), tEn)).toBe("Olivier changed the account's email address")
   })
 
   it('is also written in English', () => {

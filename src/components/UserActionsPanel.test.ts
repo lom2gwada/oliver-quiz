@@ -15,6 +15,7 @@ vi.mock('../utils/confirmDialog', () => ({ confirmDialog: vi.fn() }))
 vi.mock('../utils/adminUserActions', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../utils/adminUserActions')>()),
   setUserDisabled: vi.fn(), setUserAdmin: vi.fn(), updateUserProfile: vi.fn(), setUserQuizAccess: vi.fn(), resetUserProgress: vi.fn(), deleteUser: vi.fn(), fetchUserAuditLog: vi.fn(),
+  resendInvite: vi.fn(), sendPasswordReset: vi.fn(), changeUserEmail: vi.fn(),
 }))
 
 import { confirmDialog } from '../utils/confirmDialog'
@@ -61,7 +62,7 @@ const noticeText = () => container.querySelector('[role=status].profile-saved, .
 beforeEach(() => {
   vi.clearAllMocks()
   mocked(actions.fetchUserAuditLog).mockResolvedValue([])
-  for (const name of ['setUserDisabled', 'setUserAdmin', 'updateUserProfile', 'setUserQuizAccess', 'deleteUser'] as const) mocked(actions[name]).mockResolvedValue(null)
+  for (const name of ['setUserDisabled', 'setUserAdmin', 'updateUserProfile', 'setUserQuizAccess', 'deleteUser', 'resendInvite', 'sendPasswordReset', 'changeUserEmail'] as const) mocked(actions[name]).mockResolvedValue(null)
   mocked(actions.resetUserProgress).mockResolvedValue({ quiz_results: 3, question_results: 20, streak_results: 0, timed_results: 0, question_progress: 5 })
   container = document.createElement('div')
   document.body.appendChild(container)
@@ -176,7 +177,7 @@ describe('UserActionsPanel — profile', () => {
     await type(container.querySelector('.users-edit-form input:not([type=radio])') as HTMLInputElement, '  Alice 2  ')
     expect(save.disabled).toBe(false)
     await act(async () => { radio('🚀')!.click() })
-    await act(async () => { container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
+    await act(async () => { container.querySelector('form.users-edit-form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
     expect(actions.updateUserProfile).toHaveBeenCalledWith('u-alice', '  Alice 2  ', '🚀')
     expect(noticeText()).toBe('Profil enregistré ✓')
   })
@@ -185,7 +186,7 @@ describe('UserActionsPanel — profile', () => {
     mocked(actions.updateUserProfile).mockRejectedValue(new actions.UserActionError('invalidPseudo'))
     await mount()
     await type(container.querySelector('.users-edit-form input:not([type=radio])') as HTMLInputElement, 'x')
-    await act(async () => { container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
+    await act(async () => { container.querySelector('form.users-edit-form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
     expect(alertText()).toBe('Le pseudo doit faire entre 1 et 30 caractères.')
   })
 
@@ -193,6 +194,106 @@ describe('UserActionsPanel — profile', () => {
     await mount(detail({ avatar: '🦄' }))
     expect(radio('🦄')).toBeDefined()
     expect(radio('🦄')!.checked).toBe(true)
+  })
+})
+
+const submit = (selector: string) => act(async () => { container.querySelector(selector)!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
+const emailInput = () => container.querySelector('.users-email-form input') as HTMLInputElement
+
+describe('UserActionsPanel — account and sign-in', () => {
+  it('offers to resend the invitation of an account that never signed in, and nothing about passwords', async () => {
+    await mount(detail({ last_sign_in_at: null }))
+    expect(buttonByText("Renvoyer l'invitation")).toBeDefined()
+    expect(buttonByText('lien de réinitialisation')).toBeUndefined()
+    await click(buttonByText("Renvoyer l'invitation"))
+    expect(actions.resendInvite).toHaveBeenCalledWith('u-alice')
+    expect(noticeText()).toBe('Invitation renvoyée à alice@example.com.')
+    expect(onChanged).toHaveBeenCalledTimes(1)
+  })
+
+  it('offers a password reset link to an account that has signed in, and nothing about invitations', async () => {
+    await mount()
+    expect(buttonByText("Renvoyer l'invitation")).toBeUndefined()
+    await click(buttonByText('Envoyer un lien de réinitialisation du mot de passe'))
+    expect(actions.sendPasswordReset).toHaveBeenCalledWith('u-alice')
+    expect(noticeText()).toBe('Lien de réinitialisation envoyé à alice@example.com.')
+  })
+
+  it('offers neither for a disabled account, which can still have its address changed', async () => {
+    await mount(detail({ disabled: true }))
+    expect(buttonByText("Renvoyer l'invitation")).toBeUndefined()
+    expect(buttonByText('lien de réinitialisation')).toBeUndefined()
+    expect(container.querySelector('.users-email-form')).not.toBeNull()
+  })
+
+  it('shows what the function refused, in plain words', async () => {
+    mocked(actions.resendInvite).mockRejectedValue(new actions.UserActionError('notPending'))
+    await mount(detail({ last_sign_in_at: null }))
+    await click(buttonByText("Renvoyer l'invitation"))
+    expect(alertText()).toBe("Cette personne a déjà activé son compte : il n'y a plus d'invitation à renvoyer.")
+    expect(onChanged).not.toHaveBeenCalled()
+    mocked(actions.resendInvite).mockRejectedValue(new actions.UserActionError('rateLimited'))
+    await click(buttonByText("Renvoyer l'invitation"))
+    expect(alertText()).toContain('Trop d')
+  })
+
+  it('says the function is probably not deployed when it cannot be reached', async () => {
+    mocked(actions.sendPasswordReset).mockRejectedValue(new actions.UserActionError('unavailable'))
+    await mount()
+    await click(buttonByText('Envoyer un lien de réinitialisation du mot de passe'))
+    expect(alertText()).toContain('déployée')
+  })
+
+  it('asks for confirmation before changing the address, saying it is immediate and shared', async () => {
+    confirm.mockResolvedValue(false)
+    await mount()
+    await type(emailInput(), '  New@Example.com ')
+    await submit('form.users-email-form')
+    expect(confirm).toHaveBeenCalledTimes(1)
+    const { message } = confirm.mock.calls[0][0] as { message: string }
+    expect(message).toContain('Alice')
+    expect(message).toContain('New@Example.com'.trim())
+    expect(message).toContain('tout de suite')
+    expect(message).toContain('Quiz Forge et Periodic Quiz')
+    expect(actions.changeUserEmail).not.toHaveBeenCalled()
+    // Un champ type="email" retire lui-même les espaces autour de la valeur (spécification HTML).
+    expect(emailInput().value).toBe('New@Example.com')
+  })
+
+  it('changes the address once confirmed, reloads the page and empties the field', async () => {
+    confirm.mockResolvedValue(true)
+    await mount()
+    await type(emailInput(), 'new@example.com')
+    await submit('form.users-email-form')
+    expect(actions.changeUserEmail).toHaveBeenCalledWith('u-alice', 'new@example.com')
+    expect(noticeText()).toBe('Adresse email modifiée.')
+    expect(onChanged).toHaveBeenCalledTimes(1)
+    expect(emailInput().value).toBe('')
+  })
+
+  it('keeps what was typed and explains when the address is refused', async () => {
+    confirm.mockResolvedValue(true)
+    mocked(actions.changeUserEmail).mockRejectedValue(new actions.UserActionError('emailExists'))
+    await mount()
+    await type(emailInput(), 'taken@example.com')
+    await submit('form.users-email-form')
+    expect(alertText()).toBe('Un compte existe déjà avec cette adresse.')
+    expect(emailInput().value).toBe('taken@example.com')
+    expect(onChanged).not.toHaveBeenCalled()
+  })
+
+  it('keeps the Change button disabled while the field is empty', async () => {
+    await mount()
+    expect(buttonByText("Changer l'email")!.disabled).toBe(true)
+    await type(emailInput(), 'a@b.fr')
+    expect(buttonByText("Changer l'email")!.disabled).toBe(false)
+  })
+
+  it('hides the whole section on the administrator’s own account', async () => {
+    await mount(detail({ is_self: true, last_sign_in_at: null }))
+    expect(container.querySelector('.users-email-form')).toBeNull()
+    expect(buttonByText("Renvoyer l'invitation")).toBeUndefined()
+    expect(container.textContent).not.toContain('Compte et connexion')
   })
 })
 

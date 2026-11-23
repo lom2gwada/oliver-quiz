@@ -289,6 +289,10 @@ header.app-header { display: block; padding-bottom: 1.4rem; margin-bottom: 2rem;
 .users-detail-head { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin: 0 0 1rem; }
 .users-detail-head .overview-badge { margin-left: 0; }
 .users-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin: 0 0 1rem; }
+.users-invite-form { margin: 0 0 1.5rem; padding: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: .6rem; }
+.users-invite-form .stats-group-title { margin: 0; }
+.users-invite-form > button, .users-email-form > button { justify-self: start; width: auto; }
+.users-email-form { margin: 0 0 1.5rem; }
 .users-actions button { width: auto; }
 .users-edit-form { margin: 0 0 1.5rem; }
 .users-edit-form > button { justify-self: start; width: auto; }

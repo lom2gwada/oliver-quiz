@@ -1,0 +1,8 @@
+# Configuration du CLI Supabase, utile ici pour déployer la fonction Edge `admin-users` (voir le README, « Fonction Edge »).
+# Les migrations de ce dépôt (supabase/NNN_*.sql) sont appliquées à la main dans le SQL Editor : elles ne passent pas par ce CLI.
+project_id = "oliver-quiz"
+
+[functions.admin-users]
+# Le serveur rejette les appels sans jeton valide avant même d'exécuter la fonction ; elle vérifie ensuite que l'appelant est
+# administrateur.
+verify_jwt = true

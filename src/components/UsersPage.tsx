@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from '../i18n'
 import { fetchAdminUsers, filterUsers, sortUsers, summarizeUsers, userStatus, USER_FILTERS, USER_SORTS, type AdminUser, type UserFilter, type UserSort } from '../utils/adminUsers'
 import { longDate } from '../utils/dateFormat'
+import { InviteUserForm } from './InviteUserForm'
 
 interface UserListViewProps {
   users: AdminUser[]
@@ -78,6 +79,7 @@ export function UsersPage({ onBack, onOpenUser }: { onBack: () => void; onOpenUs
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<UserFilter>('all')
   const [sort, setSort] = useState<UserSort>('pseudo')
+  const [inviting, setInviting] = useState(false)
 
   const load = () => {
     setError(false)
@@ -88,8 +90,12 @@ export function UsersPage({ onBack, onOpenUser }: { onBack: () => void; onOpenUs
   return <section className="stats-page">
     <div className="stats-header">
       <h2>{t('users.title')}</h2>
-      <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
+      <div className="stats-header-actions">
+        <button type="button" className="secondary" aria-expanded={inviting} onClick={() => setInviting((open) => !open)}>{t('userAccounts.inviteButton')}</button>
+        <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
+      </div>
     </div>
+    {inviting && <InviteUserForm onInvited={load} />}
     {error && <p className="alert" role="alert">{t('users.errorLoad')} <button type="button" className="secondary alert-retry" onClick={load}>{t('start.retry')}</button></p>}
     {!users && !error && <p>{t('common.loading')}</p>}
     {users && <UserListView users={users} search={search} filter={filter} sort={sort} onSearchChange={setSearch} onFilterChange={setFilter} onSortChange={setSort} onOpenUser={onOpenUser} />}

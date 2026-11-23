@@ -4,9 +4,9 @@ import { playClick } from '@engine/utils/sound'
 import { confirmDialog } from '../utils/confirmDialog'
 import { dateTime } from '../utils/dateFormat'
 import { matchesTypedName } from '../utils/titleConfirmation'
-import type { AdminUserDetail, AdminUserQuiz } from '../utils/adminUsers'
+import { userStatus, type AdminUserDetail, type AdminUserQuiz } from '../utils/adminUsers'
 import {
-  deleteUser, describeAuditEntry, fetchUserAuditLog, resetUserProgress, setUserAdmin, setUserDisabled, setUserQuizAccess, updateUserProfile,
+  changeUserEmail, deleteUser, describeAuditEntry, fetchUserAuditLog, resendInvite, resetUserProgress, sendPasswordReset, setUserAdmin, setUserDisabled, setUserQuizAccess, updateUserProfile,
   UserActionError, USER_ACTION_ERROR_KEYS, type AuditEntry, type UserActionFailure,
 } from '../utils/adminUserActions'
 import { AVATAR_OPTIONS } from '../utils/avatars'
@@ -108,6 +108,18 @@ function AuditLogSection({ detail }: { detail: AdminUserDetail }) {
   return <AuditLogList entries={entries} />
 }
 
+/** Nouvelle adresse de connexion. Le champ se vide quand le changement a eu lieu (`onSubmit` renvoie alors vrai). */
+export function ChangeEmailForm({ busy, onSubmit }: { busy: boolean; onSubmit: (email: string) => Promise<boolean> }) {
+  const { t } = useTranslation()
+  const [email, setEmail] = useState('')
+  return <form className="profile-form users-email-form" onSubmit={async (event) => { event.preventDefault(); if (await onSubmit(email.trim())) setEmail('') }}>
+    <label>{t('userAccounts.changeEmailLabel')}
+      <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="off" maxLength={254} placeholder={t('userAccounts.emailPlaceholder')} />
+    </label>
+    <button type="submit" className="secondary" disabled={busy || email.trim() === ''}>{t('userAccounts.changeEmailButton')}</button>
+  </form>
+}
+
 interface UserActionsPanelProps {
   detail: AdminUserDetail
   /** Recharge la fiche après une action. */
@@ -155,6 +167,17 @@ export function UserActionsPanel({ detail, onChanged, onDeleted }: UserActionsPa
     await run(async () => { await setUserAdmin(detail.user_id, promote); return promote ? t('userActions.promotedNotice') : t('userActions.demotedNotice') })
   }
 
+  const status = userStatus(detail)
+  const resendInvitation = () => run(async () => { await resendInvite(detail.user_id); return t('userAccounts.resendSent', detail.email ?? '') })
+  const sendReset = () => run(async () => { await sendPasswordReset(detail.user_id); return t('userAccounts.resetSent', detail.email ?? '') })
+  /** Vrai si l'adresse a été changée, pour que le formulaire se vide. */
+  const changeEmail = async (email: string): Promise<boolean> => {
+    const confirmed = await confirmDialog({ title: t('userAccounts.changeEmailConfirmTitle'), message: t('userAccounts.changeEmailConfirm', detail.pseudo, email), confirmLabel: t('userAccounts.changeEmailConfirmLabel') })
+    if (!confirmed) return false
+    let changed = false
+    await run(async () => { await changeUserEmail(detail.user_id, email); changed = true; return t('userAccounts.emailChanged') })
+    return changed
+  }
   const saveProfile = (pseudo: string, avatar: string) => run(async () => { await updateUserProfile(detail.user_id, pseudo, avatar); return t('userActions.savedNotice') })
   const toggleAccess = (quizId: string, granted: boolean) => run(async () => { await setUserQuizAccess(detail.user_id, quizId, granted) })
   const reset = () => run(async () => {
@@ -186,6 +209,15 @@ export function UserActionsPanel({ detail, onChanged, onDeleted }: UserActionsPa
     </div>}
     {error && <p className="alert" role="alert">{t(USER_ACTION_ERROR_KEYS[error])}</p>}
     {notice && <p className="profile-saved" role="status">{notice}</p>}
+
+    {!detail.is_self && <>
+      <h3 className="stats-group-title">{t('userAccounts.accountTitle')}</h3>
+      <div className="users-actions">
+        {status === 'never' && <button type="button" className="secondary" disabled={busy} onClick={resendInvitation}>{t('userAccounts.resendButton')}</button>}
+        {status === 'active' && <button type="button" className="secondary" disabled={busy} onClick={sendReset}>{t('userAccounts.resetButton')}</button>}
+      </div>
+      <ChangeEmailForm busy={busy} onSubmit={changeEmail} />
+    </>}
 
     <h3 className="stats-group-title">{t('userActions.editTitle')}</h3>
     <EditProfileForm detail={detail} busy={busy} onSave={saveProfile} />
