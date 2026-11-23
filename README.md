@@ -37,6 +37,34 @@ L'accès au site est protégé par [Supabase Auth](https://supabase.com/docs/gui
 
 La clé `anon` est prévue pour être publique (elle finit de toute façon dans le bundle JS envoyé au navigateur) ; elle n'accorde par elle-même aucun accès aux données, elle sert uniquement à parler à l'API Supabase.
 
+## Fonction Edge `admin-users` (inviter et gérer les comptes)
+
+Inviter une adresse, renvoyer une invitation, envoyer un lien de réinitialisation du mot de passe et changer l'adresse email d'un compte passent par l'API d'administration de l'authentification, qui exige la clé de service : ni le navigateur ni une fonction SQL ne peuvent s'en servir. D'où la fonction Edge [`supabase/functions/admin-users`](supabase/functions/admin-users) (logique dans `handler.ts`, testée avec Vitest ; `index.ts` la branche sur `supabase-js`). Les boutons « Inviter » et « Compte et connexion » de la page **Utilisateurs** (administration) l'appellent ; sans elle ils affichent « fonction injoignable ».
+
+Ce qu'elle garantit : elle vérifie le jeton de l'appelant, puis qu'il est administrateur (`profiles.is_admin`) et que son compte n'est pas désactivé, **avant toute action** ; elle n'accepte que les origines de l'application (CORS) ; les liens mènent toujours à `APP_URL`, jamais à une adresse fournie par le client ; chaque action est inscrite au journal d'audit, sans email.
+
+### Déployer
+
+1. Appliquer les migrations [`048_admin_user_actions.sql`](supabase/048_admin_user_actions.sql) et [`049_admin_audit_account_actions.sql`](supabase/049_admin_audit_account_actions.sql) (SQL Editor).
+2. Déployer la fonction avec le [CLI Supabase](https://supabase.com/docs/guides/cli) (`<réf>` : **Project Settings > General > Reference ID**) :
+   ```bash
+   npx supabase login
+   npx supabase functions deploy admin-users --project-ref <réf>
+   ```
+   Le jeton est exigé par le serveur (`verify_jwt = true`, voir [`supabase/config.toml`](supabase/config.toml)). Redéployer de la même façon après une modification du dossier.
+3. **Aucun secret à créer** : `SUPABASE_URL`, `SUPABASE_ANON_KEY` et `SUPABASE_SERVICE_ROLE_KEY` sont fournis par Supabase à la fonction. La clé de service reste dans son environnement : elle n'est ni dans ce dépôt ni dans le navigateur.
+4. Facultatif, avec `npx supabase secrets set NOM=valeur --project-ref <réf>` : `APP_URL` (où mènent les liens ; par défaut `https://lom2gwada.github.io/oliver-quiz/`) et `ALLOWED_ORIGINS` (origines autorisées, séparées par des virgules ; par défaut le site publié et `http://localhost:5173` à `5175`).
+
+### Réglages de Supabase dont elle dépend
+
+- **Authentication > URL Configuration** : `APP_URL` doit figurer dans **Redirect URLs** (en plus de la *Site URL*). Sinon Supabase ignore la redirection et le lien de l'email arrive sans jeton : l'invité atterrit sur l'écran de connexion au lieu de « Définir mon mot de passe » (le bug de la PR #28).
+- **Envoi des emails** : le service d'envoi intégré de Supabase est très limité (quelques emails par heure) ; au-delà, l'interface affiche « Trop d'emails envoyés récemment ». Pour inviter régulièrement, configurer un SMTP personnalisé dans **Authentication > SMTP Settings**.
+- Le compte est **commun à Oliver Quiz, Quiz Forge et Periodic Quiz** : l'invitation crée donc aussi l'accès aux deux autres, et changer l'email le change partout.
+
+### Vérifier après un déploiement
+
+Sans jeton d'administrateur la fonction doit refuser : `curl -i -X POST https://<réf>.supabase.co/functions/v1/admin-users` répond `401`. Le reste se vérifie depuis l'application, avec un compte administrateur.
+
 ## Scripts disponibles
 
 | Commande          | Description                                      |
