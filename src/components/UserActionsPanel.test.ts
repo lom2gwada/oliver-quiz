@@ -12,13 +12,15 @@ vi.mock('../i18n', () => ({
 vi.mock('@engine/utils/sound', () => ({ playClick: vi.fn() }))
 vi.mock('../utils/supabase', () => ({ supabase: {} }))
 vi.mock('../utils/confirmDialog', () => ({ confirmDialog: vi.fn() }))
+vi.mock('../utils/download', () => ({ downloadTextFile: vi.fn() }))
 vi.mock('../utils/adminUserActions', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../utils/adminUserActions')>()),
   setUserDisabled: vi.fn(), setUserAdmin: vi.fn(), updateUserProfile: vi.fn(), setUserQuizAccess: vi.fn(), resetUserProgress: vi.fn(), deleteUser: vi.fn(), fetchUserAuditLog: vi.fn(),
-  resendInvite: vi.fn(), sendPasswordReset: vi.fn(), changeUserEmail: vi.fn(),
+  resendInvite: vi.fn(), sendPasswordReset: vi.fn(), changeUserEmail: vi.fn(), exportUserData: vi.fn(),
 }))
 
 import { confirmDialog } from '../utils/confirmDialog'
+import { downloadTextFile } from '../utils/download'
 import * as actions from '../utils/adminUserActions'
 import { UserActionsPanel } from './UserActionsPanel'
 
@@ -63,6 +65,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mocked(actions.fetchUserAuditLog).mockResolvedValue([])
   for (const name of ['setUserDisabled', 'setUserAdmin', 'updateUserProfile', 'setUserQuizAccess', 'deleteUser', 'resendInvite', 'sendPasswordReset', 'changeUserEmail'] as const) mocked(actions[name]).mockResolvedValue(null)
+  mocked(actions.exportUserData).mockResolvedValue({ scope: 'oliver-quiz', quiz_results: [{ id: 'r1' }] })
   mocked(actions.resetUserProgress).mockResolvedValue({ quiz_results: 3, question_results: 20, streak_results: 0, timed_results: 0, question_progress: 5 })
   container = document.createElement('div')
   document.body.appendChild(container)
@@ -294,6 +297,80 @@ describe('UserActionsPanel — account and sign-in', () => {
     expect(container.querySelector('.users-email-form')).toBeNull()
     expect(buttonByText("Renvoyer l'invitation")).toBeUndefined()
     expect(container.textContent).not.toContain('Compte et connexion')
+  })
+})
+
+describe('UserActionsPanel — personal data export', () => {
+  const exportButton = () => buttonByText('⬇️ Exporter ses données (JSON)')
+
+  it('explains what the file holds, what it leaves out and that the export is logged', async () => {
+    await mount()
+    expect(container.textContent).toContain('Données personnelles')
+    expect(container.textContent).toContain('compte, profil, parties de tous les modes')
+    expect(container.textContent).toContain('Quiz Forge et de Periodic Quiz n\'en font pas partie')
+    expect(container.textContent).toContain('inscrit au journal')
+  })
+
+  it('asks for confirmation, saying the file holds the email and the whole history, and downloads nothing if declined', async () => {
+    confirm.mockResolvedValue(false)
+    await mount()
+    await click(exportButton())
+    expect(confirm).toHaveBeenCalledTimes(1)
+    const { message } = confirm.mock.calls[0][0] as { message: string }
+    expect(message).toContain('Alice')
+    expect(message).toContain('email')
+    expect(message).toContain('données personnelles')
+    expect(message).toContain('journal d\'audit')
+    expect(actions.exportUserData).not.toHaveBeenCalled()
+    expect(downloadTextFile).not.toHaveBeenCalled()
+  })
+
+  it('downloads a JSON file named after the person and the day, then reloads the page to show the log line', async () => {
+    confirm.mockResolvedValue(true)
+    await mount()
+    await click(exportButton())
+    expect(actions.exportUserData).toHaveBeenCalledWith('u-alice')
+    expect(downloadTextFile).toHaveBeenCalledTimes(1)
+    const [filename, content, mime] = mocked(downloadTextFile).mock.calls[0] as [string, string, string]
+    const today = new Date()
+    expect(filename).toBe(`donnees-oliver-quiz-alice-${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}.json`)
+    expect(mime).toBe('application/json')
+    expect(JSON.parse(content)).toEqual({ scope: 'oliver-quiz', quiz_results: [{ id: 'r1' }] })
+    expect(content).toContain('\n  "scope"')
+    expect(onChanged).toHaveBeenCalledTimes(1)
+  })
+
+  it('says so next to the button, not at the top of the long page', async () => {
+    confirm.mockResolvedValue(true)
+    await mount()
+    await click(exportButton())
+    // Le message est le frère juste après la rangée du bouton, et il n'y en a pas d'autre en haut de la page.
+    expect(exportButton()!.parentElement!.nextElementSibling?.textContent).toBe('Export téléchargé ✓')
+    expect(container.querySelectorAll('.profile-saved')).toHaveLength(1)
+  })
+
+  it('downloads nothing and explains when the database refuses', async () => {
+    confirm.mockResolvedValue(true)
+    mocked(actions.exportUserData).mockRejectedValue(new actions.UserActionError('forbidden'))
+    await mount()
+    await click(exportButton())
+    expect(downloadTextFile).not.toHaveBeenCalled()
+    expect(alertText()).toBe('Action réservée aux administrateurs.')
+    expect(onChanged).not.toHaveBeenCalled()
+  })
+
+  it('is also offered on the administrator’s own account', async () => {
+    await mount(detail({ is_self: true }))
+    expect(exportButton()).toBeDefined()
+  })
+
+  it('does not call the export a failure when only the reload of the page fails', async () => {
+    confirm.mockResolvedValue(true)
+    onChanged.mockRejectedValueOnce(new Error('reload failed'))
+    await mount()
+    await click(exportButton())
+    expect(downloadTextFile).toHaveBeenCalledTimes(1)
+    expect(alertText()).toBe('')
   })
 })
 

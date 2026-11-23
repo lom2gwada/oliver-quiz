@@ -3,11 +3,12 @@ import { useTranslation } from '../i18n'
 import { playClick } from '@engine/utils/sound'
 import { confirmDialog } from '../utils/confirmDialog'
 import { dateTime } from '../utils/dateFormat'
+import { downloadTextFile } from '../utils/download'
 import { matchesTypedName } from '../utils/titleConfirmation'
 import { userStatus, type AdminUserDetail, type AdminUserQuiz } from '../utils/adminUsers'
 import {
-  changeUserEmail, deleteUser, describeAuditEntry, fetchUserAuditLog, resendInvite, resetUserProgress, sendPasswordReset, setUserAdmin, setUserDisabled, setUserQuizAccess, updateUserProfile,
-  UserActionError, USER_ACTION_ERROR_KEYS, type AuditEntry, type UserActionFailure,
+  changeUserEmail, deleteUser, describeAuditEntry, exportUserData, fetchUserAuditLog, resendInvite, resetUserProgress, sendPasswordReset, setUserAdmin, setUserDisabled, setUserQuizAccess, updateUserProfile,
+  userDataFilename, UserActionError, USER_ACTION_ERROR_KEYS, type AuditEntry, type UserActionFailure,
 } from '../utils/adminUserActions'
 import { AVATAR_OPTIONS } from '../utils/avatars'
 
@@ -120,6 +121,44 @@ export function ChangeEmailForm({ busy, onSubmit }: { busy: boolean; onSubmit: (
   </form>
 }
 
+/** Droit d'accès : télécharge tout ce qu'Oliver Quiz conserve sur la personne, en JSON. Le fichier contient son email et son historique,
+ * d'où la confirmation ; l'export est inscrit au journal d'audit (`onExported` recharge la fiche pour l'y montrer). Son message de réussite
+ * ou d'erreur reste à côté du bouton : cette section est en bas d'une longue page. */
+export function UserDataExportSection({ detail, onExported }: { detail: AdminUserDetail; onExported: () => void | Promise<void> }) {
+  const { t } = useTranslation()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<UserActionFailure | null>(null)
+  const [notice, setNotice] = useState('')
+
+  const exportData = async () => {
+    setError(null)
+    setNotice('')
+    const confirmed = await confirmDialog({ title: t('userExport.confirmTitle'), message: t('userExport.confirm', detail.pseudo), confirmLabel: t('userExport.confirmLabel') })
+    if (!confirmed) return
+    setBusy(true)
+    try {
+      const data = await exportUserData(detail.user_id)
+      downloadTextFile(userDataFilename(detail.pseudo, new Date()), JSON.stringify(data, null, 2), 'application/json')
+      setNotice(t('userExport.done'))
+      await Promise.resolve(onExported()).catch(() => {})
+    } catch (failure) {
+      setError(failure instanceof UserActionError ? failure.failure : 'failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return <>
+    <h3 className="stats-group-title profile-section-title">{t('userExport.title')}</h3>
+    <p className="mode-hint">{t('userExport.hint')}</p>
+    <div className="users-actions">
+      <button type="button" className="secondary" disabled={busy} onClick={exportData}>{busy ? t('common.loading') : t('userExport.button')}</button>
+    </div>
+    {error && <p className="alert" role="alert">{t(USER_ACTION_ERROR_KEYS[error])}</p>}
+    {notice && <p className="profile-saved" role="status">{notice}</p>}
+  </>
+}
+
 interface UserActionsPanelProps {
   detail: AdminUserDetail
   /** Recharge la fiche après une action. */
@@ -229,6 +268,8 @@ export function UserActionsPanel({ detail, onChanged, onDeleted }: UserActionsPa
     <h3 className="stats-group-title profile-section-title">{t('userActions.auditTitle')}</h3>
     <p className="mode-hint">{t('userActions.auditHint')}</p>
     <AuditLogSection detail={detail} />
+
+    <UserDataExportSection detail={detail} onExported={onChanged} />
 
     <UserDangerZone detail={detail} busy={busy} onReset={reset} onDelete={remove} />
   </>

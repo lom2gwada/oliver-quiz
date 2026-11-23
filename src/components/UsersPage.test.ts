@@ -85,6 +85,32 @@ describe('UserListView', () => {
     expect(byGames.indexOf('Carl')).toBeLessThan(byGames.indexOf('Bob'))
   })
 
+  it('has no checkbox and no export button unless the page asks for them', () => {
+    const html = render()
+    expect(html).not.toContain('type="checkbox"')
+    expect(html).not.toContain('Exporter (CSV)')
+    expect(html).not.toContain('Tout sélectionner')
+  })
+
+  it('shows a checkbox per user, named after the user, when the page asks for selection', () => {
+    const html = render({ selected: new Set(['id-Bob']), onToggleUser: noop, onToggleAll: noop })
+    expect(html.match(/type="checkbox"/g)).toHaveLength(4)
+    expect(html).toContain('aria-label="Sélectionner Alice"')
+    expect(html).toContain('Tout sélectionner (3)')
+    expect(html.match(/checked=""/g)).toHaveLength(1)
+  })
+
+  it('hands the shown users to the bulk bar, filters and sort applied', () => {
+    const shownBy = (props: Partial<Parameters<typeof UserListView>[0]>) => {
+      let received: string[] = []
+      render({ ...props, renderBulk: (shown) => { received = shown.map((item) => item.pseudo); return null } })
+      return received
+    }
+    expect(shownBy({ sort: 'games' })).toEqual(['Alice', 'Carl', 'Bob'])
+    expect(shownBy({ filter: 'admins' })).toEqual(['Alice'])
+    expect(shownBy({ search: 'ali', sort: 'games' })).toEqual(['Alice'])
+  })
+
   it('does not fail on a user without email', () => {
     expect(render({ users: [user('Dana', { email: null })] })).toContain('email inconnu')
   })

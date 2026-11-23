@@ -41,10 +41,30 @@ export interface AdminUserDetail extends AdminUser {
 }
 
 export type UserStatus = 'active' | 'disabled' | 'never'
-export type UserFilter = 'all' | 'admins' | 'disabled' | 'never'
+export type UserFilter = 'all' | 'admins' | 'disabled' | 'never' | 'inactive'
 export type UserSort = 'pseudo' | 'created' | 'lastSignIn' | 'games'
 
-export const USER_FILTERS: UserFilter[] = ['all', 'admins', 'disabled', 'never']
+export const USER_FILTERS: UserFilter[] = ['all', 'admins', 'disabled', 'never', 'inactive']
+
+/** Les durées proposées pour « inactif depuis… », en jours. */
+export const INACTIVITY_DAYS = [30, 60, 90, 180, 365]
+export const DEFAULT_INACTIVITY_DAYS = 90
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/** La dernière trace d'activité d'un compte : sa dernière connexion ou sa dernière partie, la plus récente. Une session qui reste
+ * ouverte des semaines ne met pas à jour la connexion, d'où la dernière partie. `null` si le compte n'a jamais servi. */
+export function lastActivity(user: Pick<AdminUser, 'last_sign_in_at' | 'last_played_at'>): string | null {
+  const dates = [user.last_sign_in_at, user.last_played_at].filter((date): date is string => !!date)
+  return dates.length === 0 ? null : dates.reduce((latest, date) => (date > latest ? date : latest))
+}
+
+/** Un compte qui a déjà servi mais sans aucune trace depuis plus de `days` jours. Un compte jamais utilisé n'est PAS « inactif depuis »
+ * (il a son propre filtre, « jamais connecté »). */
+export function isInactive(user: Pick<AdminUser, 'last_sign_in_at' | 'last_played_at'>, days: number, now: number): boolean {
+  const last = lastActivity(user)
+  return last !== null && now - new Date(last).getTime() > days * DAY_MS
+}
 export const USER_SORTS: UserSort[] = ['pseudo', 'created', 'lastSignIn', 'games']
 
 /** Un compte bloqué l'est même s'il ne s'est jamais connecté ; sinon, sans connexion, il n'a jamais servi. */
@@ -52,14 +72,17 @@ export const userStatus = (user: Pick<AdminUser, 'disabled' | 'last_sign_in_at'>
   user.disabled ? 'disabled' : user.last_sign_in_at ? 'active' : 'never'
 
 /** Les utilisateurs dont le pseudo ou l'email contient la recherche (sans tenir compte des accents ni de la casse), puis le
- * filtre : administrateurs, comptes bloqués, ou comptes jamais connectés. */
-export function filterUsers(users: AdminUser[], query: string, filter: UserFilter): AdminUser[] {
+ * filtre : administrateurs, comptes bloqués, comptes jamais connectés, ou comptes inactifs depuis `inactiveDays` jours (90 par défaut). */
+export function filterUsers(users: AdminUser[], query: string, filter: UserFilter, options: { inactiveDays?: number; now?: number } = {}): AdminUser[] {
   const wanted = normalizeSearch(query)
+  const inactiveDays = options.inactiveDays ?? DEFAULT_INACTIVITY_DAYS
+  const now = options.now ?? Date.now()
   return users.filter((user) => {
     if (wanted && !normalizeSearch(`${user.pseudo} ${user.email ?? ''}`).includes(wanted)) return false
     if (filter === 'admins') return user.is_admin
     if (filter === 'disabled') return userStatus(user) === 'disabled'
     if (filter === 'never') return userStatus(user) === 'never'
+    if (filter === 'inactive') return isInactive(user, inactiveDays, now)
     return true
   })
 }
