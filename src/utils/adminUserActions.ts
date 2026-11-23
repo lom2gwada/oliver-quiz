@@ -1,4 +1,5 @@
 import type { TranslationKey } from '../i18n'
+import { localDay } from './dateFormat'
 import { supabase } from './supabase'
 
 /** Pourquoi une action d'administration a été refusée (voir `048_admin_user_actions.sql`) : les garde-fous sont en base, ce
@@ -124,9 +125,26 @@ export const sendPasswordReset = (userId: string) => callAccountFunction({ actio
 /** Change l'adresse de connexion d'un compte (jamais le sien) ; effective tout de suite. */
 export const changeUserEmail = (userId: string, email: string) => callAccountFunction({ action: 'change_email', userId, email })
 
+/** Tout ce qu'Oliver Quiz conserve sur un utilisateur (`admin_export_user_data`, 050) : compte, profil, parties, journal des questions,
+ * progression, accès, actions d'administration sur son compte. Pas les données de Quiz Forge ni de Periodic Quiz (`scope` le dit). */
+export type UserDataExport = Record<string, unknown>
+
+/** Exporte les données d'un utilisateur (droit d'accès). L'export est inscrit au journal d'audit. */
+export async function exportUserData(userId: string): Promise<UserDataExport> {
+  const data = await call<UserDataExport>('admin_export_user_data', { p_user_id: userId })
+  if (!data) throw new UserActionError('failed')
+  return data
+}
+
+/** `donnees-oliver-quiz-alice-2026-11-24.json` : le pseudo sans accents ni caractères gênants pour un nom de fichier. */
+export function userDataFilename(pseudo: string, date: Date): string {
+  const slug = pseudo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'utilisateur'
+  return `donnees-oliver-quiz-${slug}-${localDay(date)}.json`
+}
+
 export type AuditAction =
   | 'disable' | 'enable' | 'update_profile' | 'set_admin' | 'reset_progress' | 'delete_user' | 'grant_access' | 'revoke_access'
-  | 'invite_user' | 'resend_invite' | 'send_password_reset' | 'change_email'
+  | 'invite_user' | 'resend_invite' | 'send_password_reset' | 'change_email' | 'export_user_data'
 
 /** Une ligne du journal d'audit : qui a fait quoi, sur qui, quand — avec les pseudos de l'époque, jamais d'email. */
 export interface AuditEntry {
@@ -171,6 +189,7 @@ export function describeAuditEntry(entry: AuditEntry, t: Translate): string {
     case 'resend_invite': return t('audit.resendInvite', admin)
     case 'send_password_reset': return t('audit.sendReset', admin)
     case 'change_email': return t('audit.changeEmail', admin)
+    case 'export_user_data': return t('audit.exportUserData', admin)
     case 'update_profile': {
       const pseudo = asChange(details.pseudo)
       const avatar = asChange(details.avatar)

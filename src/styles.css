@@ -293,6 +293,20 @@ header.app-header { display: block; padding-bottom: 1.4rem; margin-bottom: 2rem;
 .users-invite-form .stats-group-title { margin: 0; }
 .users-invite-form > button, .users-email-form > button { justify-self: start; width: auto; }
 .users-email-form { margin: 0 0 1.5rem; }
+.users-list-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1rem; margin: 0 0 .8rem; }
+.users-list-tools button { width: auto; }
+.users-selectable { display: flex; align-items: stretch; }
+.users-selectable .overview-item { flex: 1; min-width: 0; }
+.users-select { display: flex; align-items: center; justify-content: center; min-width: 44px; padding-left: .4rem; cursor: pointer; }
+.users-bulk { display: grid; gap: .6rem; margin: 0 0 1rem; padding: .8rem 1rem; background: var(--surface); border: 1px solid var(--accent); border-radius: .6rem; }
+.users-bulk-row { display: flex; flex-wrap: wrap; align-items: end; gap: .6rem; }
+.users-bulk-row button { width: auto; }
+.users-bulk-count { align-self: center; margin-right: .4rem; color: var(--ink); }
+.users-bulk-clear { margin-left: auto; }
+.users-bulk-quiz { display: grid; gap: .3rem; flex: 1 1 14rem; color: var(--text-soft); }
+.users-bulk-report p { margin: 0; }
+.users-bulk-failed { margin-top: .4rem !important; color: var(--danger-text); font-weight: 700; }
+.users-bulk-report ul { margin: .3rem 0 0; padding-left: 1.2rem; color: var(--text-soft); font-size: .9rem; }
 .users-actions button { width: auto; }
 .users-edit-form { margin: 0 0 1.5rem; }
 .users-edit-form > button { justify-self: start; width: auto; }

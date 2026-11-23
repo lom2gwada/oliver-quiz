@@ -12,7 +12,7 @@ const invoke = vi.hoisted(() => vi.fn())
 vi.mock('./supabase', () => ({ supabase: { rpc, from, functions: { invoke } } }))
 
 import {
-  changeUserEmail, classifyAccountCode, classifyUserActionError, deleteUser, describeAuditEntry, fetchUserAuditLog, inviteUser, readFunctionError, resendInvite, resetUserProgress, sendPasswordReset, setUserAdmin, setUserDisabled, setUserQuizAccess, updateUserProfile,
+  changeUserEmail, classifyAccountCode, classifyUserActionError, deleteUser, describeAuditEntry, exportUserData, fetchUserAuditLog, inviteUser, readFunctionError, resendInvite, resetUserProgress, sendPasswordReset, setUserAdmin, setUserDisabled, setUserQuizAccess, updateUserProfile, userDataFilename,
   UserActionError, USER_ACTION_ERROR_KEYS, type AuditEntry, type UserActionFailure,
 } from './adminUserActions'
 
@@ -174,6 +174,49 @@ describe('the account actions call the Edge function', () => {
   })
 })
 
+describe('exportUserData', () => {
+  beforeEach(() => { rpc.mockReset() })
+
+  it('asks the database for the export of one user and returns the document', async () => {
+    rpc.mockResolvedValue({ data: { scope: 'oliver-quiz', quiz_results: [] }, error: null })
+    expect(await exportUserData('u1')).toEqual({ scope: 'oliver-quiz', quiz_results: [] })
+    expect(rpc).toHaveBeenCalledWith('admin_export_user_data', { p_user_id: 'u1' })
+  })
+
+  it('raises a UserActionError that says why the database refused', async () => {
+    rpc.mockResolvedValue({ data: null, error: { message: 'not_found' } })
+    const failure = await exportUserData('u1').catch((error: unknown) => error)
+    expect(failure).toBeInstanceOf(UserActionError)
+    expect((failure as UserActionError).failure).toBe('notFound')
+  })
+
+  it('treats an empty answer as a failure rather than downloading an empty file', async () => {
+    rpc.mockResolvedValue({ data: null, error: null })
+    await expect(exportUserData('u1')).rejects.toMatchObject({ failure: 'failed' })
+  })
+
+  it('is sent once: the export is logged, so it must not be replayed by itself', async () => {
+    rpc.mockResolvedValue({ data: null, error: { message: 'Failed to fetch' } })
+    await expect(exportUserData('u1')).rejects.toBeInstanceOf(UserActionError)
+    expect(rpc).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('userDataFilename', () => {
+  const date = new Date(2026, 10, 24, 23, 30)
+
+  it('carries the nickname without accents or awkward characters, and the date', () => {
+    expect(userDataFilename('Andrée', date)).toBe('donnees-oliver-quiz-andree-2026-11-24.json')
+    expect(userDataFilename('Jean-Luc  Picard!', date)).toBe('donnees-oliver-quiz-jean-luc-picard-2026-11-24.json')
+  })
+
+  it('never lets a nickname build a path or an empty name', () => {
+    expect(userDataFilename('../../etc/passwd', date)).toBe('donnees-oliver-quiz-etc-passwd-2026-11-24.json')
+    expect(userDataFilename('🦊🦊', date)).toBe('donnees-oliver-quiz-utilisateur-2026-11-24.json')
+    expect(userDataFilename('', date)).toBe('donnees-oliver-quiz-utilisateur-2026-11-24.json')
+  })
+})
+
 describe('fetchUserAuditLog', () => {
   beforeEach(() => { limit.mockReset(); from.mockClear(); select.mockClear(); eq.mockClear(); order.mockClear() })
 
@@ -234,6 +277,11 @@ describe('describeAuditEntry', () => {
     expect(describeAuditEntry(entry('change_email'), tFr)).toBe("Olivier a changé l'adresse email du compte")
     expect(describeAuditEntry(entry('invite_user'), tEn)).toBe('Olivier invited the user')
     expect(describeAuditEntry(entry('change_email'), tEn)).toBe("Olivier changed the account's email address")
+  })
+
+  it('names the export of personal data', () => {
+    expect(describeAuditEntry(entry('export_user_data'), tFr)).toBe('Olivier a exporté les données de la personne')
+    expect(describeAuditEntry(entry('export_user_data'), tEn)).toBe("Olivier exported the person's data")
   })
 
   it('is also written in English', () => {
