@@ -3,10 +3,16 @@ import { useTranslation } from '../i18n'
 import { CreateQuizForm } from './CreateQuizForm'
 import { ABOUT } from '../config/about'
 import { buildQuizTemplate, QUIZ_TEMPLATE_FILENAME } from '../utils/quizTemplate'
+import type { QuizRoles } from '../utils/quizPermissions'
 
 interface QuizListPageProps {
   hostedQuizzes: HostedQuizSummary[]
-  isAdmin: boolean
+  /** L'administrateur global voit la page Utilisateurs ; un administrateur de quiz n'y a pas accès. */
+  isGlobalAdmin: boolean
+  /** Créer un quiz vide : réservé à l'administrateur global pour l'instant. */
+  canCreate: boolean
+  /** Le rôle du compte sur chacun de ses quiz, pour l'étiquette de chaque tuile. */
+  roles: QuizRoles
   onBack: () => void
   /** Administration des utilisateurs (liste et fiches). */
   onViewUsers: () => void
@@ -35,13 +41,13 @@ function downloadTemplate(language: Parameters<typeof buildQuizTemplate>[0]): vo
 
 /** Page générale : liste (tuiles) des quiz hébergés, création et import/mise à jour par JSON.
  * Cliquer une tuile sélectionne ce quiz comme quiz actif puis navigue vers `QuizDetailPage`. */
-export function QuizListPage({ hostedQuizzes, isAdmin, onBack, onViewUsers, onSelectQuiz, onCreateQuiz, createError, onPublish, publishError, publishSuccess, publishWarning }: QuizListPageProps) {
+export function QuizListPage({ hostedQuizzes, isGlobalAdmin, canCreate, roles, onBack, onViewUsers, onSelectQuiz, onCreateQuiz, createError, onPublish, publishError, publishSuccess, publishWarning }: QuizListPageProps) {
   const { t, language } = useTranslation()
   return <section className="stats-page">
     <div className="stats-header">
       <h2>{t('nav.admin')}</h2>
       <div className="stats-header-actions">
-        {isAdmin && <button type="button" className="secondary" onClick={onViewUsers}>{t('nav.users')}</button>}
+        {isGlobalAdmin && <button type="button" className="secondary" onClick={onViewUsers}>{t('nav.users')}</button>}
         <button type="button" className="secondary" onClick={onBack}>{t('common.back')}</button>
       </div>
     </div>
@@ -50,12 +56,14 @@ export function QuizListPage({ hostedQuizzes, isAdmin, onBack, onViewUsers, onSe
       ? <p>{t('admin.noPublishedQuiz')}</p>
       : <div className="quiz-tile-grid">
         {hostedQuizzes.map((hosted) => <button type="button" key={hosted.id} className="quiz-tile" onClick={() => onSelectQuiz(hosted.id)}>
-          {hosted.title}{hosted.is_public && <span className="quiz-tile-badge"> {t('admin.publicQuizBadge')}</span>}
+          {hosted.title}{hosted.is_public && <span className="quiz-tile-badge"> {t('admin.publicQuizBadge')}</span>}{roles[hosted.id] && <span className="quiz-tile-badge"> {t(roles[hosted.id] === 'owner' ? 'quizAdmin.roleOwner' : 'quizAdmin.roleAdmin')}</span>}
         </button>)}
       </div>}
-    {isAdmin && <>
+    {canCreate && <>
       <h3 className="stats-group-title profile-section-title">{t('admin.createQuizTitle')}</h3>
       <CreateQuizForm error={createError} onCreate={onCreateQuiz} />
+    </>}
+    <>
       <h3 className="stats-group-title profile-section-title">{t('admin.publishQuizTitle')}</h3>
       <div className="quiz-import">
         <label className="file-input">{t('admin.importLabel')}<input type="file" accept="application/json,.json" onChange={(event) => onPublish(event.target.files?.[0])} /></label>
@@ -67,6 +75,6 @@ export function QuizListPage({ hostedQuizzes, isAdmin, onBack, onViewUsers, onSe
         {publishSuccess && <p className="profile-saved">{t('admin.publishSuccess')}</p>}
         {publishSuccess && publishWarning && <p className="mode-hint" role="status">{publishWarning}</p>}
       </div>
-    </>}
+    </>
   </section>
 }

@@ -56,6 +56,8 @@ Pour qu'aucun droit ne se contourne depuis un client modifié : un administrateu
 
 Un administrateur de quiz ne lit pas `profiles` : il cherche un compte par **pseudo** (`quiz_search_users`), la réponse ne contient jamais d'email.
 
+Dans l'application : la page **Quiz** est ouverte à qui administre au moins un quiz (elle n'en liste que les siens, avec son rôle) ; la page **Utilisateurs** reste réservée à l'administrateur global. Sur la fiche d'un quiz, l'onglet **Administrateurs** liste les propriétaires et administrateurs (un propriétaire en ajoute par recherche de pseudo, les retire, les promeut ou les rétrograde, avec confirmation ; un administrateur simple peut se retirer lui-même), et les onglets Accès et Liens invités suivent les droits du compte. La création d'un quiz reste réservée à l'administrateur global (#243).
+
 ## Fonction Edge `admin-users` (inviter et gérer les comptes)
 
 Inviter une adresse, renvoyer une invitation, envoyer un lien de réinitialisation du mot de passe et changer l'adresse email d'un compte passent par l'API d'administration de l'authentification, qui exige la clé de service : ni le navigateur ni une fonction SQL ne peuvent s'en servir. D'où la fonction Edge [`supabase/functions/admin-users`](supabase/functions/admin-users) (logique dans `handler.ts`, testée avec Vitest ; `index.ts` la branche sur `supabase-js`). Les boutons « Inviter » et « Compte et connexion » de la page **Utilisateurs** (administration) l'appellent ; sans elle ils affichent « fonction injoignable ».

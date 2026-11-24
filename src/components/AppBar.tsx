@@ -10,6 +10,8 @@ interface AppBarProps {
   view: View
   muted: boolean
   profile: Profile | null
+  /** Le compte administre au moins un quiz (sans être administrateur global) : il a droit à l'entrée « Quiz », pas à « Utilisateurs ». */
+  administersQuizzes?: boolean
   onLanguageChange: (language: Language) => void
   onToggleSound: () => void
   onHome: () => void
@@ -23,7 +25,7 @@ interface AppBarProps {
  * administration et utilisateurs (comptes admin), déconnexion. La page courante est signalée sur Profil, Quiz et Utilisateurs.
  * Sur téléphone, la barre tient sur une ligne : les commandes passent derrière un bouton ☰ (voir `styles.css`) ; ce
  * menu se referme après un choix, avec Échap, en touchant ailleurs ou en changeant de page. */
-export function AppBar({ view, muted, profile, onLanguageChange, onToggleSound, onHome, onProfile, onAdmin, onUsers, onLogout }: AppBarProps) {
+export function AppBar({ view, muted, profile, administersQuizzes = false, onLanguageChange, onToggleSound, onHome, onProfile, onAdmin, onUsers, onLogout }: AppBarProps) {
   const { t, language } = useTranslation()
   const onAdminPage = view === 'quizzes' || view === 'quizDetail'
   const onUsersPage = view === 'users' || view === 'userDetail'
@@ -49,7 +51,7 @@ export function AppBar({ view, muted, profile, onLanguageChange, onToggleSound, 
       <LanguageSwitch value={language} onChange={(next) => { setMenuOpen(false); onLanguageChange(next) }} />
       <button type="button" className="secondary" onClick={thenClose(onToggleSound)} aria-label={muted ? t('nav.unmuteSound') : t('nav.muteSound')}><SoundIcon muted={muted} /></button>
       <button type="button" className="secondary" onClick={thenClose(onProfile)} aria-current={view === 'profile' ? 'page' : undefined}>{profile ? `${profile.avatar} ${profile.pseudo}` : t('nav.profile')}</button>
-      {profile?.isAdmin && <button type="button" className="secondary" onClick={thenClose(onAdmin)} aria-current={onAdminPage ? 'page' : undefined}>{t('nav.quiz')}</button>}
+      {(profile?.isAdmin || administersQuizzes) && <button type="button" className="secondary" onClick={thenClose(onAdmin)} aria-current={onAdminPage ? 'page' : undefined}>{t('nav.quiz')}</button>}
       {profile?.isAdmin && <button type="button" className="secondary" onClick={thenClose(onUsers)} aria-current={onUsersPage ? 'page' : undefined}>{t('nav.users')}</button>}
       <button type="button" className="secondary" onClick={thenClose(onLogout)}>{t('common.logout')}</button>
     </div>

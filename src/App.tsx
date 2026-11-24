@@ -47,6 +47,8 @@ import { fetchStreakTopScore, fetchTimedTopScore, fetchTopScore } from './utils/
 import { computeDueQuestions, createQuestionProgressJob, fetchQuestionProgress, selectReviewCards, type ReviewCard } from './utils/leitner'
 import { runSaveJobs, type SaveJob, type SaveStatus } from './utils/gameSave'
 import { canOfferUnseenOnly, coveragePercentTenths, fetchQuizCoverage, REVIEW_BATCH_SIZE, type QuizCoverage } from './utils/coverage'
+import { classifyQuizAdminError, fetchMyQuizRoles } from './utils/quizAdmins'
+import { administeredQuizzes, administersAnyQuiz, quizPermissions, type QuizRoles } from './utils/quizPermissions'
 import { deleteQuiz, fetchAccessibleQuizzes, fetchAccessibleQuizzesWithRetry, fetchQuizContent, fetchQuizWithVersion, QuizConflictError, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
 import { applyTheme } from './utils/theme'
 import { LanguageProvider, translate } from './i18n'
@@ -198,6 +200,12 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const quizVersionRef = useRef<string | null>(null)
   /** Le message d'une erreur d'édition : celui d'un conflit de version est expliqué, les autres gardent leur texte. */
   const editErrorMessage = (error: unknown, fallbackKey: TranslationKey) => error instanceof QuizConflictError ? t('quizAdmin.errorConflict') : error instanceof Error ? error.message : t(fallbackKey)
+  /** Le rôle du compte sur chacun des quiz qu'il administre (propriétaire ou administrateur), par id de quiz : de quoi savoir quels quiz il peut gérer
+   * et ce qu'il peut y faire. L'administrateur global administre tous les quiz sans y figurer (voir `quizPermissions`). */
+  const [quizRoles, setQuizRoles] = useState<QuizRoles>({})
+  const [rolesState, setRolesState] = useState<'loading' | 'ready' | 'error'>('loading')
+  /** Relit les rôles ; renvoie `null` si la lecture échoue (les rôles affichés restent alors ceux d'avant). */
+  const refreshRoles = () => fetchMyQuizRoles().then((roles) => { setQuizRoles(roles); setRolesState('ready'); return roles }).catch((error) => { console.error('Impossible de charger les rôles sur les quiz.', error); setRolesState('error'); return null })
   const hostedQuizzesRef = useRef<HostedQuizSummary[]>([])
   hostedQuizzesRef.current = hostedQuizzes
   const loadQuizzes = () => {
@@ -221,6 +229,14 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     })
   }
   useEffect(() => { loadQuizzes() }, [])
+  useEffect(() => { refreshRoles() }, [])
+  useEffect(() => {
+    if (rolesState !== 'error') return
+    const retry = () => { if (document.visibilityState === 'visible') refreshRoles() }
+    window.addEventListener('online', retry)
+    document.addEventListener('visibilitychange', retry)
+    return () => { window.removeEventListener('online', retry); document.removeEventListener('visibilitychange', retry) }
+  }, [rolesState])
   useEffect(() => {
     if (quizListState !== 'error') return
     const retry = () => { if (document.visibilityState === 'visible') loadQuizzes() }
@@ -361,7 +377,24 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   const replace = (next: View) => { setView(next); window.history.replaceState({ view: next }, '', urlForView(next)) }
   // Les pages d'administration ne sont pas pour les autres comptes (leur bouton est déjà masqué) : une URL tapée à la main
   // les ramène à l'accueil dès que le profil est chargé.
-  useEffect(() => { if (profile && !profile.isAdmin && (view === 'quizzes' || view === 'quizDetail' || view === 'users' || view === 'userDetail')) replace('start') }, [profile, view])
+  const isGlobalAdmin = profile?.isAdmin ?? false
+  const administers = administersAnyQuiz(isGlobalAdmin, quizRoles)
+  const activePermissions = quizPermissions(selectedHostedQuizId, isGlobalAdmin, quizRoles)
+  // Les pages Utilisateurs sont réservées à l'administrateur global ; la page Quiz à qui administre au moins un quiz, et la fiche d'un quiz à qui
+  // l'administre. On attend que les rôles soient lus (et, pour la fiche, que le quiz ait été choisi) avant de renvoyer quelqu'un à l'accueil.
+  useEffect(() => {
+    if (!profile || isGlobalAdmin) return
+    if (view === 'users' || view === 'userDetail') { replace('start'); return }
+    if (rolesState === 'loading') return
+    if (view === 'quizzes' && !administers) replace('start')
+    else if (view === 'quizDetail' && quizListState === 'ready' && !activePermissions.manage) replace('start')
+  }, [profile, view, rolesState, quizRoles, quizListState, selectedHostedQuizId])
+  /** Le compte connecté vient de changer son propre rôle sur le quiz ouvert : on relit ses droits, et s'il n'administre plus ce quiz on le quitte. */
+  const onSelfRoleChanged = async (left: boolean) => {
+    const roles = await refreshRoles()
+    fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
+    if (left && !isGlobalAdmin) replace(roles && Object.keys(roles).length > 0 ? 'quizzes' : 'start')
+  }
   // Navigation depuis la barre supérieure, présente sur toutes les pages : quitter une partie en cours en abandonne la
   // progression, comme le bouton « Annuler » et le retour du navigateur, et demande donc confirmation.
   const confirmLeaveProfile = async () => !profileDirtyRef.current || await confirmDialog(leaveProfileConfirm(t))
@@ -466,6 +499,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       applyQuizLanguage(newQuiz)
       selectId(id)
       quizVersionRef.current = await fetchQuizWithVersion(id).then((created) => created.updatedAt).catch(() => null)
+      refreshRoles()
       setSelectedThemes([]); setDifficulty(''); setSessionQuestions([])
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
@@ -493,13 +527,15 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       const parsed = parseQuiz(content)
       const publishedId = await upsertQuiz(parsed.metadata.title, content)
       if (publishedId === selectedIdRef.current) await selectHostedQuiz(publishedId, true)
+      refreshRoles()
       setPublishError('')
       setPublishSuccess(true)
       const importedLanguage = normalizeQuizLanguage(parsed.metadata.language ?? '')
       if (importedLanguage && !isKnownQuizLanguage(importedLanguage)) setPublishWarning(t('admin.quizLanguageUnknown', importedLanguage))
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
-      setPublishError(error instanceof Error ? error.message : t('admin.errorInvalidJson'))
+      const raw = error instanceof Error ? error.message : (error as { message?: string } | null)?.message
+      setPublishError(classifyQuizAdminError(raw) === 'forbidden' ? t('admin.errorImportForbidden') : error instanceof Error ? error.message : t('admin.errorInvalidJson'))
     }
   }
 
@@ -596,6 +632,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       await deleteQuiz(id, deleteHistoryToo)
       setHostedQuizzes((current) => current.filter((existing) => existing.id !== id))
       if (selectedHostedQuizId === id) { setQuiz(initialQuiz); selectId(''); quizVersionRef.current = null }
+      setQuizRoles((current) => Object.fromEntries(Object.entries(current).filter(([quizId]) => quizId !== id)))
       navigate('quizzes')
     } catch (error) {
       setDeleteQuizError(error instanceof Error ? error.message : t('admin.errorDeleteQuiz'))
@@ -755,7 +792,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
 
   return <LanguageProvider language={language}><QuizLanguageProvider language={quiz.metadata.language}><main className="app-shell">
     <header className="app-header">
-      <AppBar view={view} muted={muted} profile={profile} onLanguageChange={changeLanguage} onToggleSound={toggleSound} onHome={() => goTo('start')} onProfile={() => goTo('profile')} onAdmin={() => goTo('quizzes')} onUsers={() => goTo('users')} onLogout={onLogout} />
+      <AppBar view={view} muted={muted} profile={profile} administersQuizzes={administers} onLanguageChange={changeLanguage} onToggleSound={toggleSound} onHome={() => goTo('start')} onProfile={() => goTo('profile')} onAdmin={() => goTo('quizzes')} onUsers={() => goTo('users')} onLogout={onLogout} />
       {breadcrumb.length > 0 && <Breadcrumb items={breadcrumb} label={t('nav.breadcrumb')} />}
       {/* Le quiz actif (titre, auteur, langue) n'est présenté que sur les pages qui le concernent. */}
       {isQuizPage(view) && <div className="quiz-context">
@@ -818,10 +855,10 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'streakResults' && streakResult && <StreakResultPage links={quiz.metadata.links} {...streakResult} onRestartSame={restartStreak} onBackToSettings={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} onViewOverview={() => viewOverview('streakResults')} />}
     {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} seenIds={unseenSeenIds} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
     {view === 'timedResults' && timedResult && <TimedResultPage links={quiz.metadata.links} {...timedResult} onRestartSame={restartTimed} onBackToSettings={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} onViewOverview={() => viewOverview('timedResults')} />}
-    {view === 'quizzes' && <QuizListPage hostedQuizzes={hostedQuizzes} isAdmin={profile?.isAdmin ?? false} onBack={() => navigate('start')} onViewUsers={() => { playClick(); navigate('users') }} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} publishWarning={publishWarning} />}
-    {view === 'users' && profile?.isAdmin && <UsersPage onBack={() => navigate('quizzes')} onOpenUser={openUser} />}
-    {view === 'userDetail' && profile?.isAdmin && selectedUserId && <UserDetailPage userId={selectedUserId} onBack={() => navigate('users')} onLoaded={setSelectedUserName} onDeleted={() => { setSelectedUserId(null); setSelectedUserName(''); selectedUserIdRef.current = null; navigate('users') }} />}
-    {view === 'quizDetail' && <QuizDetailPage quiz={quiz} hostedQuizId={selectedHostedQuizId} isPublic={hostedQuizzes.find((hosted) => hosted.id === selectedHostedQuizId)?.is_public ?? false} onTogglePublic={(isPublic) => togglePublicLocally(selectedHostedQuizId, isPublic)} onBack={() => navigate('quizzes')} onExport={exportQuiz} isAdmin={profile?.isAdmin ?? false} canEditQuiz={(profile?.isAdmin ?? false) && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onAddTheme={addTheme} quizLoadError={quizLoadError} onUpdateQuizMeta={updateQuizMeta} onDeleteQuiz={deleteHostedQuiz} deleteQuizError={deleteQuizError} />}
+    {view === 'quizzes' && administers && <QuizListPage hostedQuizzes={administeredQuizzes(hostedQuizzes, isGlobalAdmin, quizRoles)} isGlobalAdmin={isGlobalAdmin} canCreate={isGlobalAdmin} roles={isGlobalAdmin ? {} : quizRoles} onBack={() => navigate('start')} onViewUsers={() => { playClick(); navigate('users') }} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} publishWarning={publishWarning} />}
+    {view === 'users' && isGlobalAdmin && <UsersPage onBack={() => navigate('quizzes')} onOpenUser={openUser} />}
+    {view === 'userDetail' && isGlobalAdmin && selectedUserId && <UserDetailPage userId={selectedUserId} onBack={() => navigate('users')} onLoaded={setSelectedUserName} onDeleted={() => { setSelectedUserId(null); setSelectedUserName(''); selectedUserIdRef.current = null; navigate('users') }} />}
+    {view === 'quizDetail' && activePermissions.manage && <QuizDetailPage quiz={quiz} hostedQuizId={selectedHostedQuizId} isPublic={hostedQuizzes.find((hosted) => hosted.id === selectedHostedQuizId)?.is_public ?? false} onTogglePublic={(isPublic) => togglePublicLocally(selectedHostedQuizId, isPublic)} onBack={() => navigate('quizzes')} onExport={exportQuiz} canManage={activePermissions.manage} isOwner={activePermissions.owner} isGlobalAdmin={isGlobalAdmin} onSelfChanged={onSelfRoleChanged} canEditQuiz={activePermissions.manage && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onAddTheme={addTheme} quizLoadError={quizLoadError} onUpdateQuizMeta={updateQuizMeta} onDeleteQuiz={deleteHostedQuiz} deleteQuizError={deleteQuizError} />}
     {view === 'overview' && <OverviewPage activeQuizId={selectedHostedQuizId} onReviewQuiz={reviewQuizDue} onViewHistory={async (id) => { playClick(); await selectHostedQuiz(id); viewHistory('overview') }} onViewLeaderboard={async (id) => { playClick(); await selectHostedQuiz(id); viewLeaderboard('overview') }} onBack={() => navigate(overviewBack)} onSelectQuiz={async (id) => { playClick(); await selectHostedQuiz(id); navigate('start') }} />}
     {view === 'history' && <HistoryPage onBack={() => navigate(historyBack)} quiz={quiz} hostedQuizId={selectedHostedQuizId} hostedQuizzes={hostedQuizzes} onReviewDue={reviewDue} onViewLeaderboard={(key, label) => { playClick(); viewLeaderboard('history', 'classic', { key, label }) }} onPlayTheme={playTheme} />}
     {view === 'leaderboard' && <LeaderboardPage quiz={quiz} hostedQuizId={selectedHostedQuizId} hostedQuizzes={hostedQuizzes} initialMode={leaderboardMode} focusQuiz={leaderboardFocus} onViewOverview={() => viewOverview('leaderboard')} onBack={() => navigate(leaderboardBack)} />}

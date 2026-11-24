@@ -94,6 +94,22 @@ select, .text-answer { width: 100%; background: var(--surface-solid); color: var
 .correction .question-diagram { margin: .8rem 0; }
 .question-diagram-error { color: var(--text-muted); font-size: .85rem; }
 .question-diagram-error p { margin: 0 0 .4rem; }
+.quiz-user-search { display: grid; gap: .5rem; max-width: 36rem; margin-top: .8rem; }
+.quiz-user-search > label { display: grid; gap: .4rem; color: var(--text-soft); }
+.quiz-user-search .mode-hint { margin: 0; font-size: .8rem; }
+.quiz-user-search input { width: 100%; background: var(--surface-solid); color: var(--text); border: 1px solid var(--border-input); border-radius: .45rem; padding: .6rem .8rem; }
+.quiz-user-results, .quiz-admin-list { list-style: none; margin: .4rem 0; padding: 0; display: grid; gap: .5rem; }
+.quiz-user-results li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; padding: .5rem .8rem; border: 1px solid var(--border); border-radius: .5rem; background: var(--surface); }
+.quiz-user-name { font-weight: 700; color: var(--ink); }
+.quiz-admins { display: grid; gap: .6rem; max-width: 44rem; }
+.quiz-admin-item { display: grid; gap: .35rem; padding: .8rem 1rem; border: 1px solid var(--border); border-radius: .6rem; background: var(--surface); }
+.quiz-admin-who { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.quiz-admin-tag { padding: .1rem .55rem; border: 1px solid var(--border); border-radius: 999px; font-size: .75rem; color: var(--text-muted); }
+.quiz-admin-owner { color: var(--accent-text); border-color: var(--accent); }
+.quiz-admin-added { margin: 0; font-size: .8rem; }
+.quiz-admin-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.quiz-admin-actions button, .quiz-user-results button { width: auto; padding: .4rem .8rem; font-size: .85rem; }
+.quiz-admin-add-title { margin: 1rem 0 0; }
 .question-diagram-cause { font-size: .75rem; opacity: .8; word-break: break-word; }
 .question-table-wrap { max-width: 100%; margin: 0 0 1.2rem; border: 1px solid var(--border); border-radius: .6rem; overflow: auto; }
 .question-table { width: 100%; border-collapse: collapse; background: var(--surface-solid); font-size: .9rem; }
