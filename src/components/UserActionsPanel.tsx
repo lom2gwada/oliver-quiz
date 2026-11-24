@@ -7,7 +7,7 @@ import { downloadTextFile } from '../utils/download'
 import { matchesTypedName } from '../utils/titleConfirmation'
 import { userStatus, type AdminUserDetail, type AdminUserQuiz } from '../utils/adminUsers'
 import {
-  changeUserEmail, deleteUser, describeAuditEntry, exportUserData, fetchUserAuditLog, resendInvite, resetUserProgress, sendPasswordReset, setUserAdmin, setUserDisabled, setUserQuizAccess, updateUserProfile,
+  changeUserEmail, deleteUser, describeAuditEntry, exportUserData, fetchUserAuditLog, resendInvite, resetUserProgress, sendPasswordReset, setUserAdmin, setUserCanCreateQuizzes, setUserDisabled, setUserQuizAccess, updateUserProfile,
   userDataFilename, UserActionError, USER_ACTION_ERROR_KEYS, type AuditEntry, type UserActionFailure,
 } from '../utils/adminUserActions'
 import { AVATAR_OPTIONS } from '../utils/avatars'
@@ -206,6 +206,15 @@ export function UserActionsPanel({ detail, onChanged, onDeleted }: UserActionsPa
     await run(async () => { await setUserAdmin(detail.user_id, promote); return promote ? t('userActions.promotedNotice') : t('userActions.demotedNotice') })
   }
 
+  const toggleCanCreate = async () => {
+    const allow = !detail.can_create_quizzes
+    const confirmed = await confirmDialog(allow
+      ? { title: t('userActions.allowCreateConfirmTitle'), message: t('userActions.allowCreateConfirm', detail.pseudo), confirmLabel: t('userActions.allowCreateConfirmLabel') }
+      : { title: t('userActions.denyCreateConfirmTitle'), message: t('userActions.denyCreateConfirm', detail.pseudo), confirmLabel: t('userActions.denyCreateConfirmLabel'), destructive: true })
+    if (!confirmed) return
+    await run(async () => { await setUserCanCreateQuizzes(detail.user_id, allow); return allow ? t('userActions.allowedCreateNotice') : t('userActions.deniedCreateNotice') })
+  }
+
   const status = userStatus(detail)
   const resendInvitation = () => run(async () => { await resendInvite(detail.user_id); return t('userAccounts.resendSent', detail.email ?? '') })
   const sendReset = () => run(async () => { await sendPasswordReset(detail.user_id); return t('userAccounts.resetSent', detail.email ?? '') })
@@ -248,6 +257,14 @@ export function UserActionsPanel({ detail, onChanged, onDeleted }: UserActionsPa
     </div>}
     {error && <p className="alert" role="alert">{t(USER_ACTION_ERROR_KEYS[error])}</p>}
     {notice && <p className="profile-saved" role="status">{notice}</p>}
+
+    {!detail.is_admin && <>
+      <h3 className="stats-group-title">{t('userActions.canCreateTitle')}</h3>
+      <p className="mode-hint">{t(detail.can_create_quizzes ? 'userActions.canCreateOnNote' : 'userActions.canCreateOffNote')}</p>
+      <div className="users-actions">
+        <button type="button" className="secondary" disabled={busy} onClick={toggleCanCreate}>{t(detail.can_create_quizzes ? 'userActions.denyCreateButton' : 'userActions.allowCreateButton')}</button>
+      </div>
+    </>}
 
     {!detail.is_self && <>
       <h3 className="stats-group-title">{t('userAccounts.accountTitle')}</h3>

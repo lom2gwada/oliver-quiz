@@ -47,9 +47,9 @@ import { fetchStreakTopScore, fetchTimedTopScore, fetchTopScore } from './utils/
 import { computeDueQuestions, createQuestionProgressJob, fetchQuestionProgress, selectReviewCards, type ReviewCard } from './utils/leitner'
 import { runSaveJobs, type SaveJob, type SaveStatus } from './utils/gameSave'
 import { canOfferUnseenOnly, coveragePercentTenths, fetchQuizCoverage, REVIEW_BATCH_SIZE, type QuizCoverage } from './utils/coverage'
-import { classifyQuizAdminError, fetchMyQuizRoles } from './utils/quizAdmins'
+import { classifyQuizAdminError, fetchMyQuizRoles, QUIZ_ADMIN_ERROR_KEYS } from './utils/quizAdmins'
 import { administeredQuizzes, administersAnyQuiz, quizPermissions, type QuizRoles } from './utils/quizPermissions'
-import { deleteQuiz, fetchAccessibleQuizzes, fetchAccessibleQuizzesWithRetry, fetchQuizContent, fetchQuizWithVersion, QuizConflictError, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
+import { deleteQuiz, fetchAccessibleQuizzes, fetchAccessibleQuizzesWithRetry, fetchQuizContent, fetchQuizWithVersion, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
 import { applyTheme } from './utils/theme'
 import { LanguageProvider, translate } from './i18n'
 import type { Language, TranslationKey } from './i18n'
@@ -198,8 +198,14 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   /** La version (`updated_at`) du quiz hébergé actif telle que chargée ou enregistrée en dernier : renvoyée à chaque enregistrement pour que
    * deux administrateurs ne s'écrasent pas (`update_quiz`, 051). `null` tant qu'elle n'est pas connue : l'enregistrement n'est alors pas contrôlé. */
   const quizVersionRef = useRef<string | null>(null)
-  /** Le message d'une erreur d'édition : celui d'un conflit de version est expliqué, les autres gardent leur texte. */
-  const editErrorMessage = (error: unknown, fallbackKey: TranslationKey) => error instanceof QuizConflictError ? t('quizAdmin.errorConflict') : error instanceof Error ? error.message : t(fallbackKey)
+  /** Le message d'une erreur d'écriture sur un quiz : les refus de la base (conflit de version, titre pris, plafond atteint, droit manquant…)
+   * sont expliqués, les autres gardent leur texte. */
+  const editErrorMessage = (error: unknown, fallbackKey: TranslationKey) => {
+    const raw = error instanceof Error ? error.message : (error as { message?: string } | null)?.message
+    const failure = classifyQuizAdminError(raw)
+    if (failure !== 'failed') return t(QUIZ_ADMIN_ERROR_KEYS[failure])
+    return error instanceof Error ? error.message : t(fallbackKey)
+  }
   /** Le rôle du compte sur chacun des quiz qu'il administre (propriétaire ou administrateur), par id de quiz : de quoi savoir quels quiz il peut gérer
    * et ce qu'il peut y faire. L'administrateur global administre tous les quiz sans y figurer (voir `quizPermissions`). */
   const [quizRoles, setQuizRoles] = useState<QuizRoles>({})
@@ -378,7 +384,9 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   // Les pages d'administration ne sont pas pour les autres comptes (leur bouton est déjà masqué) : une URL tapée à la main
   // les ramène à l'accueil dès que le profil est chargé.
   const isGlobalAdmin = profile?.isAdmin ?? false
-  const administers = administersAnyQuiz(isGlobalAdmin, quizRoles)
+  /** Autorisé (par l'administrateur global) à créer des quiz : il a droit à la page Quiz même sans encore en administrer un. */
+  const canCreateQuizzes = isGlobalAdmin || (profile?.canCreateQuizzes ?? false)
+  const administers = administersAnyQuiz(isGlobalAdmin, quizRoles) || canCreateQuizzes
   const activePermissions = quizPermissions(selectedHostedQuizId, isGlobalAdmin, quizRoles)
   // Les pages Utilisateurs sont réservées à l'administrateur global ; la page Quiz à qui administre au moins un quiz, et la fiche d'un quiz à qui
   // l'administre. On attend que les rôles soient lus (et, pour la fiche, que le quiz ait été choisi) avant de renvoyer quelqu'un à l'accueil.
@@ -503,7 +511,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       setSelectedThemes([]); setDifficulty(''); setSessionQuestions([])
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
-      setCreateError(error instanceof Error ? error.message : t('admin.errorCreateQuiz'))
+      setCreateError(editErrorMessage(error, 'admin.errorCreateQuiz'))
       throw error
     }
   }
@@ -535,7 +543,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
       const raw = error instanceof Error ? error.message : (error as { message?: string } | null)?.message
-      setPublishError(classifyQuizAdminError(raw) === 'forbidden' ? t('admin.errorImportForbidden') : error instanceof Error ? error.message : t('admin.errorInvalidJson'))
+      setPublishError(classifyQuizAdminError(raw) === 'forbidden' ? t('admin.errorImportForbidden') : editErrorMessage(error, 'admin.errorInvalidJson'))
     }
   }
 
@@ -855,7 +863,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     {view === 'streakResults' && streakResult && <StreakResultPage links={quiz.metadata.links} {...streakResult} onRestartSame={restartStreak} onBackToSettings={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} onViewOverview={() => viewOverview('streakResults')} />}
     {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} seenIds={unseenSeenIds} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
     {view === 'timedResults' && timedResult && <TimedResultPage links={quiz.metadata.links} {...timedResult} onRestartSame={restartTimed} onBackToSettings={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} onViewOverview={() => viewOverview('timedResults')} />}
-    {view === 'quizzes' && administers && <QuizListPage hostedQuizzes={administeredQuizzes(hostedQuizzes, isGlobalAdmin, quizRoles)} isGlobalAdmin={isGlobalAdmin} canCreate={isGlobalAdmin} roles={isGlobalAdmin ? {} : quizRoles} onBack={() => navigate('start')} onViewUsers={() => { playClick(); navigate('users') }} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} publishWarning={publishWarning} />}
+    {view === 'quizzes' && administers && <QuizListPage hostedQuizzes={administeredQuizzes(hostedQuizzes, isGlobalAdmin, quizRoles)} isGlobalAdmin={isGlobalAdmin} canCreate={canCreateQuizzes} roles={isGlobalAdmin ? {} : quizRoles} onBack={() => navigate('start')} onViewUsers={() => { playClick(); navigate('users') }} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} publishWarning={publishWarning} />}
     {view === 'users' && isGlobalAdmin && <UsersPage onBack={() => navigate('quizzes')} onOpenUser={openUser} />}
     {view === 'userDetail' && isGlobalAdmin && selectedUserId && <UserDetailPage userId={selectedUserId} onBack={() => navigate('users')} onLoaded={setSelectedUserName} onDeleted={() => { setSelectedUserId(null); setSelectedUserName(''); selectedUserIdRef.current = null; navigate('users') }} />}
     {view === 'quizDetail' && activePermissions.manage && <QuizDetailPage quiz={quiz} hostedQuizId={selectedHostedQuizId} isPublic={hostedQuizzes.find((hosted) => hosted.id === selectedHostedQuizId)?.is_public ?? false} onTogglePublic={(isPublic) => togglePublicLocally(selectedHostedQuizId, isPublic)} onBack={() => navigate('quizzes')} onExport={exportQuiz} canManage={activePermissions.manage} isOwner={activePermissions.owner} isGlobalAdmin={isGlobalAdmin} onSelfChanged={onSelfRoleChanged} canEditQuiz={activePermissions.manage && selectedHostedQuizId !== ''} onSaveQuestion={saveQuestion} onAddQuestion={addQuestion} onDeleteQuestion={deleteQuestion} editError={editError} onAddTheme={addTheme} quizLoadError={quizLoadError} onUpdateQuizMeta={updateQuizMeta} onDeleteQuiz={deleteHostedQuiz} deleteQuizError={deleteQuizError} />}

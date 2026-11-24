@@ -9,6 +9,8 @@ export interface AdminUser {
   avatar: string
   email: string | null
   is_admin: boolean
+  /** Autorisé à créer des quiz (`052_quiz_creation_permission.sql`) ; absent tant que cette migration n'est pas appliquée. */
+  can_create_quizzes?: boolean
   /** C'est le compte de l'administrateur qui regarde : les garde-fous lui interdisent de se désactiver, se supprimer ou se rétrograder. */
   is_self: boolean
   /** Création du compte. */
@@ -41,10 +43,10 @@ export interface AdminUserDetail extends AdminUser {
 }
 
 export type UserStatus = 'active' | 'disabled' | 'never'
-export type UserFilter = 'all' | 'admins' | 'disabled' | 'never' | 'inactive'
+export type UserFilter = 'all' | 'admins' | 'creators' | 'disabled' | 'never' | 'inactive'
 export type UserSort = 'pseudo' | 'created' | 'lastSignIn' | 'games'
 
-export const USER_FILTERS: UserFilter[] = ['all', 'admins', 'disabled', 'never', 'inactive']
+export const USER_FILTERS: UserFilter[] = ['all', 'admins', 'creators', 'disabled', 'never', 'inactive']
 
 /** Les durées proposées pour « inactif depuis… », en jours. */
 export const INACTIVITY_DAYS = [30, 60, 90, 180, 365]
@@ -80,6 +82,7 @@ export function filterUsers(users: AdminUser[], query: string, filter: UserFilte
   return users.filter((user) => {
     if (wanted && !normalizeSearch(`${user.pseudo} ${user.email ?? ''}`).includes(wanted)) return false
     if (filter === 'admins') return user.is_admin
+    if (filter === 'creators') return !!user.can_create_quizzes && !user.is_admin
     if (filter === 'disabled') return userStatus(user) === 'disabled'
     if (filter === 'never') return userStatus(user) === 'never'
     if (filter === 'inactive') return isInactive(user, inactiveDays, now)

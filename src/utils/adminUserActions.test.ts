@@ -12,7 +12,7 @@ const invoke = vi.hoisted(() => vi.fn())
 vi.mock('./supabase', () => ({ supabase: { rpc, from, functions: { invoke } } }))
 
 import {
-  changeUserEmail, classifyAccountCode, classifyUserActionError, deleteUser, describeAuditEntry, exportUserData, fetchUserAuditLog, inviteUser, readFunctionError, resendInvite, resetUserProgress, sendPasswordReset, setUserAdmin, setUserDisabled, setUserQuizAccess, updateUserProfile, userDataFilename,
+  changeUserEmail, classifyAccountCode, classifyUserActionError, deleteUser, describeAuditEntry, exportUserData, fetchUserAuditLog, inviteUser, readFunctionError, resendInvite, resetUserProgress, sendPasswordReset, setUserAdmin, setUserCanCreateQuizzes, setUserDisabled, setUserQuizAccess, updateUserProfile, userDataFilename,
   UserActionError, USER_ACTION_ERROR_KEYS, type AuditEntry, type UserActionFailure,
 } from './adminUserActions'
 
@@ -297,5 +297,31 @@ describe('describeAuditEntry', () => {
     expect(describeAuditEntry({ ...entry('disable'), details: undefined as unknown as Record<string, unknown> }, tFr)).toBe('Olivier a désactivé le compte')
     expect(describeAuditEntry({ ...entry('disable'), admin_pseudo: '' }, tFr)).toBe('? a désactivé le compte')
     expect(describeAuditEntry({ ...entry('disable'), action: 'something_new' as AuditEntry['action'] }, tFr)).toBe('Olivier a effectué une action')
+  })
+})
+
+describe('setUserCanCreateQuizzes', () => {
+  beforeEach(() => rpc.mockReset())
+
+  it('allows or removes the permission through the SQL function', async () => {
+    rpc.mockResolvedValue({ data: null, error: null })
+    await setUserCanCreateQuizzes('u1', true)
+    expect(rpc).toHaveBeenLastCalledWith('admin_set_user_can_create_quizzes', { p_user_id: 'u1', p_allowed: true })
+    await setUserCanCreateQuizzes('u1', false)
+    expect(rpc).toHaveBeenLastCalledWith('admin_set_user_can_create_quizzes', { p_user_id: 'u1', p_allowed: false })
+  })
+
+  it('says why when the database refuses', async () => {
+    rpc.mockResolvedValue({ data: null, error: { message: 'forbidden' } })
+    const failure = await setUserCanCreateQuizzes('u1', true).catch((error) => error)
+    expect(failure).toBeInstanceOf(UserActionError)
+    expect(failure.failure).toBe('forbidden')
+  })
+
+  it('is described in the audit log, in both languages', () => {
+    expect(describeAuditEntry(entry('set_can_create_quizzes', { allowed: true }), tFr)).toBe("Olivier l'a autorisé à créer des quiz")
+    expect(describeAuditEntry(entry('set_can_create_quizzes', { allowed: false }), tFr)).toBe("Olivier lui a retiré l'autorisation de créer des quiz")
+    expect(describeAuditEntry(entry('set_can_create_quizzes', { allowed: true }), tEn)).toBe('Olivier allowed them to create quizzes')
+    expect(describeAuditEntry(entry('set_can_create_quizzes', { allowed: false }), tEn)).toBe('Olivier removed their permission to create quizzes')
   })
 })

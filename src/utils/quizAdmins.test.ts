@@ -21,6 +21,9 @@ describe('classifyQuizAdminError', () => {
     ['user_disabled', 'userDisabled'],
     ['invalid_role', 'invalidRole'],
     ['conflict', 'conflict'],
+    ['title_unavailable', 'titleUnavailable'],
+    ['quiz_limit_reached', 'limitReached'],
+    ['quiz_too_large', 'tooLarge'],
     ['not_found', 'notFound'],
     ['forbidden', 'forbidden'],
     ['new row violates row-level security policy for table "guest_links"', 'forbidden'],
@@ -44,7 +47,7 @@ describe('QUIZ_ADMIN_ERROR_KEYS', () => {
   })
 
   it('covers every failure kind', () => {
-    const kinds: QuizAdminFailure[] = ['forbidden', 'notFound', 'lastOwner', 'userDisabled', 'invalidRole', 'conflict', 'soleOwner', 'failed']
+    const kinds: QuizAdminFailure[] = ['forbidden', 'notFound', 'lastOwner', 'userDisabled', 'invalidRole', 'conflict', 'soleOwner', 'titleUnavailable', 'limitReached', 'tooLarge', 'failed']
     expect(Object.keys(QUIZ_ADMIN_ERROR_KEYS).sort()).toEqual([...kinds].sort())
   })
 })

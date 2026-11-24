@@ -46,6 +46,8 @@ describe('filterUsers', () => {
 
   it('filters administrators, blocked accounts and accounts never signed in', () => {
     expect(pseudos(filterUsers(everyone, '', 'admins'))).toEqual(['Alice'])
+    const creators = [...everyone, user('Dana', { can_create_quizzes: true }), user('Eve', { can_create_quizzes: false }), user('Fred', { is_admin: true, can_create_quizzes: true })]
+    expect(pseudos(filterUsers(creators, '', 'creators'))).toEqual(['Dana'])
     expect(pseudos(filterUsers(everyone, '', 'disabled'))).toEqual(['Carl'])
     expect(pseudos(filterUsers(everyone, '', 'never'))).toEqual(['Bob'])
   })

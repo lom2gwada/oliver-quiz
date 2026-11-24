@@ -15,7 +15,7 @@ vi.mock('../utils/confirmDialog', () => ({ confirmDialog: vi.fn() }))
 vi.mock('../utils/download', () => ({ downloadTextFile: vi.fn() }))
 vi.mock('../utils/adminUserActions', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../utils/adminUserActions')>()),
-  setUserDisabled: vi.fn(), setUserAdmin: vi.fn(), updateUserProfile: vi.fn(), setUserQuizAccess: vi.fn(), resetUserProgress: vi.fn(), deleteUser: vi.fn(), fetchUserAuditLog: vi.fn(),
+  setUserDisabled: vi.fn(), setUserAdmin: vi.fn(), setUserCanCreateQuizzes: vi.fn(), updateUserProfile: vi.fn(), setUserQuizAccess: vi.fn(), resetUserProgress: vi.fn(), deleteUser: vi.fn(), fetchUserAuditLog: vi.fn(),
   resendInvite: vi.fn(), sendPasswordReset: vi.fn(), changeUserEmail: vi.fn(), exportUserData: vi.fn(),
 }))
 
@@ -64,7 +64,7 @@ const noticeText = () => container.querySelector('[role=status].profile-saved, .
 beforeEach(() => {
   vi.clearAllMocks()
   mocked(actions.fetchUserAuditLog).mockResolvedValue([])
-  for (const name of ['setUserDisabled', 'setUserAdmin', 'updateUserProfile', 'setUserQuizAccess', 'deleteUser', 'resendInvite', 'sendPasswordReset', 'changeUserEmail'] as const) mocked(actions[name]).mockResolvedValue(null)
+  for (const name of ['setUserDisabled', 'setUserAdmin', 'setUserCanCreateQuizzes', 'updateUserProfile', 'setUserQuizAccess', 'deleteUser', 'resendInvite', 'sendPasswordReset', 'changeUserEmail'] as const) mocked(actions[name]).mockResolvedValue(null)
   mocked(actions.exportUserData).mockResolvedValue({ scope: 'oliver-quiz', quiz_results: [{ id: 'r1' }] })
   mocked(actions.resetUserProgress).mockResolvedValue({ quiz_results: 3, question_results: 20, streak_results: 0, timed_results: 0, question_progress: 5 })
   container = document.createElement('div')
@@ -477,5 +477,49 @@ describe('UserActionsPanel — audit log', () => {
     await mount(detail({ pseudo: 'Alice 2' }))
     await flush()
     expect(alertText()).toBe('Impossible de charger le journal.')
+  })
+})
+
+describe('UserActionsPanel — creating quizzes', () => {
+  it('says a player cannot create quizzes and offers to allow it, after confirmation', async () => {
+    confirm.mockResolvedValue(true)
+    await mount()
+    expect(container.textContent).toContain('Ce compte ne peut pas créer de quiz.')
+    await click(buttonByText('Autoriser à créer des quiz'))
+    expect(confirm.mock.calls[0][0].message).toContain('Alice')
+    expect(confirm.mock.calls[0][0].message).toContain('Quiz Forge et Periodic Quiz')
+    expect(actions.setUserCanCreateQuizzes).toHaveBeenCalledWith('u-alice', true)
+    expect(noticeText()).toBe('Ce compte peut maintenant créer des quiz.')
+  })
+
+  it('does nothing when the confirmation is declined', async () => {
+    confirm.mockResolvedValue(false)
+    await mount()
+    await click(buttonByText('Autoriser à créer des quiz'))
+    expect(actions.setUserCanCreateQuizzes).not.toHaveBeenCalled()
+  })
+
+  it('removes the permission with a destructive confirmation that says the quizzes stay', async () => {
+    confirm.mockResolvedValue(true)
+    await mount(detail({ can_create_quizzes: true }))
+    expect(container.textContent).toContain('Ce compte peut créer des quiz')
+    await click(buttonByText("Retirer l'autorisation de créer des quiz"))
+    expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ destructive: true, message: expect.stringContaining('Les quiz déjà créés restent les siens.') }))
+    expect(actions.setUserCanCreateQuizzes).toHaveBeenCalledWith('u-alice', false)
+    expect(noticeText()).toBe("L'autorisation de créer des quiz est retirée.")
+  })
+
+  it('shows nothing for an administrator: the global administrator can already create', async () => {
+    await mount(detail({ is_admin: true }))
+    expect(buttonByText('Autoriser à créer des quiz')).toBeUndefined()
+    expect(container.textContent).not.toContain('Création de quiz')
+  })
+
+  it('explains a refusal', async () => {
+    confirm.mockResolvedValue(true)
+    mocked(actions.setUserCanCreateQuizzes).mockRejectedValue(new actions.UserActionError('forbidden'))
+    await mount()
+    await click(buttonByText('Autoriser à créer des quiz'))
+    expect(alertText()).toBe('Action réservée aux administrateurs.')
   })
 })

@@ -19,9 +19,11 @@ describe('saveProfile', () => {
     expect(options).toEqual({ onConflict: 'id' })
   })
 
-  it("n'envoie jamais le statut administrateur, même si le profil le porte", async () => {
-    await saveProfile({ pseudo: 'Alice', avatar: '🦊', theme: 'dark', language: 'fr', isAdmin: true })
+  it("n'envoie jamais le statut administrateur ni l'autorisation de créer des quiz, même si le profil les porte", async () => {
+    await saveProfile({ pseudo: 'Alice', avatar: '🦊', theme: 'dark', language: 'fr', isAdmin: true, canCreateQuizzes: true })
     const [payload] = upsert.mock.calls[0] as unknown as [Record<string, unknown>]
+    expect(payload).not.toHaveProperty('canCreateQuizzes')
+    expect(payload).not.toHaveProperty('can_create_quizzes')
     expect(payload).not.toHaveProperty('isAdmin')
     expect(payload).not.toHaveProperty('is_admin')
     expect(Object.keys(payload).every((column) => WRITABLE_COLUMNS.includes(column))).toBe(true)

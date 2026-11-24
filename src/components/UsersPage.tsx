@@ -36,7 +36,7 @@ export function UserListView({ users, search, filter, sort, onSearchChange, onFi
   const shown = sortUsers(filterUsers(users, search, filter, { inactiveDays }), sort)
   const summary = summarizeUsers(users)
   const narrowed = search.trim() !== '' || filter !== 'all'
-  const filterLabel = { all: t('users.filterAll'), admins: t('users.filterAdmins'), disabled: t('users.filterDisabled'), never: t('users.filterNever'), inactive: t('users.filterInactive') }
+  const filterLabel = { all: t('users.filterAll'), admins: t('users.filterAdmins'), creators: t('users.filterCreators'), disabled: t('users.filterDisabled'), never: t('users.filterNever'), inactive: t('users.filterInactive') }
   const sortLabel = { pseudo: t('users.sortPseudo'), created: t('users.sortCreated'), lastSignIn: t('users.sortLastSignIn'), games: t('users.sortGames') }
   const allShownSelected = !!selected && shown.length > 0 && shown.every((user) => selected.has(user.user_id))
 
@@ -86,6 +86,7 @@ export function UserListView({ users, search, filter, sort, onSearchChange, onFi
                   {user.pseudo}
                   {user.is_self && <span className="overview-badge users-badge-info">{t('users.badgeSelf')}</span>}
                   {user.is_admin && <span className="overview-badge">{t('users.badgeAdmin')}</span>}
+                  {user.can_create_quizzes && !user.is_admin && <span className="overview-badge">{t('users.badgeCreator')}</span>}
                   {status === 'disabled' && <span className="overview-badge users-badge-disabled">{t('users.badgeDisabled')}</span>}
                   {status === 'never' && <span className="overview-badge users-badge-never">{t('users.badgeNever')}</span>}
                 </span>
