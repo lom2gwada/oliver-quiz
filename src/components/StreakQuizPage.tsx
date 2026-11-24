@@ -9,6 +9,7 @@ import { abandonGameConfirm } from '../utils/confirmPresets'
 import { useAdvanceGuard } from '../utils/useAdvanceGuard'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
 import { isCorrect } from './ResultPage'
+import { useDiagramPreload } from '../utils/useDiagramPreload'
 import { QuestionBody } from './QuestionBody'
 import { TYPE_ICONS, difficultyLabel, typeLabel, withShuffledAnswers } from './QuizPage'
 
@@ -41,6 +42,7 @@ export function StreakQuizPage({ quiz, pool, seenIds, timeboxed, onFinish, onCan
   const [answers, setAnswers] = useState<AnswersByQuestion>({})
   const [elapsed, setElapsed] = useState(0)
   const question = order[index]
+  useDiagramPreload(order)
   const streakCount = index
 
   useEffect(() => {

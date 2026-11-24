@@ -6,6 +6,7 @@ import { formatDuration } from '@engine/utils/time'
 import { shuffle, shuffleAwayFrom } from '../utils/shuffle'
 import { questionTimeLimit, questionTimerUrgency } from '../utils/questionTimeLimits'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
+import { useDiagramPreload } from '../utils/useDiagramPreload'
 import { dictationLanguageTag } from '../utils/dictation'
 import { confirmDialog } from '../utils/confirmDialog'
 import { abandonGameConfirm } from '../utils/confirmPresets'
@@ -67,6 +68,7 @@ export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel, revie
   const [elapsed, setElapsed] = useState(0)
   const shuffledQuestions = useMemo(() => questions.map(withShuffledAnswers), [questions])
   const question = shuffledQuestions[current]
+  useDiagramPreload(shuffledQuestions)
   const updateAnswer = (answer: AnswersByQuestion[string]) => setAnswers((previous) => ({ ...previous, [question.id]: answer }))
   const cancelQuiz = async () => { if (await confirmDialog(abandonGameConfirm(t, t('quiz.confirmAbandonQuiz')))) onCancel() }
 

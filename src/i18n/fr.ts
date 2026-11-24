@@ -613,6 +613,7 @@ export const fr = {
   'result.listenExplanation': '🗣️ Écouter l’explication',
   'quiz.listenError': 'La lecture vocale n’a pas démarré',
   'quiz.diagramError': 'Le diagramme de cette question n’a pas pu être affiché.',
+  'quiz.diagramRetry': 'Réessayer',
   'save.failed': 'Partie non enregistrée — vérifiez votre connexion.',
   'save.retry': 'Réessayer',
   'save.retrying': 'Nouvel essai…',

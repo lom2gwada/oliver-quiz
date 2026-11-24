@@ -9,6 +9,7 @@ import { QuizLanguageProvider } from '../utils/quizLanguageContext'
 import { useAdvanceGuard } from '../utils/useAdvanceGuard'
 import { MermaidDiagram } from './MermaidDiagram'
 import { QuestionImage } from '@engine/components/QuestionImage'
+import { useDiagramPreload } from '../utils/useDiagramPreload'
 import { QuestionBody } from './QuestionBody'
 import { QuestionReplay } from './QuestionReplay'
 import { QuestionTable } from './QuestionTable'
@@ -41,6 +42,7 @@ function GuestQuizLoader({ token }: { token: string }) {
 function GuestSession({ token, mode, quiz }: { token: string; mode: GuestLinkMode; quiz: Quiz }) {
   const { t, language } = useTranslation()
   const questions = useMemo(() => quiz.questions.map(withShuffledAnswers), [quiz])
+  useDiagramPreload(questions)
   const [step, setStep] = useState<'name' | 'quiz' | 'done'>('name')
   const [name, setName] = useState('')
   const [current, setCurrent] = useState(0)

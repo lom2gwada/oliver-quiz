@@ -93,6 +93,8 @@ select, .text-answer { width: 100%; background: var(--surface-solid); color: var
 .question-diagram svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
 .correction .question-diagram { margin: .8rem 0; }
 .question-diagram-error { color: var(--text-muted); font-size: .85rem; }
+.question-diagram-error p { margin: 0 0 .4rem; }
+.question-diagram-cause { font-size: .75rem; opacity: .8; word-break: break-word; }
 .question-table-wrap { max-width: 100%; margin: 0 0 1.2rem; border: 1px solid var(--border); border-radius: .6rem; overflow: auto; }
 .question-table { width: 100%; border-collapse: collapse; background: var(--surface-solid); font-size: .9rem; }
 .question-table th, .question-table td { padding: .5rem .8rem; text-align: left; border-bottom: 1px solid var(--border); }

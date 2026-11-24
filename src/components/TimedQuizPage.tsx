@@ -9,6 +9,7 @@ import { confirmDialog } from '../utils/confirmDialog'
 import { abandonGameConfirm } from '../utils/confirmPresets'
 import { useAdvanceGuard } from '../utils/useAdvanceGuard'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
+import { useDiagramPreload } from '../utils/useDiagramPreload'
 import { QuestionBody } from './QuestionBody'
 import { TYPE_ICONS, difficultyLabel, typeLabel, withShuffledAnswers } from './QuizPage'
 
@@ -39,6 +40,7 @@ export function TimedQuizPage({ quiz, pool, seenIds, durationSeconds, timeboxed,
   const [attempts, setAttempts] = useState<QuestionAttempt[]>([])
   const [elapsed, setElapsed] = useState(0)
   const question = order[index]
+  useDiagramPreload(order)
 
   useEffect(() => {
     const interval = setInterval(() => setElapsed((value) => value + 1), 1000)
