@@ -567,6 +567,18 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     }
   }
 
+  /** Depuis la page de jeu : enregistre la question modifiée dans le quiz joué (mêmes contrôles que `saveQuestion`, en base). Rejette avec le
+   * message à montrer dans la fenêtre de modification, qui reste ouverte. N'utilise pas `editError`, celui de la fiche du quiz. */
+  const editQuestionInPlay = async (updated: Question) => {
+    try {
+      await republishQuestions(quiz.questions.map((existing) => (existing.id === updated.id ? updated : existing)))
+    } catch (error) {
+      throw new Error(editErrorMessage(error, 'admin.errorSaveQuestion'))
+    }
+  }
+  /** Le bouton « Modifier » de la page de jeu : pour qui administre le quiz joué, sur un quiz hébergé (jamais le quiz par défaut). */
+  const editInPlay = selectedHostedQuizId !== '' && activePermissions.manage ? editQuestionInPlay : undefined
+
   /** Admin uniquement, sur un quiz hébergé actif : ajoute une nouvelle question. Rejette en cas d'échec pour laisser le formulaire ouvert. */
   const addQuestion = async (created: Question) => {
     setEditError('')
@@ -846,7 +858,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       <p>{t('start.availability', filteredQuestions.length, gameMode, Math.min(questionCount, filteredQuestions.length))}</p>
       <button type="button" className="start-button" onClick={gameMode === 'classic' ? startQuiz : gameMode === 'streak' ? startStreak : startTimed} disabled={!filteredQuestions.length || !quizReady}>{gameMode === 'classic' ? t('start.startClassic') : gameMode === 'streak' ? t('start.startStreak') : t('start.startTimed')}</button>
     </section>}
-    {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} timeboxed={timeboxed} reviewBoxes={isReplay ? reviewBoxes : undefined} onFinish={(nextAnswers, duration, played) => {
+    {view === 'quiz' && <QuizPage quiz={quiz} questions={sessionQuestions} timeboxed={timeboxed} reviewBoxes={isReplay ? reviewBoxes : undefined} onEditQuestion={editInPlay} onFinish={(nextAnswers, duration, played) => {
       setAnswers(nextAnswers); setElapsedSeconds(duration); setSessionQuestions(played); replace('results')
       markSeen(played)
       const resultPayload = buildQuizResultPayload(played, nextAnswers, quiz.categories, duration, quiz.metadata.title, selectedHostedQuizId || null, isUnfiltered && !isReplay)
@@ -859,9 +871,9 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     }} onCancel={backToStart} />}
     {(view === 'results' || view === 'streakResults' || view === 'timedResults') && <SaveStatusNotice status={saveStatus} onRetry={retrySave} />}
     {view === 'results' && <ResultPage links={quiz.metadata.links} reviewBoxes={isReplay ? reviewBoxes : undefined} questions={sessionQuestions} answers={answers} themes={quiz.categories} elapsedSeconds={elapsedSeconds} onRestartSame={isReplay ? undefined : restartQuiz} onBackToSettings={backToStart} onViewHistory={() => viewHistory('results')} onViewLeaderboard={() => viewLeaderboard('results')} onViewOverview={() => viewOverview('results')} />}
-    {view === 'streak' && <StreakQuizPage quiz={quiz} pool={filteredQuestions} seenIds={unseenSeenIds} timeboxed={timeboxed} onFinish={finishStreak} onCancel={backToStart} />}
+    {view === 'streak' && <StreakQuizPage quiz={quiz} pool={filteredQuestions} seenIds={unseenSeenIds} timeboxed={timeboxed} onFinish={finishStreak} onCancel={backToStart} onEditQuestion={editInPlay} />}
     {view === 'streakResults' && streakResult && <StreakResultPage links={quiz.metadata.links} {...streakResult} onRestartSame={restartStreak} onBackToSettings={backToStart} onViewHistory={() => viewHistory('streakResults')} onViewLeaderboard={() => viewLeaderboard('streakResults', 'streak')} onViewOverview={() => viewOverview('streakResults')} />}
-    {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} seenIds={unseenSeenIds} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} />}
+    {view === 'timed' && <TimedQuizPage quiz={quiz} pool={filteredQuestions} seenIds={unseenSeenIds} durationSeconds={durationMinutes * 60} timeboxed={timeboxed} onFinish={finishTimed} onCancel={backToStart} onEditQuestion={editInPlay} />}
     {view === 'timedResults' && timedResult && <TimedResultPage links={quiz.metadata.links} {...timedResult} onRestartSame={restartTimed} onBackToSettings={backToStart} onViewHistory={() => viewHistory('timedResults')} onViewLeaderboard={() => viewLeaderboard('timedResults', 'timed')} onViewOverview={() => viewOverview('timedResults')} />}
     {view === 'quizzes' && administers && <QuizListPage hostedQuizzes={administeredQuizzes(hostedQuizzes, isGlobalAdmin, quizRoles)} isGlobalAdmin={isGlobalAdmin} canCreate={canCreateQuizzes} roles={isGlobalAdmin ? {} : quizRoles} onBack={() => navigate('start')} onViewUsers={() => { playClick(); navigate('users') }} onSelectQuiz={(id) => { playClick(); openQuizDetail(id) }} onCreateQuiz={createQuizAndOpen} createError={createError} onPublish={publishQuiz} publishError={publishError} publishSuccess={publishSuccess} publishWarning={publishWarning} />}
     {view === 'users' && isGlobalAdmin && <UsersPage onBack={() => navigate('quizzes')} onOpenUser={openUser} />}

@@ -11,9 +11,11 @@ import { dictationLanguageTag } from '../utils/dictation'
 import { confirmDialog } from '../utils/confirmDialog'
 import { abandonGameConfirm } from '../utils/confirmPresets'
 import { useAdvanceGuard } from '../utils/useAdvanceGuard'
+import { answerSurvivesEdit, useQuestionEdits } from '../utils/questionEdit'
 import { hasAnswer } from '../utils/hasAnswer'
 import { MAX_BOX } from '../utils/leitner'
 import { questionToSpeech } from '../utils/speech'
+import { EditQuestionInPlay } from './EditQuestionInPlay'
 import { ListenButton } from './ListenButton'
 import { QuestionBody } from './QuestionBody'
 
@@ -57,25 +59,36 @@ interface QuizPageProps {
   /** Présent pour une révision : la boîte Leitner de chaque question avant la session. Signale le mode (bandeau, boîte)
    * et empêche de passer une question sans réponse par erreur (voir « Passer »). */
   reviewBoxes?: Record<string, number>
+  /** Présent pour qui administre le quiz joué : enregistre la question modifiée dans le quiz (rejette avec un message si c'est refusé).
+   * Absent : pas de bouton « Modifier » (joueur, lien invité, quiz non hébergé). */
+  onEditQuestion?: (updated: Question) => Promise<void>
 }
 
-export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel, reviewBoxes }: QuizPageProps) {
+export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel, reviewBoxes, onEditQuestion }: QuizPageProps) {
   const { t, language } = useTranslation()
   // Lecture de l'énoncé dans la langue du quiz (celle de l'interface à défaut) — même règle que la dictée.
   const speechTag = dictationLanguageTag(quiz.metadata.language, language)
   const [current, setCurrent] = useState(0)
   const [answers, setAnswers] = useState<AnswersByQuestion>({})
   const [elapsed, setElapsed] = useState(0)
-  const shuffledQuestions = useMemo(() => questions.map(withShuffledAnswers), [questions])
+  const shuffledAtStart = useMemo(() => questions.map(withShuffledAnswers), [questions])
+  // Les questions modifiées en cours de partie remplacent leur version d'origine, sans remélanger les autres.
+  const { record: recordEdit, overlay } = useQuestionEdits(questions)
+  const shuffledQuestions = useMemo(() => overlay(shuffledAtStart), [overlay, shuffledAtStart])
+  // La fenêtre de modification est ouverte : chronomètres suspendus. `editRevision` remonte la zone de réponse après une modification.
+  const [editing, setEditing] = useState(false)
+  const [editRevision, setEditRevision] = useState(0)
+  const paused = editing && onEditQuestion !== undefined
   const question = shuffledQuestions[current]
   useDiagramPreload(shuffledQuestions)
   const updateAnswer = (answer: AnswersByQuestion[string]) => setAnswers((previous) => ({ ...previous, [question.id]: answer }))
   const cancelQuiz = async () => { if (await confirmDialog(abandonGameConfirm(t, t('quiz.confirmAbandonQuiz')))) onCancel() }
 
   useEffect(() => {
+    if (paused) return
     const interval = setInterval(() => setElapsed((value) => value + 1), 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [paused])
 
   const canAdvance = useAdvanceGuard(question?.id ?? '')
   const advance = () => {
@@ -90,7 +103,17 @@ export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel, revie
   const reviewing = reviewBoxes !== undefined
   const unanswered = reviewing && question !== undefined && !hasAnswer(answers[question.id])
   const timeLimit = timeboxed && question ? questionTimeLimit(question) : null
-  const remaining = useQuestionTimer(question?.id ?? '', timeLimit, advance)
+  const remaining = useQuestionTimer(question?.id ?? '', timeLimit, advance, paused)
+
+  /** Enregistre la modification dans le quiz, puis l'applique à la partie en cours : la question affichée change tout de suite, et la
+   * réponse déjà saisie est gardée si elle a encore un sens (voir `answerSurvivesEdit`). */
+  const saveEdit = async (updated: Question) => {
+    if (!onEditQuestion || !question) return
+    await onEditQuestion(updated)
+    if (!answerSurvivesEdit(question, updated)) setAnswers((previous) => { const { [question.id]: _dropped, ...rest } = previous; return rest })
+    recordEdit(withShuffledAnswers(updated))
+    setEditRevision((value) => value + 1)
+  }
 
   if (!question) return <section className="empty"><h2>{t('quiz.emptyTitle')}</h2><p>{t('quiz.emptyHintQuiz')}</p><button type="button" className="secondary" onClick={onCancel}>{t('common.back')}</button></section>
   const theme = quiz.categories.find((item) => item.id === question.category)?.label ?? question.category
@@ -105,9 +128,12 @@ export function QuizPage({ quiz, questions, timeboxed, onFinish, onCancel, revie
       <p className="progress">{t('quiz.questionProgress', current + 1, shuffledQuestions.length)}</p>
       {/* Pas de lecture avec le chrono par question : elle mangerait le temps de réponse. Cette page ne sert qu'au mode
           classique et à la révision ; les modes sans-faute et contre-la-montre n'ont pas ce bouton. */}
-      {!timeboxed && <ListenButton key={question.id} text={questionToSpeech(question, speechTag)} languageTag={speechTag} />}
+      <div className="question-tools">
+        {onEditQuestion && <EditQuestionInPlay question={quiz.questions.find((item) => item.id === question.id) ?? question} themes={quiz.categories} onSave={saveEdit} onOpenChange={setEditing} />}
+        {!timeboxed && <ListenButton key={question.id} text={questionToSpeech(question, speechTag)} languageTag={speechTag} />}
+      </div>
     </div>
-    <QuestionBody key={question.id} question={question} answer={answers[question.id]} onChange={updateAnswer} onEnter={() => { if (!unanswered) goNext() }} />
+    <QuestionBody key={`${question.id}-${editRevision}`} question={question} answer={answers[question.id]} onChange={updateAnswer} onEnter={() => { if (!unanswered) goNext() }} />
     <div className="quiz-actions">
       <button type="button" className="secondary" onClick={cancelQuiz}>{t('common.cancel')}</button>
       <div className="quiz-nav">

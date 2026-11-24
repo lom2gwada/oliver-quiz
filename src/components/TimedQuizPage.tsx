@@ -9,7 +9,9 @@ import { confirmDialog } from '../utils/confirmDialog'
 import { abandonGameConfirm } from '../utils/confirmPresets'
 import { useAdvanceGuard } from '../utils/useAdvanceGuard'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
+import { answerSurvivesEdit, replaceQuestion } from '../utils/questionEdit'
 import { useDiagramPreload } from '../utils/useDiagramPreload'
+import { EditQuestionInPlay } from './EditQuestionInPlay'
 import { QuestionBody } from './QuestionBody'
 import { TYPE_ICONS, difficultyLabel, typeLabel, withShuffledAnswers } from './QuizPage'
 
@@ -30,22 +32,30 @@ interface TimedQuizPageProps {
   timeboxed: boolean
   onFinish: (result: TimedResult) => void
   onCancel: () => void
+  /** Présent pour qui administre le quiz joué : enregistre la question modifiée dans le quiz (rejette avec un message si c'est refusé). */
+  onEditQuestion?: (updated: Question) => Promise<void>
 }
 
-export function TimedQuizPage({ quiz, pool, seenIds, durationSeconds, timeboxed, onFinish, onCancel }: TimedQuizPageProps) {
+export function TimedQuizPage({ quiz, pool, seenIds, durationSeconds, timeboxed, onFinish, onCancel, onEditQuestion }: TimedQuizPageProps) {
   const { t } = useTranslation()
   const [order, setOrder] = useState<Question[]>(() => orderUnseenFirst(pool, seenIds).map(withShuffledAnswers))
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState<UserAnswer | undefined>(undefined)
   const [attempts, setAttempts] = useState<QuestionAttempt[]>([])
   const [elapsed, setElapsed] = useState(0)
+  // La fenêtre de modification est ouverte : chronomètres suspendus (celui de la partie comme celui de la question).
+  // `editRevision` remonte la zone de réponse après une modification.
+  const [editing, setEditing] = useState(false)
+  const [editRevision, setEditRevision] = useState(0)
+  const paused = editing && onEditQuestion !== undefined
   const question = order[index]
   useDiagramPreload(order)
 
   useEffect(() => {
+    if (paused) return
     const interval = setInterval(() => setElapsed((value) => value + 1), 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [paused])
 
   // Le chrono déclenche lui-même la fin de partie quand la durée choisie est écoulée (mode "Infini" exclu, durationSeconds = 0).
   useEffect(() => {
@@ -68,7 +78,17 @@ export function TimedQuizPage({ quiz, pool, seenIds, durationSeconds, timeboxed,
   const canAdvance = useAdvanceGuard(question ? `${question.id}-${index}` : '')
   const goNext = () => { if (canAdvance()) advance() }
   const questionTimeLimitSeconds = timeboxed && question ? questionTimeLimit(question) : null
-  const questionRemaining = useQuestionTimer(question ? `${question.id}-${index}` : '', questionTimeLimitSeconds, advance)
+  const questionRemaining = useQuestionTimer(question ? `${question.id}-${index}` : '', questionTimeLimitSeconds, advance, paused)
+
+  /** Enregistre la modification dans le quiz, puis l'applique à la partie en cours : la question affichée, et ses prochains passages, changent
+   * tout de suite (voir `answerSurvivesEdit` pour la réponse déjà saisie). */
+  const saveEdit = async (updated: Question) => {
+    if (!onEditQuestion || !question) return
+    await onEditQuestion(updated)
+    if (!answerSurvivesEdit(question, updated)) setAnswer(undefined)
+    setOrder((previous) => replaceQuestion(previous, updated, withShuffledAnswers))
+    setEditRevision((value) => value + 1)
+  }
 
   const finishNow = () => {
     const finalAttempts = answer === undefined ? attempts : [...attempts, { question, answer }]
@@ -82,8 +102,11 @@ export function TimedQuizPage({ quiz, pool, seenIds, durationSeconds, timeboxed,
   return <section className="quiz-card">
     <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span><span>✅ {attempts.length}</span>{questionRemaining !== null && questionTimeLimitSeconds !== null && <span className={`quiz-timer-${questionTimerUrgency(questionRemaining, questionTimeLimitSeconds)}`}>⏳ {questionRemaining}s</span>}<span>⏱ {remaining !== null ? formatDuration(remaining) : formatDuration(elapsed)}</span></div>
     {durationSeconds > 0 && <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${Math.min(100, (elapsed / durationSeconds) * 100)}%` }} /></div>}
-    <p className="progress">{t('quiz.questionNumber', attempts.length + 1)}</p>
-    <QuestionBody key={`${question.id}-${index}`} question={question} answer={answer} onChange={setAnswer} onEnter={goNext} />
+    <div className="question-progress-row">
+      <p className="progress">{t('quiz.questionNumber', attempts.length + 1)}</p>
+      {onEditQuestion && <EditQuestionInPlay question={quiz.questions.find((item) => item.id === question.id) ?? question} themes={quiz.categories} onSave={saveEdit} onOpenChange={setEditing} />}
+    </div>
+    <QuestionBody key={`${question.id}-${index}-${editRevision}`} question={question} answer={answer} onChange={setAnswer} onEnter={goNext} />
     <div className="quiz-actions">
       <button type="button" className="secondary" onClick={cancelQuiz}>{t('quiz.abandon')}</button>
       <div className="quiz-nav">
