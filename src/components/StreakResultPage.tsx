@@ -1,18 +1,13 @@
 import { useEffect } from 'react'
-import { CorrectionExplanation } from './CorrectionExplanation'
+import { CorrectionList } from './CorrectionList'
 import type { AnswersByQuestion, Question, QuizLink } from '../types/quiz'
 import { useTranslation } from '../i18n'
 import { formatDuration } from '@engine/utils/time'
 import { playFinish, playVictory } from '@engine/utils/sound'
 import { Confetti } from '@engine/components/Confetti'
-import { MermaidDiagram } from './MermaidDiagram'
-import { QuestionReplay } from './QuestionReplay'
-import { QuestionTable } from './QuestionTable'
-import { QuestionImage } from '@engine/components/QuestionImage'
 import { FurtherReading } from './FurtherReading'
 import { ResultActions } from './ResultActions'
 import { ResultNavLinks } from './ResultNavLinks'
-import { correctAnswer, isCorrect, userAnswer } from './ResultPage'
 
 interface StreakResultPageProps {
   streakCount: number
@@ -44,18 +39,6 @@ export function StreakResultPage({ links, streakCount, elapsedSeconds, victory, 
     <ResultActions onRestartSame={onRestartSame} onBackToSettings={onBackToSettings} />
     <ResultNavLinks onViewHistory={onViewHistory} onViewLeaderboard={onViewLeaderboard} onViewOverview={onViewOverview} />
     <FurtherReading links={links} />
-    <div className="corrections">{playedQuestions.map((question) => {
-      const correct = isCorrect(question, answers[question.id])
-      return <article className={`correction ${correct ? 'correct' : 'incorrect'}`} key={question.id}>
-        <h3>{correct ? t('result.correct') : t('result.incorrect')} — {question.question}</h3>
-        {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
-        {question.diagram && <MermaidDiagram chart={question.diagram} />}
-        {question.table && <QuestionTable table={question.table} />}
-        {!correct && <p><strong>{t('result.yourAnswer')}</strong> {userAnswer(question, answers[question.id], t)}</p>}
-        {!correct && <p><strong>{t('result.correctAnswerLabel')}</strong> {correctAnswer(question, t)}</p>}
-        <CorrectionExplanation text={question.explanation} />
-        <QuestionReplay question={question} answer={answers[question.id]} />
-      </article>
-    })}</div>
+    <CorrectionList items={playedQuestions.map((question) => ({ key: question.id, question, answer: answers[question.id] }))} onRestartSame={onRestartSame} onBackToSettings={onBackToSettings} />
   </section>
 }
