@@ -13,6 +13,7 @@ import { QuestionImage } from '@engine/components/QuestionImage'
 import { QuestionPreview } from './QuestionPreview'
 import { QuestionTable } from './QuestionTable'
 import { QuizAccessManager } from './QuizAccessManager'
+import { QuizAdminsPanel } from './QuizAdminsPanel'
 import { difficultyLabel, TYPE_ICONS, typeLabel } from './QuizPage'
 import { correctAnswer } from './ResultPage'
 import { TabList, tabPanelId } from './TabList'
@@ -23,7 +24,7 @@ const QUESTION_TYPES: Question['type'][] = ['qcm', 'text', 'code', 'ordering', '
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard']
 const DIFFICULTY_COLORS: Record<Difficulty, string> = { easy: '#34d399', medium: '#38bdf8', hard: '#fb7185' }
 
-type DetailTab = 'info' | 'questions' | 'access' | 'guests' | 'stats'
+type DetailTab = 'info' | 'questions' | 'access' | 'guests' | 'admins' | 'stats'
 
 interface QuizDetailPageProps {
   quiz: Quiz
@@ -32,7 +33,13 @@ interface QuizDetailPageProps {
   onTogglePublic: (isPublic: boolean) => void
   onBack: () => void
   onExport: () => void
-  isAdmin: boolean
+  /** Administrateur de ce quiz (propriétaire, administrateur, ou administrateur global) : contenu, accès, liens invités, administrateurs, import et export. */
+  canManage: boolean
+  /** Propriétaire de ce quiz (ou administrateur global) : rendre le quiz public, gérer les administrateurs, le supprimer. */
+  isOwner: boolean
+  isGlobalAdmin: boolean
+  /** Le compte connecté vient de changer son propre rôle sur ce quiz (`left` : il ne l'administre plus). */
+  onSelfChanged: (left: boolean) => void
   /** Édition en direct proposée seulement une fois un vrai quiz hébergé chargé (jamais pendant le tout
    * premier affichage, avant que le quiz par défaut n'ait fini de charger — cf. `initialQuiz` dans App.tsx). */
   canEditQuiz: boolean
@@ -49,7 +56,7 @@ interface QuizDetailPageProps {
 
 /** Page d'un seul quiz hébergé : méta, graphiques de répartition, export, visibilité publique, gestion des
  * accès et des questions — tout scopé à ce quiz, plus de sélecteur ni de création ici. */
-export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, onBack, onExport, isAdmin, canEditQuiz, onSaveQuestion, onAddQuestion, onDeleteQuestion, editError, onAddTheme, quizLoadError, onUpdateQuizMeta, onDeleteQuiz, deleteQuizError }: QuizDetailPageProps) {
+export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, onBack, onExport, canManage, isOwner, isGlobalAdmin, onSelfChanged, canEditQuiz, onSaveQuestion, onAddQuestion, onDeleteQuestion, editError, onAddTheme, quizLoadError, onUpdateQuizMeta, onDeleteQuiz, deleteQuizError }: QuizDetailPageProps) {
   const { t } = useTranslation()
   const [editingQuestionId, setEditingQuestionId] = useState('')
   const [previewingIds, setPreviewingIds] = useState<string[]>([])
@@ -89,8 +96,8 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
   // les accès comme les liens invités n'existent que pour un quiz hébergé.
   const tabs: { id: DetailTab; label: string }[] = [
     { id: 'info', label: t('admin.tabInfo') },
-    ...(isAdmin ? [{ id: 'questions' as const, label: t('admin.tabQuestions', quiz.questions.length) }] : []),
-    ...(isAdmin && hostedQuizId ? [{ id: 'access' as const, label: t('admin.tabAccess') }, { id: 'guests' as const, label: t('admin.tabGuests') }] : []),
+    ...(canManage ? [{ id: 'questions' as const, label: t('admin.tabQuestions', quiz.questions.length) }] : []),
+    ...(canManage && hostedQuizId ? [{ id: 'access' as const, label: t('admin.tabAccess') }, { id: 'guests' as const, label: t('admin.tabGuests') }, { id: 'admins' as const, label: t('admin.tabAdmins') }] : []),
     { id: 'stats', label: t('admin.tabStats') },
   ]
   const activeTab = tabs.some((item) => item.id === tab) ? tab : 'info'
@@ -124,9 +131,9 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
             error={editError}
             onSave={onUpdateQuizMeta}
           />}
-          {isAdmin && <button type="button" className="secondary" onClick={onExport}>{t('admin.exportButton')}</button>}
+          {canManage && <button type="button" className="secondary" onClick={onExport}>{t('admin.exportButton')}</button>}
         </div>
-        {canEditQuiz && <DangerZone key={hostedQuizId} title={quiz.metadata.title} onExport={onExport} onDelete={(deleteHistoryToo) => onDeleteQuiz(hostedQuizId, deleteHistoryToo)} error={deleteQuizError} />}
+        {canEditQuiz && isOwner && <DangerZone key={hostedQuizId} title={quiz.metadata.title} onExport={onExport} onDelete={(deleteHistoryToo) => onDeleteQuiz(hostedQuizId, deleteHistoryToo)} error={deleteQuizError} />}
       </div>
 
       {activeTab === 'stats' && <>
@@ -149,17 +156,22 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
         </div>
       </>}
 
-      {activeTab === 'access' && isAdmin && hostedQuizId && <>
+      {activeTab === 'access' && canManage && hostedQuizId && <>
         <h3 className="stats-group-title">{t('admin.manageAccessTitle')}</h3>
-        <QuizAccessManager quiz={{ id: hostedQuizId, title: quiz.metadata.title, is_public: isPublic }} onTogglePublic={onTogglePublic} />
+        <QuizAccessManager quiz={{ id: hostedQuizId, title: quiz.metadata.title, is_public: isPublic }} onTogglePublic={onTogglePublic} isGlobalAdmin={isGlobalAdmin} isOwner={isOwner} />
       </>}
 
-      {activeTab === 'guests' && isAdmin && hostedQuizId && <>
+      {activeTab === 'guests' && canManage && hostedQuizId && <>
         <h3 className="stats-group-title">{t('admin.guestLinksTitle')}</h3>
         <GuestLinksManager quizId={hostedQuizId} quiz={quiz} />
       </>}
 
-      {activeTab === 'questions' && isAdmin && <>
+      {activeTab === 'admins' && canManage && hostedQuizId && <>
+        <h3 className="stats-group-title">{t('quizAdmin.title')}</h3>
+        <QuizAdminsPanel quizId={hostedQuizId} quizTitle={quiz.metadata.title} isOwner={isOwner} onSelfChanged={onSelfChanged} />
+      </>}
+
+      {activeTab === 'questions' && canManage && <>
         <h3 className="stats-group-title">{t('admin.allQuestionsTitle', quiz.questions.length)}</h3>
         {canEditQuiz && <div className="question-create-bar">
           <input type="text" value={newThemeLabel} onChange={(event) => setNewThemeLabel(event.target.value)} placeholder={t('admin.newThemePlaceholder')} />

@@ -44,3 +44,23 @@ describe('AppBar — administration entries', () => {
     }
   })
 })
+
+describe('AppBar — an administrator of some quizzes who is not the global administrator', () => {
+  const renderAsQuizAdmin = (view: View = 'start') => renderToStaticMarkup(createElement(AppBar, {
+    view, muted: false, profile: player, administersQuizzes: true, onLanguageChange: noop, onToggleSound: noop, onHome: noop, onProfile: noop, onAdmin: noop, onUsers: noop, onLogout: noop,
+  }))
+
+  it('shows the Quiz entry but not the Users entry', () => {
+    const html = renderAsQuizAdmin()
+    expect(html).toContain('nav.quiz')
+    expect(html).not.toContain('nav.users')
+  })
+
+  it('marks the Quiz entry as the current page on the quiz administration pages', () => {
+    expect(renderAsQuizAdmin('quizDetail')).toMatch(/aria-current="page">nav.quiz</)
+  })
+
+  it('shows nothing more to an ordinary player: the entry is for those who administer a quiz', () => {
+    expect(render(player)).not.toContain('nav.quiz')
+  })
+})

@@ -26,3 +26,23 @@ export const leaveProfileConfirm = (t: Translate): ConfirmOptions => ({
 export const deleteAccountConfirm = (t: Translate): ConfirmOptions => ({
   title: t('confirm.deleteAccountTitle'), message: t('profile.deleteConfirm'), confirmLabel: t('confirm.deleteAccount'), destructive: true,
 })
+
+/** Gestion des administrateurs d'un quiz (`QuizAdminsPanel`). */
+export const addQuizAdminConfirm = (t: Translate, pseudo: string, quiz: string): ConfirmOptions => ({
+  title: t('confirm.quizAdminTitle'), message: t('quizAdmin.confirmAdd', pseudo, quiz), confirmLabel: t('confirm.addQuizAdmin'),
+})
+
+export const changeQuizRoleConfirm = (t: Translate, pseudo: string, quiz: string, role: 'owner' | 'admin'): ConfirmOptions => ({
+  title: t('confirm.quizAdminTitle'),
+  message: t(role === 'owner' ? 'quizAdmin.confirmMakeOwner' : 'quizAdmin.confirmMakeAdmin', pseudo, quiz),
+  confirmLabel: t(role === 'owner' ? 'confirm.makeQuizOwner' : 'confirm.makeQuizAdmin'),
+  destructive: role === 'admin',
+})
+
+export const removeQuizAdminConfirm = (t: Translate, pseudo: string, quiz: string): ConfirmOptions => ({
+  title: t('confirm.quizAdminTitle'), message: t('quizAdmin.confirmRemove', pseudo, quiz), confirmLabel: t('confirm.removeQuizAdmin'), destructive: true,
+})
+
+export const leaveQuizConfirm = (t: Translate, quiz: string): ConfirmOptions => ({
+  title: t('confirm.quizAdminTitle'), message: t('quizAdmin.confirmLeave', quiz), confirmLabel: t('confirm.leaveQuiz'), destructive: true,
+})
