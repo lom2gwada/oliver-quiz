@@ -14,6 +14,7 @@ import { QuestionPreview } from './QuestionPreview'
 import { QuestionTable } from './QuestionTable'
 import { QuizAccessManager } from './QuizAccessManager'
 import { QuizAdminsPanel } from './QuizAdminsPanel'
+import { QuizAuditPanel } from './QuizAuditPanel'
 import { difficultyLabel, TYPE_ICONS, typeLabel } from './QuizPage'
 import { correctAnswer } from './ResultPage'
 import { TabList, tabPanelId } from './TabList'
@@ -24,7 +25,7 @@ const QUESTION_TYPES: Question['type'][] = ['qcm', 'text', 'code', 'ordering', '
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard']
 const DIFFICULTY_COLORS: Record<Difficulty, string> = { easy: '#34d399', medium: '#38bdf8', hard: '#fb7185' }
 
-type DetailTab = 'info' | 'questions' | 'access' | 'guests' | 'admins' | 'stats'
+type DetailTab = 'info' | 'questions' | 'access' | 'guests' | 'admins' | 'journal' | 'stats'
 
 interface QuizDetailPageProps {
   quiz: Quiz
@@ -98,6 +99,8 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
     { id: 'info', label: t('admin.tabInfo') },
     ...(canManage ? [{ id: 'questions' as const, label: t('admin.tabQuestions', quiz.questions.length) }] : []),
     ...(canManage && hostedQuizId ? [{ id: 'access' as const, label: t('admin.tabAccess') }, { id: 'guests' as const, label: t('admin.tabGuests') }, { id: 'admins' as const, label: t('admin.tabAdmins') }] : []),
+    // Le journal de gestion : le propriétaire (ou l'administrateur global) seulement, comme la liste des administrateurs qu'il retrace.
+    ...(isOwner && hostedQuizId ? [{ id: 'journal' as const, label: t('quizAudit.tab') }] : []),
     { id: 'stats', label: t('admin.tabStats') },
   ]
   const activeTab = tabs.some((item) => item.id === tab) ? tab : 'info'
@@ -169,6 +172,11 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
       {activeTab === 'admins' && canManage && hostedQuizId && <>
         <h3 className="stats-group-title">{t('quizAdmin.title')}</h3>
         <QuizAdminsPanel quizId={hostedQuizId} quizTitle={quiz.metadata.title} isOwner={isOwner} onSelfChanged={onSelfChanged} />
+      </>}
+
+      {activeTab === 'journal' && isOwner && hostedQuizId && <>
+        <h3 className="stats-group-title">{t('quizAudit.title')}</h3>
+        <QuizAuditPanel quizId={hostedQuizId} />
       </>}
 
       {activeTab === 'questions' && canManage && <>

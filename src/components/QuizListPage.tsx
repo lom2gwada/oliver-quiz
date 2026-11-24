@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import type { HostedQuizSummary } from '../types/hostedQuiz'
 import { useTranslation } from '../i18n'
 import { CreateQuizForm } from './CreateQuizForm'
+import { QuizAuditPanel } from './QuizAuditPanel'
 import { ABOUT } from '../config/about'
 import { buildQuizTemplate, QUIZ_TEMPLATE_FILENAME } from '../utils/quizTemplate'
 import type { QuizRoles } from '../utils/quizPermissions'
@@ -43,6 +45,7 @@ function downloadTemplate(language: Parameters<typeof buildQuizTemplate>[0]): vo
  * Cliquer une tuile sélectionne ce quiz comme quiz actif puis navigue vers `QuizDetailPage`. */
 export function QuizListPage({ hostedQuizzes, isGlobalAdmin, canCreate, roles, onBack, onViewUsers, onSelectQuiz, onCreateQuiz, createError, onPublish, publishError, publishSuccess, publishWarning }: QuizListPageProps) {
   const { t, language } = useTranslation()
+  const [showJournal, setShowJournal] = useState(false)
   return <section className="stats-page">
     <div className="stats-header">
       <h2>{t('nav.admin')}</h2>
@@ -76,5 +79,12 @@ export function QuizListPage({ hostedQuizzes, isGlobalAdmin, canCreate, roles, o
         {publishSuccess && publishWarning && <p className="mode-hint" role="status">{publishWarning}</p>}
       </div>
     </>
+    {isGlobalAdmin && <>
+      <h3 className="stats-group-title profile-section-title">{t('quizAudit.globalTitle')}</h3>
+      <div className="users-actions">
+        <button type="button" className="secondary" aria-expanded={showJournal} onClick={() => setShowJournal((shown) => !shown)}>{t(showJournal ? 'quizAudit.hide' : 'quizAudit.show')}</button>
+      </div>
+      {showJournal && <QuizAuditPanel quizId={null} />}
+    </>}
   </section>
 }

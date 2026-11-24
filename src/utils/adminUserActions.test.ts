@@ -12,7 +12,7 @@ const invoke = vi.hoisted(() => vi.fn())
 vi.mock('./supabase', () => ({ supabase: { rpc, from, functions: { invoke } } }))
 
 import {
-  changeUserEmail, classifyAccountCode, classifyUserActionError, deleteUser, describeAuditEntry, exportUserData, fetchUserAuditLog, inviteUser, readFunctionError, resendInvite, resetUserProgress, sendPasswordReset, setUserAdmin, setUserCanCreateQuizzes, setUserDisabled, setUserQuizAccess, updateUserProfile, userDataFilename,
+  changeUserEmail, classifyAccountCode, classifyUserActionError, deleteUser, describeAuditEntry, exportUserData, fetchUserAuditLog, inviteUser, readFunctionError, resendInvite, resetUserProgress, sendPasswordReset, setUserAdmin, setUserCanCreateQuizzes, setUserDisabled, setUserQuizAccess, soleOwnerTitles, updateUserProfile, userDataFilename,
   UserActionError, USER_ACTION_ERROR_KEYS, type AuditEntry, type UserActionFailure,
 } from './adminUserActions'
 
@@ -23,14 +23,15 @@ const translate = (dictionary: Record<string, unknown>) => (key: string, ...args
 const tFr = translate(fr as Record<string, unknown>) as Parameters<typeof describeAuditEntry>[1]
 const tEn = translate(en as Record<string, unknown>) as Parameters<typeof describeAuditEntry>[1]
 
-const entry = (action: AuditEntry['action'], details: Record<string, unknown> = {}): AuditEntry => ({
-  id: 'e1', created_at: '2026-11-21T14:05:00Z', admin_pseudo: 'Olivier', target_pseudo: 'Alice', action, details,
+const entry = (action: AuditEntry['action'], details: Record<string, unknown> = {}, extra: Partial<AuditEntry> = {}): AuditEntry => ({
+  id: 'e1', created_at: '2026-11-21T14:05:00Z', admin_pseudo: 'Olivier', target_pseudo: 'Alice', action, details, ...extra,
 })
 
 describe('classifyUserActionError', () => {
   it.each([
     ['self_forbidden', 'self'],
     ['last_admin', 'lastAdmin'],
+    ['sole_quiz_owner', 'soleQuizOwner'],
     ['invalid_pseudo', 'invalidPseudo'],
     ['invalid_avatar', 'invalidAvatar'],
     ['not_found', 'notFound'],
@@ -52,7 +53,7 @@ describe('USER_ACTION_ERROR_KEYS', () => {
       expect(typeof (fr as Record<string, unknown>)[key]).toBe('string')
       expect(typeof (en as Record<string, unknown>)[key]).toBe('string')
     }
-    expect(Object.keys(USER_ACTION_ERROR_KEYS).sort()).toEqual(['disabled', 'emailExists', 'failed', 'forbidden', 'invalidAvatar', 'invalidEmail', 'invalidPseudo', 'lastAdmin', 'noEmail', 'notActive', 'notFound', 'notPending', 'rateLimited', 'self', 'sendFailed', 'unavailable'])
+    expect(Object.keys(USER_ACTION_ERROR_KEYS).sort()).toEqual(['disabled', 'emailExists', 'failed', 'forbidden', 'invalidAvatar', 'invalidEmail', 'invalidPseudo', 'lastAdmin', 'noEmail', 'notActive', 'notFound', 'notPending', 'rateLimited', 'self', 'sendFailed', 'soleQuizOwner', 'unavailable'])
   })
 })
 
@@ -323,5 +324,76 @@ describe('setUserCanCreateQuizzes', () => {
     expect(describeAuditEntry(entry('set_can_create_quizzes', { allowed: false }), tFr)).toBe("Olivier lui a retiré l'autorisation de créer des quiz")
     expect(describeAuditEntry(entry('set_can_create_quizzes', { allowed: true }), tEn)).toBe('Olivier allowed them to create quizzes')
     expect(describeAuditEntry(entry('set_can_create_quizzes', { allowed: false }), tEn)).toBe('Olivier removed their permission to create quizzes')
+  })
+})
+
+describe('the quizzes that block a deletion', () => {
+  beforeEach(() => rpc.mockReset())
+
+  it('reads the titles the database joins with line breaks', () => {
+    expect(soleOwnerTitles('Culture générale\nSpring\r\n  Jest  \n')).toEqual(['Culture générale', 'Spring', 'Jest'])
+    expect(soleOwnerTitles(undefined)).toEqual([])
+    expect(soleOwnerTitles('')).toEqual([])
+  })
+
+  it('hands the titles over with the refusal, so the page can list the quizzes', async () => {
+    rpc.mockResolvedValue({ data: null, error: { message: 'sole_quiz_owner', details: 'Culture générale\nSpring' } })
+    const failure = await deleteUser('u1').catch((error) => error)
+    expect(failure).toBeInstanceOf(UserActionError)
+    expect(failure.failure).toBe('soleQuizOwner')
+    expect(soleOwnerTitles(failure.detail)).toEqual(['Culture générale', 'Spring'])
+  })
+})
+
+describe('describeAuditEntry — quiz management', () => {
+  const quizEntry = (action: AuditEntry['action'], details: Record<string, unknown>, extra: Partial<AuditEntry> = {}) => entry(action, { quiz_id: 'q1', quiz_title: 'Culture générale', ...details }, extra)
+
+  it('says who created, deleted or opened a quiz, by its title at the time', () => {
+    expect(describeAuditEntry(quizEntry('create_quiz', {}), tFr)).toBe('Olivier a créé le quiz « Culture générale »')
+    expect(describeAuditEntry(quizEntry('delete_quiz', { purge_history: false }), tFr)).toBe('Olivier a supprimé le quiz « Culture générale »')
+    expect(describeAuditEntry(quizEntry('delete_quiz', { purge_history: true }), tFr)).toBe("Olivier a supprimé le quiz « Culture générale », avec l'historique de ses parties")
+    expect(describeAuditEntry(quizEntry('set_quiz_public', { is_public: true }), tFr)).toBe('Olivier a rendu le quiz « Culture générale » public')
+    expect(describeAuditEntry(quizEntry('set_quiz_public', { is_public: false }), tFr)).toBe('Olivier a rendu le quiz « Culture générale » privé')
+  })
+
+  it('names the person each administrator change is about', () => {
+    expect(describeAuditEntry(quizEntry('add_quiz_admin', { role: 'admin' }), tFr)).toBe('Olivier a ajouté Alice comme administrateur du quiz « Culture générale »')
+    expect(describeAuditEntry(quizEntry('add_quiz_admin', { role: 'owner' }), tFr)).toBe('Olivier a ajouté Alice comme propriétaire du quiz « Culture générale »')
+    expect(describeAuditEntry(quizEntry('promote_quiz_admin', { role: 'owner' }), tFr)).toBe('Olivier a nommé Alice propriétaire du quiz « Culture générale »')
+    expect(describeAuditEntry(quizEntry('demote_quiz_admin', { role: 'admin' }), tFr)).toBe('Olivier a rendu Alice simple administrateur du quiz « Culture générale »')
+    expect(describeAuditEntry(quizEntry('remove_quiz_admin', { role: 'admin', self: false }), tFr)).toBe("Olivier a retiré Alice de l'administration du quiz « Culture générale »")
+  })
+
+  it('says someone left on their own rather than that they were removed', () => {
+    expect(describeAuditEntry(quizEntry('remove_quiz_admin', { role: 'admin', self: true }, { admin_pseudo: 'Alice' }), tFr)).toBe("Alice a quitté l'administration du quiz « Culture générale »")
+    expect(describeAuditEntry(quizEntry('remove_quiz_admin', { role: 'admin', self: true }, { admin_pseudo: 'Alice' }), tEn)).toBe('Alice left the administration of the quiz “Culture générale”')
+  })
+
+  it('has the same sentences in English', () => {
+    expect(describeAuditEntry(quizEntry('create_quiz', {}), tEn)).toBe('Olivier created the quiz “Culture générale”')
+    expect(describeAuditEntry(quizEntry('delete_quiz', { purge_history: true }), tEn)).toBe('Olivier deleted the quiz “Culture générale”, along with its game history')
+    expect(describeAuditEntry(quizEntry('set_quiz_public', { is_public: true }), tEn)).toBe('Olivier made the quiz “Culture générale” public')
+    expect(describeAuditEntry(quizEntry('add_quiz_admin', { role: 'owner' }), tEn)).toBe('Olivier added Alice as an owner of the quiz “Culture générale”')
+    expect(describeAuditEntry(quizEntry('add_quiz_admin', { role: 'admin' }), tEn)).toBe('Olivier added Alice as an administrator of the quiz “Culture générale”')
+    expect(describeAuditEntry(quizEntry('promote_quiz_admin', { role: 'owner' }), tEn)).toBe('Olivier made Alice an owner of the quiz “Culture générale”')
+    expect(describeAuditEntry(quizEntry('demote_quiz_admin', { role: 'admin' }), tEn)).toBe('Olivier made Alice a plain administrator of the quiz “Culture générale”')
+    expect(describeAuditEntry(quizEntry('remove_quiz_admin', { role: 'admin', self: false }), tEn)).toBe('Olivier removed Alice from the administration of the quiz “Culture générale”')
+  })
+
+  it('names the person in the quiz journal, where the page is not theirs', () => {
+    expect(describeAuditEntry(quizEntry('grant_access', {}), tFr, 'quiz')).toBe('Olivier a accordé à Alice l\'accès au quiz « Culture générale »')
+    expect(describeAuditEntry(quizEntry('revoke_access', {}), tFr, 'quiz')).toBe('Olivier a retiré à Alice l\'accès au quiz « Culture générale »')
+    expect(describeAuditEntry(entry('set_can_create_quizzes', { allowed: true }), tFr, 'quiz')).toBe('Olivier a autorisé Alice à créer des quiz')
+    expect(describeAuditEntry(entry('set_can_create_quizzes', { allowed: false }), tEn, 'quiz')).toBe("Olivier removed Alice's permission to create quizzes")
+    expect(describeAuditEntry(quizEntry('grant_access', {}), tEn, 'quiz')).toBe('Olivier granted Alice access to the quiz “Culture générale”')
+  })
+
+  it('keeps the user-page sentences by default', () => {
+    expect(describeAuditEntry(quizEntry('grant_access', {}), tFr)).toBe("Olivier lui a accordé l'accès au quiz « Culture générale »")
+  })
+
+  it('copes with missing details', () => {
+    expect(describeAuditEntry(entry('create_quiz'), tFr)).toBe('Olivier a créé le quiz «  »')
+    expect(describeAuditEntry(entry('add_quiz_admin', {}, { target_pseudo: '' }), tFr)).toContain('?')
   })
 })

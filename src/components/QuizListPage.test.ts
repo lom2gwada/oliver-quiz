@@ -52,3 +52,17 @@ describe('QuizListPage — what each kind of administrator sees', () => {
     expect(html).not.toContain('quizAdmin.roleAdmin')
   })
 })
+
+describe('QuizListPage — the journal of every quiz', () => {
+  it('is offered to the global administrator only', () => {
+    expect(render({ isGlobalAdmin: true, canCreate: true, roles: {} })).toContain('quizAudit.globalTitle')
+    expect(render({ isGlobalAdmin: true, canCreate: true, roles: {} })).toContain('quizAudit.show')
+    const owner = render({ isGlobalAdmin: false, canCreate: true, roles: { a: 'owner' } })
+    expect(owner).not.toContain('quizAudit.globalTitle')
+    expect(owner).not.toContain('quizAudit.show')
+  })
+
+  it('is not loaded until it is asked for', () => {
+    expect(render({ isGlobalAdmin: true, canCreate: true, roles: {} })).not.toContain('quizAudit.globalHint')
+  })
+})

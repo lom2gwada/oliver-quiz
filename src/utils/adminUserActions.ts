@@ -5,7 +5,7 @@ import { supabase } from './supabase'
 /** Pourquoi une action d'administration a été refusée (voir `048_admin_user_actions.sql`) : les garde-fous sont en base, ce
  * sont leurs messages qu'on reconnaît ici. */
 export type UserActionFailure =
-  | 'forbidden' | 'notFound' | 'self' | 'lastAdmin' | 'invalidPseudo' | 'invalidAvatar' | 'failed'
+  | 'forbidden' | 'notFound' | 'self' | 'lastAdmin' | 'soleQuizOwner' | 'invalidPseudo' | 'invalidAvatar' | 'failed'
   // Refus de la fonction Edge `admin-users` (inviter, renvoyer, réinitialiser, changer l'email) :
   | 'invalidEmail' | 'emailExists' | 'rateLimited' | 'notPending' | 'notActive' | 'disabled' | 'noEmail' | 'sendFailed' | 'unavailable'
 
@@ -13,6 +13,7 @@ export function classifyUserActionError(message: string | undefined): UserAction
   const text = message ?? ''
   if (text.includes('self_forbidden')) return 'self'
   if (text.includes('last_admin')) return 'lastAdmin'
+  if (text.includes('sole_quiz_owner')) return 'soleQuizOwner'
   if (text.includes('invalid_pseudo')) return 'invalidPseudo'
   if (text.includes('invalid_avatar')) return 'invalidAvatar'
   if (text.includes('not_found')) return 'notFound'
@@ -26,6 +27,7 @@ export const USER_ACTION_ERROR_KEYS: Record<UserActionFailure, TranslationKey> =
   notFound: 'userDetail.notFound',
   self: 'userActions.errorSelf',
   lastAdmin: 'userActions.errorLastAdmin',
+  soleQuizOwner: 'userActions.errorSoleQuizOwner',
   invalidPseudo: 'userActions.errorPseudo',
   invalidAvatar: 'userActions.errorAvatar',
   failed: 'userActions.errorFailed',
@@ -40,18 +42,25 @@ export const USER_ACTION_ERROR_KEYS: Record<UserActionFailure, TranslationKey> =
   unavailable: 'userAccounts.errorUnavailable',
 }
 
-/** Erreur d'une action : `failure` dit pourquoi, pour choisir le message. */
+/** Les titres des quiz qui bloquent la suppression d'un compte : la base les joint par des retours à la ligne dans le détail de
+ * l'erreur `sole_quiz_owner` (`assert_not_sole_quiz_owner`, 051). */
+export const soleOwnerTitles = (detail: string | undefined): string[] => (detail ?? '').split(/\r?\n/).map((title) => title.trim()).filter(Boolean)
+
+/** Erreur d'une action : `failure` dit pourquoi, pour choisir le message ; `detail` est le détail donné par la base (les titres des quiz,
+ * pour `soleQuizOwner`). */
 export class UserActionError extends Error {
   failure: UserActionFailure
-  constructor(failure: UserActionFailure, message?: string) {
+  detail?: string
+  constructor(failure: UserActionFailure, message?: string, detail?: string) {
     super(message ?? failure)
     this.failure = failure
+    this.detail = detail
   }
 }
 
 async function call<T>(fn: string, args: Record<string, unknown>): Promise<T | null> {
   const { data, error } = await supabase.rpc(fn, args)
-  if (error) throw new UserActionError(classifyUserActionError(error.message), error.message)
+  if (error) throw new UserActionError(classifyUserActionError(error.message), error.message, error.details)
   return (data ?? null) as T | null
 }
 
@@ -148,6 +157,8 @@ export function userDataFilename(pseudo: string, date: Date): string {
 export type AuditAction =
   | 'disable' | 'enable' | 'update_profile' | 'set_admin' | 'reset_progress' | 'delete_user' | 'grant_access' | 'revoke_access'
   | 'invite_user' | 'resend_invite' | 'send_password_reset' | 'change_email' | 'export_user_data' | 'set_can_create_quizzes'
+  // Gestion d'un quiz (053) : `details.quiz_id` et `details.quiz_title` (le titre au moment de l'action) désignent le quiz.
+  | 'create_quiz' | 'delete_quiz' | 'set_quiz_public' | 'add_quiz_admin' | 'remove_quiz_admin' | 'promote_quiz_admin' | 'demote_quiz_admin'
 
 /** Une ligne du journal d'audit : qui a fait quoi, sur qui, quand — avec les pseudos de l'époque, jamais d'email. */
 export interface AuditEntry {
@@ -176,16 +187,29 @@ const asChange = (value: unknown): { from: string; to: string } | null => {
   return typeof from === 'string' && typeof to === 'string' ? { from, to } : null
 }
 
+/** Où se lit une ligne : sur la fiche de la personne visée (`user`, « lui a accordé l'accès… ») ou dans le journal d'un quiz ou de tous les
+ * quiz (`quiz`, où il faut dire qui est visé). */
+export type AuditScope = 'user' | 'quiz'
+
 /** Une ligne du journal en une phrase, dans la langue de l'interface (`t`). Tolère des détails absents ou inattendus. */
-export function describeAuditEntry(entry: AuditEntry, t: Translate): string {
+export function describeAuditEntry(entry: AuditEntry, t: Translate, scope: AuditScope = 'user'): string {
   const admin = entry.admin_pseudo || '?'
+  const target = entry.target_pseudo || '?'
   const details = entry.details ?? {}
+  const quiz = asText(details.quiz_title)
   switch (entry.action) {
     case 'disable': return t('audit.disable', admin)
     case 'enable': return t('audit.enable', admin)
     case 'set_admin': return details.is_admin === true ? t('audit.promote', admin) : t('audit.demote', admin)
-    case 'grant_access': return t('audit.grantAccess', admin, asText(details.quiz_title))
-    case 'revoke_access': return t('audit.revokeAccess', admin, asText(details.quiz_title))
+    case 'grant_access': return scope === 'quiz' ? t('audit.quizGrantAccess', admin, target, quiz) : t('audit.grantAccess', admin, quiz)
+    case 'revoke_access': return scope === 'quiz' ? t('audit.quizRevokeAccess', admin, target, quiz) : t('audit.revokeAccess', admin, quiz)
+    case 'create_quiz': return t('audit.createQuiz', admin, quiz)
+    case 'delete_quiz': return t('audit.deleteQuiz', admin, quiz, details.purge_history === true)
+    case 'set_quiz_public': return t('audit.setQuizPublic', admin, quiz, details.is_public === true)
+    case 'add_quiz_admin': return t('audit.addQuizAdmin', admin, target, quiz, details.role === 'owner')
+    case 'remove_quiz_admin': return details.self === true ? t('audit.leaveQuiz', target, quiz) : t('audit.removeQuizAdmin', admin, target, quiz)
+    case 'promote_quiz_admin': return t('audit.promoteQuizAdmin', admin, target, quiz)
+    case 'demote_quiz_admin': return t('audit.demoteQuizAdmin', admin, target, quiz)
     case 'reset_progress': return t('audit.resetProgress', admin, asNumber(details.quiz_results) + asNumber(details.streak_results) + asNumber(details.timed_results), asNumber(details.question_results))
     case 'delete_user': return t('audit.deleteUser', admin)
     case 'invite_user': return t('audit.invite', admin)
@@ -193,7 +217,9 @@ export function describeAuditEntry(entry: AuditEntry, t: Translate): string {
     case 'send_password_reset': return t('audit.sendReset', admin)
     case 'change_email': return t('audit.changeEmail', admin)
     case 'export_user_data': return t('audit.exportUserData', admin)
-    case 'set_can_create_quizzes': return details.allowed === true ? t('audit.allowCreateQuizzes', admin) : t('audit.denyCreateQuizzes', admin)
+    case 'set_can_create_quizzes':
+      if (scope === 'quiz') return details.allowed === true ? t('audit.quizAllowCreate', admin, target) : t('audit.quizDenyCreate', admin, target)
+      return details.allowed === true ? t('audit.allowCreateQuizzes', admin) : t('audit.denyCreateQuizzes', admin)
     case 'update_profile': {
       const pseudo = asChange(details.pseudo)
       const avatar = asChange(details.avatar)

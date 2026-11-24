@@ -108,9 +108,11 @@ export function ProfilePage({ profile, onBack, onSave, onDirtyChange }: ProfileP
   const [deletePassword, setDeletePassword] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [deleteBlockers, setDeleteBlockers] = useState<string[]>([])
   const submitDelete = async (event: React.FormEvent) => {
     event.preventDefault()
     setDeleteError('')
+    setDeleteBlockers([])
     if (!(await confirmDialog(deleteAccountConfirm(t)))) return
     setDeleting(true)
     if (!(await verifyPassword(email, deletePassword))) {
@@ -118,10 +120,11 @@ export function ProfilePage({ profile, onBack, onSave, onDirtyChange }: ProfileP
       setDeleteError(t('profile.currentPasswordWrong'))
       return
     }
-    const failure = await deleteMyAccount()
-    if (failure) {
+    const refusal = await deleteMyAccount()
+    if (refusal) {
       setDeleting(false)
-      setDeleteError(t(failure === 'lastAdmin' ? 'profile.deleteErrorLastAdmin' : 'profile.deleteError'))
+      setDeleteError(t(refusal.failure === 'lastAdmin' ? 'profile.deleteErrorLastAdmin' : refusal.failure === 'soleQuizOwner' ? 'profile.deleteErrorSoleQuizOwner' : 'profile.deleteError'))
+      setDeleteBlockers(refusal.titles)
       return
     }
     // Le compte n'existe plus : la session locale est fermée, l'écran de connexion prend la suite.
@@ -189,6 +192,10 @@ export function ProfilePage({ profile, onBack, onSave, onDirtyChange }: ProfileP
         <input type="password" value={deletePassword} onChange={(event) => setDeletePassword(event.target.value)} required autoComplete="current-password" />
       </label>
       {deleteError && <p className="alert" role="alert">{deleteError}</p>}
+      {deleteBlockers.length > 0 && <>
+        <p className="mode-hint">{t('profile.deleteBlockingQuizzes')}</p>
+        <ul className="blocking-quizzes">{deleteBlockers.map((title) => <li key={title}>{title}</li>)}</ul>
+      </>}
       <button type="submit" className="danger" disabled={deleting || !deletePassword}>{deleting ? t('profile.deleting') : t('profile.deleteButton')}</button>
     </form>
     <p className="profile-about-link"><a href="#/a-propos">{t('about.link')}</a></p>
