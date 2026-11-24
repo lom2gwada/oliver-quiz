@@ -8,7 +8,7 @@ import { matchesTypedName } from '../utils/titleConfirmation'
 import { userStatus, type AdminUserDetail, type AdminUserQuiz } from '../utils/adminUsers'
 import {
   changeUserEmail, deleteUser, describeAuditEntry, exportUserData, fetchUserAuditLog, resendInvite, resetUserProgress, sendPasswordReset, setUserAdmin, setUserCanCreateQuizzes, setUserDisabled, setUserQuizAccess, updateUserProfile,
-  userDataFilename, UserActionError, USER_ACTION_ERROR_KEYS, type AuditEntry, type UserActionFailure,
+  soleOwnerTitles, userDataFilename, UserActionError, USER_ACTION_ERROR_KEYS, type AuditEntry, type AuditScope, type UserActionFailure,
 } from '../utils/adminUserActions'
 import { AVATAR_OPTIONS } from '../utils/avatars'
 
@@ -82,13 +82,13 @@ export function UserAccessSection({ quizzes, busy, onToggle }: { quizzes: AdminU
 }
 
 /** Les actions du journal, la plus récente d'abord, chacune en une phrase avec sa date et son heure. */
-export function AuditLogList({ entries }: { entries: AuditEntry[] }) {
+export function AuditLogList({ entries, scope = 'user' }: { entries: AuditEntry[]; scope?: AuditScope }) {
   const { t, language } = useTranslation()
   if (entries.length === 0) return <p className="mode-hint">{t('userActions.auditEmpty')}</p>
   return <ul className="users-audit">
     {entries.map((entry) => <li key={entry.id}>
       <time dateTime={entry.created_at}>{dateTime(entry.created_at, language)}</time>
-      {describeAuditEntry(entry, t)}
+      {describeAuditEntry(entry, t, scope)}
     </li>)}
   </ul>
 }
@@ -173,12 +173,19 @@ export function UserActionsPanel({ detail, onChanged, onDeleted }: UserActionsPa
   const { t } = useTranslation()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<UserActionFailure | null>(null)
+  /** Les titres des quiz qui bloquent une suppression (`soleQuizOwner`). */
+  const [blockers, setBlockers] = useState<string[]>([])
   const [notice, setNotice] = useState('')
+  const fail = (failure: unknown) => {
+    setError(failure instanceof UserActionError ? failure.failure : 'failed')
+    setBlockers(failure instanceof UserActionError && failure.failure === 'soleQuizOwner' ? soleOwnerTitles(failure.detail) : [])
+  }
 
   /** Lance une action : un seul message d'erreur ou de réussite à la fois, la fiche rechargée ensuite. */
   const run = async (task: () => Promise<string | void>) => {
     setBusy(true)
     setError(null)
+    setBlockers([])
     setNotice('')
     try {
       const message = await task()
@@ -186,7 +193,7 @@ export function UserActionsPanel({ detail, onChanged, onDeleted }: UserActionsPa
       // L'action a réussi : si la fiche ne se recharge pas, ce n'est pas un échec de l'action (elle se rechargera à la prochaine visite).
       await Promise.resolve(onChanged()).catch(() => {})
     } catch (failure) {
-      setError(failure instanceof UserActionError ? failure.failure : 'failed')
+      fail(failure)
     } finally {
       setBusy(false)
     }
@@ -237,12 +244,13 @@ export function UserActionsPanel({ detail, onChanged, onDeleted }: UserActionsPa
   const remove = async () => {
     setBusy(true)
     setError(null)
+    setBlockers([])
     setNotice('')
     try {
       await deleteUser(detail.user_id)
       onDeleted()
     } catch (failure) {
-      setError(failure instanceof UserActionError ? failure.failure : 'failed')
+      fail(failure)
     } finally {
       setBusy(false)
     }
@@ -256,6 +264,10 @@ export function UserActionsPanel({ detail, onChanged, onDeleted }: UserActionsPa
       <button type="button" className="secondary" disabled={busy} onClick={toggleAdmin}>{detail.is_admin ? t('userActions.removeAdminButton') : t('userActions.makeAdminButton')}</button>
     </div>}
     {error && <p className="alert" role="alert">{t(USER_ACTION_ERROR_KEYS[error])}</p>}
+    {blockers.length > 0 && <>
+      <p className="mode-hint">{t('userActions.blockingQuizzes')}</p>
+      <ul className="blocking-quizzes">{blockers.map((title) => <li key={title}>{title}</li>)}</ul>
+    </>}
     {notice && <p className="profile-saved" role="status">{notice}</p>}
 
     {!detail.is_admin && <>

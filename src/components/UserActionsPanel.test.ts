@@ -523,3 +523,31 @@ describe('UserActionsPanel — creating quizzes', () => {
     expect(alertText()).toBe('Action réservée aux administrateurs.')
   })
 })
+
+describe('UserActionsPanel — a deletion blocked by the quizzes the account owns alone', () => {
+  const deleteButton = () => buttonByText('Supprimer définitivement')!
+  const confirmInputs = () => [...container.querySelectorAll('.danger-confirm input')] as HTMLInputElement[]
+
+  it('says why and lists the quizzes', async () => {
+    mocked(actions.deleteUser).mockRejectedValue(new actions.UserActionError('soleQuizOwner', 'sole_quiz_owner', 'Culture générale\nSpring'))
+    await mount()
+    await type(confirmInputs()[1], 'Alice')
+    await click(deleteButton())
+    expect(onDeleted).not.toHaveBeenCalled()
+    expect(alertText()).toContain("seul propriétaire d'au moins un quiz")
+    expect([...container.querySelectorAll('.blocking-quizzes li')].map((item) => item.textContent)).toEqual(['Culture générale', 'Spring'])
+  })
+
+  it('lists nothing after another refusal', async () => {
+    mocked(actions.deleteUser).mockRejectedValueOnce(new actions.UserActionError('soleQuizOwner', 'sole_quiz_owner', 'Spring'))
+    mocked(actions.deleteUser).mockRejectedValueOnce(new actions.UserActionError('lastAdmin'))
+    await mount()
+    await type(confirmInputs()[1], 'Alice')
+    await click(deleteButton())
+    expect(container.querySelectorAll('.blocking-quizzes li')).toHaveLength(1)
+    await type(confirmInputs()[1], 'Alice')
+    await click(deleteButton())
+    expect(container.querySelectorAll('.blocking-quizzes li')).toHaveLength(0)
+    expect(alertText()).toBe('Il doit rester au moins un administrateur actif.')
+  })
+})

@@ -332,6 +332,7 @@ header.app-header { display: block; padding-bottom: 1.4rem; margin-bottom: 2rem;
 .users-audit { display: grid; gap: .5rem; list-style: none; margin: 0 0 1.5rem; padding: 0; }
 .users-audit li { padding: .6rem .9rem; background: var(--surface); border: 1px solid var(--border); border-radius: .5rem; font-size: .88rem; }
 .users-audit time { display: block; color: var(--text-muted); font-size: .75rem; }
+.blocking-quizzes { margin: 0 0 1rem; padding-left: 1.4rem; font-size: .9rem; }
 .users-danger-block { display: grid; gap: .8rem; }
 .users-danger-block h4 { margin: 0; color: var(--danger-text); }
 .users-danger-block p { margin: 0; }
