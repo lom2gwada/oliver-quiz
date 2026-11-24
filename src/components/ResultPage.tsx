@@ -1,60 +1,23 @@
 import { useEffect, useState } from 'react'
-import { CorrectionExplanation } from './CorrectionExplanation'
+import { CorrectionList } from './CorrectionList'
 import type { AnswersByQuestion, Question, Category, QuizLink } from '../types/quiz'
 import type { TranslationKey } from '../i18n'
-import { translate, useTranslation } from '../i18n'
+import { useTranslation } from '../i18n'
 import { formatPercent } from '../utils/format'
-import { matchesExpected } from '@engine/utils/answerMatch'
 import { formatDuration } from '@engine/utils/time'
 import { playFinish, playVictory } from '@engine/utils/sound'
 import { Confetti } from '@engine/components/Confetti'
-import { MermaidDiagram } from './MermaidDiagram'
-import { QuestionReplay } from './QuestionReplay'
-import { QuestionTable } from './QuestionTable'
 import { PieChart } from '@engine/components/PieChart'
-import { QuestionImage } from '@engine/components/QuestionImage'
 import { FurtherReading } from './FurtherReading'
 import { ResultActions } from './ResultActions'
 import { ResultNavLinks } from './ResultNavLinks'
 import { ReviewSummary } from './ReviewSummary'
 import { reviewOutcomes } from '../utils/leitner'
+import { isCorrect, type TFunction } from '../utils/answerCheck'
+
+// Réexportés : d'autres écrans importent encore la correction depuis la page de résultat.
+export { correctAnswer, isCorrect, userAnswer } from '../utils/answerCheck'
 import { difficultyLabel } from './QuizPage'
-
-type TFunction = (key: TranslationKey, ...args: unknown[]) => string
-/** Traducteur français par défaut : `userAnswer`/`correctAnswer` sont appelées par des écrans pas encore
- * migrés (ex. `QuizContentPage.tsx`) qui ne passent pas de `t` — ce défaut préserve exactement le
- * comportement (et les chaînes) d'avant l'i18n pour ces appelants, sans les forcer à être touchés ici. */
-const defaultT: TFunction = (key, ...args) => translate('fr', key, ...args)
-
-const sameIds = (left: string[], right: string[]) => left.length === right.length && left.every((item) => right.includes(item))
-
-export function isCorrect(question: Question, answer: AnswersByQuestion[string] | undefined): boolean {
-  if (question.type === 'text' || question.type === 'cloze') {
-    if (typeof answer !== 'string') return false
-    // Comparaison du moteur commun : accents, majuscules, tirets / apostrophes, article de tête et faute de frappe sur un
-    // mot long sont tolérés (voir `matchesExpected`) ; `caseSensitive` la rend stricte.
-    return matchesExpected(answer, question.content.expectedAnswers, question.content.caseSensitive)
-  }
-  if (question.type === 'numeric') {
-    if (typeof answer !== 'string' || answer === '') return false
-    const value = Number(answer)
-    return Number.isFinite(value) && Math.abs(value - question.content.target) <= question.content.tolerance
-  }
-  if (!Array.isArray(answer)) return false
-  if (question.type === 'ordering') return answer.every((id, index) => id === question.content.correctOrder[index]) && answer.length === question.content.correctOrder.length
-  if (question.type === 'boolean') return answer[0] === String(question.content.isTrue)
-  if (question.type === 'matching') {
-    const expected = question.content.correctPairs
-    const given: Record<string, string> = {}
-    answer.forEach((token) => {
-      const [left, right] = token.split(':')
-      if (left && right) given[left] = right
-    })
-    const keys = Object.keys(expected)
-    return keys.length === Object.keys(given).length && keys.every((left) => given[left] === expected[left])
-  }
-  return sameIds(answer, question.content.answers.filter((item) => item.isCorrect).map((item) => item.id))
-}
 
 function correctnessBreakdown<T extends string>(questions: Question[], answers: AnswersByQuestion, keyOf: (question: Question) => T, labelOf: (key: T) => string, t: TFunction) {
   const keys = Array.from(new Set(questions.map(keyOf)))
@@ -137,7 +100,9 @@ export function ResultPage({ links, reviewBoxes, questions, answers, themes, ela
     <ResultActions onRestartSame={onRestartSame} onBackToSettings={onBackToSettings} />
     <ResultNavLinks onViewHistory={onViewHistory} onViewLeaderboard={onViewLeaderboard} onViewOverview={onViewOverview} />
     <FurtherReading links={links} />
-    <div className="stats-groups">
+    <details className="result-breakdown">
+      <summary>{t('result.breakdownTitle')}</summary>
+      <div className="stats-groups">
       <div className="stats-group">
         <h3 className="stats-group-title">{t('result.byTheme')}</h3>
         <div className="stats-grid">{byTheme.map((group) => <PieChart key={`theme-${group.key}`} title={`${group.label} — score`} data={group.data} />)}</div>
@@ -146,59 +111,9 @@ export function ResultPage({ links, reviewBoxes, questions, answers, themes, ela
         <h3 className="stats-group-title">{t('result.byDifficulty')}</h3>
         <div className="stats-grid">{byDifficulty.map((group) => <PieChart key={`difficulty-${group.key}`} title={`${group.label} — score`} data={group.data} />)}</div>
       </div>
-    </div>
-    <div className="corrections">{questions.map((question) => {
-      const correct = isCorrect(question, answers[question.id])
-      return <article className={`correction ${correct ? 'correct' : 'incorrect'}`} key={question.id}>
-        <h3>{correct ? t('result.correct') : t('result.incorrect')} — {question.question}</h3>
-        {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
-        {question.diagram && <MermaidDiagram chart={question.diagram} />}
-        {question.table && <QuestionTable table={question.table} />}
-        {!correct && <p><strong>{t('result.yourAnswer')}</strong> {userAnswer(question, answers[question.id], t)}</p>}
-        {!correct && <p><strong>{t('result.correctAnswerLabel')}</strong> {correctAnswer(question, t)}</p>}
-        <CorrectionExplanation text={question.explanation} />
-        <QuestionReplay question={question} answer={answers[question.id]} />
-      </article>
-    })}</div>
+      </div>
+    </details>
+    <CorrectionList items={questions.map((question) => ({ key: question.id, question, answer: answers[question.id] }))} onRestartSame={onRestartSame} onBackToSettings={onBackToSettings} />
   </section>
 }
 
-export function userAnswer(question: Question, answer: AnswersByQuestion[string] | undefined, t: TFunction = defaultT): string {
-  if (question.type === 'text' || question.type === 'cloze') return typeof answer === 'string' && answer.trim() ? answer : t('quiz.noAnswer')
-  if (question.type === 'numeric') {
-    if (typeof answer !== 'string' || answer === '') return t('quiz.noAnswer')
-    const suffix = question.content.unit ? ` ${question.content.unit}` : ''
-    return `${answer}${suffix}`
-  }
-  if (!Array.isArray(answer) || !answer.length) return t('quiz.noAnswer')
-  if (question.type === 'ordering') return answer.map((id) => question.content.items.find((item) => item.id === id)?.label).join(' → ')
-  if (question.type === 'boolean') return answer[0] === 'true' ? t('quiz.true') : t('quiz.false')
-  if (question.type === 'matching') {
-    const pairs = answer.map((token) => {
-      const [leftId, rightId] = token.split(':')
-      const left = question.content.left.find((item) => item.id === leftId)
-      const right = question.content.right.find((item) => item.id === rightId)
-      return left && right ? `${left.label} → ${right.label}` : null
-    }).filter(Boolean)
-    return pairs.length ? pairs.join(', ') : t('quiz.noAnswer')
-  }
-  return answer.map((id) => question.content.answers.find((item) => item.id === id)?.label).join(', ')
-}
-
-export function correctAnswer(question: Question, t: TFunction = defaultT): string {
-  if (question.type === 'text' || question.type === 'cloze') return question.content.expectedAnswers.join(t('quiz.orSeparator'))
-  if (question.type === 'numeric') {
-    const { target, tolerance, unit } = question.content
-    const suffix = unit ? ` ${unit}` : ''
-    return tolerance > 0 ? `${target}${suffix} (± ${tolerance}${suffix})` : `${target}${suffix}`
-  }
-  if (question.type === 'ordering') return question.content.correctOrder.map((id) => question.content.items.find((item) => item.id === id)?.label).join(' → ')
-  if (question.type === 'boolean') return question.content.isTrue ? t('quiz.true') : t('quiz.false')
-  if (question.type === 'matching') {
-    return question.content.left.map((left) => {
-      const right = question.content.right.find((item) => item.id === question.content.correctPairs[left.id])
-      return `${left.label} → ${right?.label ?? '?'}`
-    }).join(', ')
-  }
-  return question.content.answers.filter((answer) => answer.isCorrect).map((answer) => answer.label).join(', ')
-}

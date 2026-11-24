@@ -1,18 +1,14 @@
 import { useEffect } from 'react'
-import { CorrectionExplanation } from './CorrectionExplanation'
+import { CorrectionList } from './CorrectionList'
 import type { QuestionAttempt, QuizLink } from '../types/quiz'
 import { useTranslation } from '../i18n'
 import { formatDuration } from '@engine/utils/time'
 import { playFinish, playVictory } from '@engine/utils/sound'
 import { Confetti } from '@engine/components/Confetti'
-import { MermaidDiagram } from './MermaidDiagram'
-import { QuestionReplay } from './QuestionReplay'
-import { QuestionTable } from './QuestionTable'
-import { QuestionImage } from '@engine/components/QuestionImage'
 import { FurtherReading } from './FurtherReading'
 import { ResultActions } from './ResultActions'
 import { ResultNavLinks } from './ResultNavLinks'
-import { correctAnswer, isCorrect, userAnswer } from './ResultPage'
+import { isCorrect } from '../utils/answerCheck'
 
 interface TimedResultPageProps {
   attempts: QuestionAttempt[]
@@ -43,18 +39,6 @@ export function TimedResultPage({ links, attempts, elapsedSeconds, onRestartSame
     <ResultActions onRestartSame={onRestartSame} onBackToSettings={onBackToSettings} />
     <ResultNavLinks onViewHistory={onViewHistory} onViewLeaderboard={onViewLeaderboard} onViewOverview={onViewOverview} />
     <FurtherReading links={links} />
-    <div className="corrections">{attempts.map(({ question, answer }, index) => {
-      const correct = isCorrect(question, answer)
-      return <article className={`correction ${correct ? 'correct' : 'incorrect'}`} key={`${question.id}-${index}`}>
-        <h3>{correct ? t('result.correct') : t('result.incorrect')} — {question.question}</h3>
-        {question.imageUrl && <QuestionImage src={question.imageUrl} alt={question.imageAlt} />}
-        {question.diagram && <MermaidDiagram chart={question.diagram} />}
-        {question.table && <QuestionTable table={question.table} />}
-        {!correct && <p><strong>{t('result.yourAnswer')}</strong> {userAnswer(question, answer, t)}</p>}
-        {!correct && <p><strong>{t('result.correctAnswerLabel')}</strong> {correctAnswer(question, t)}</p>}
-        <CorrectionExplanation text={question.explanation} />
-        <QuestionReplay question={question} answer={answer} />
-      </article>
-    })}</div>
+    <CorrectionList items={attempts.map(({ question, answer }, index) => ({ key: `${question.id}-${index}`, question, answer }))} onRestartSame={onRestartSame} onBackToSettings={onBackToSettings} />
   </section>
 }
