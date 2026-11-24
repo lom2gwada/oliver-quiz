@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { AnswersByQuestion, Question, Quiz, UserAnswer } from '../types/quiz'
 import { useTranslation } from '../i18n'
 import { formatDuration } from '@engine/utils/time'
@@ -8,8 +8,10 @@ import { confirmDialog } from '../utils/confirmDialog'
 import { abandonGameConfirm } from '../utils/confirmPresets'
 import { useAdvanceGuard } from '../utils/useAdvanceGuard'
 import { useQuestionTimer } from '../utils/useQuestionTimer'
+import { answerSurvivesEdit, replaceQuestion } from '../utils/questionEdit'
 import { isCorrect } from './ResultPage'
 import { useDiagramPreload } from '../utils/useDiagramPreload'
+import { EditQuestionInPlay } from './EditQuestionInPlay'
 import { QuestionBody } from './QuestionBody'
 import { TYPE_ICONS, difficultyLabel, typeLabel, withShuffledAnswers } from './QuizPage'
 
@@ -30,25 +32,33 @@ interface StreakQuizPageProps {
   timeboxed: boolean
   onFinish: (result: StreakResult) => void
   onCancel: () => void
+  /** Présent pour qui administre le quiz joué : enregistre la question modifiée dans le quiz (rejette avec un message si c'est refusé). */
+  onEditQuestion?: (updated: Question) => Promise<void>
 }
 
-export function StreakQuizPage({ quiz, pool, seenIds, timeboxed, onFinish, onCancel }: StreakQuizPageProps) {
+export function StreakQuizPage({ quiz, pool, seenIds, timeboxed, onFinish, onCancel, onEditQuestion }: StreakQuizPageProps) {
   const { t } = useTranslation()
   // Les questions vues au lancement de la série : l'ordre ne doit pas changer en cours de route.
   const seenAtStart = useRef(seenIds)
-  const order = useMemo(() => orderUnseenFirst(pool, seenAtStart.current).map(withShuffledAnswers), [pool])
+  // Fixé au lancement : modifier une question en cours de série met le quiz à jour, donc `pool` change, sans que l'ordre ne bouge.
+  const [order, setOrder] = useState(() => orderUnseenFirst(pool, seenAtStart.current).map(withShuffledAnswers))
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState<UserAnswer | undefined>(undefined)
   const [answers, setAnswers] = useState<AnswersByQuestion>({})
   const [elapsed, setElapsed] = useState(0)
+  // La fenêtre de modification est ouverte : chronomètres suspendus. `editRevision` remonte la zone de réponse après une modification.
+  const [editing, setEditing] = useState(false)
+  const [editRevision, setEditRevision] = useState(0)
+  const paused = editing && onEditQuestion !== undefined
   const question = order[index]
   useDiagramPreload(order)
   const streakCount = index
 
   useEffect(() => {
+    if (paused) return
     const interval = setInterval(() => setElapsed((value) => value + 1), 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [paused])
 
   const cancelQuiz = async () => { if (await confirmDialog(abandonGameConfirm(t, t('quiz.confirmAbandonStreak')))) onCancel() }
 
@@ -68,7 +78,16 @@ export function StreakQuizPage({ quiz, pool, seenIds, timeboxed, onFinish, onCan
   const canAdvance = useAdvanceGuard(question?.id ?? '')
   const goNext = () => { if (canAdvance()) advance() }
   const timeLimit = timeboxed && question ? questionTimeLimit(question) : null
-  const remaining = useQuestionTimer(question?.id ?? '', timeLimit, advance)
+  const remaining = useQuestionTimer(question?.id ?? '', timeLimit, advance, paused)
+
+  /** Enregistre la modification dans le quiz, puis l'applique à la série en cours (voir `answerSurvivesEdit` pour la réponse déjà saisie). */
+  const saveEdit = async (updated: Question) => {
+    if (!onEditQuestion || !question) return
+    await onEditQuestion(updated)
+    if (!answerSurvivesEdit(question, updated)) setAnswer(undefined)
+    setOrder((previous) => replaceQuestion(previous, updated, withShuffledAnswers))
+    setEditRevision((value) => value + 1)
+  }
 
   if (!question) return <section className="empty"><h2>{t('quiz.emptyTitle')}</h2><p>{t('quiz.emptyHintRun')}</p><button type="button" className="secondary" onClick={onCancel}>{t('common.back')}</button></section>
   const theme = quiz.categories.find((item) => item.id === question.category)?.label ?? question.category
@@ -76,8 +95,11 @@ export function StreakQuizPage({ quiz, pool, seenIds, timeboxed, onFinish, onCan
   return <section className="quiz-card">
     <div className="question-meta"><span>{TYPE_ICONS[question.type]} {typeLabel(t, question.type)}</span><span>{theme}</span><span>{difficultyLabel(t, question.difficulty)}</span><span>{question.points} pts</span><span>🔥 {streakCount}</span>{remaining !== null && timeLimit !== null && <span className={`quiz-timer-${questionTimerUrgency(remaining, timeLimit)}`}>⏳ {remaining}s</span>}{!timeboxed && <span>⏱ {formatDuration(elapsed)}</span>}</div>
     <div className="quiz-progress"><div className="quiz-progress-fill" style={{ width: `${((index + 1) / order.length) * 100}%` }} /></div>
-    <p className="progress">{t('quiz.questionProgress', index + 1, order.length)}</p>
-    <QuestionBody key={question.id} question={question} answer={answer} onChange={setAnswer} onEnter={goNext} />
+    <div className="question-progress-row">
+      <p className="progress">{t('quiz.questionProgress', index + 1, order.length)}</p>
+      {onEditQuestion && <EditQuestionInPlay question={quiz.questions.find((item) => item.id === question.id) ?? question} themes={quiz.categories} onSave={saveEdit} onOpenChange={setEditing} />}
+    </div>
+    <QuestionBody key={`${question.id}-${editRevision}`} question={question} answer={answer} onChange={setAnswer} onEnter={goNext} />
     <div className="quiz-actions">
       <button type="button" className="secondary" onClick={cancelQuiz}>{t('quiz.abandon')}</button>
       <button type="button" onClick={goNext}>{index + 1 === order.length ? t('quiz.viewCorrection') : t('quiz.next')}</button>
