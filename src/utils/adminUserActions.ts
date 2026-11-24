@@ -62,6 +62,9 @@ export const updateUserProfile = (userId: string, pseudo: string, avatar: string
 
 export const setUserAdmin = (userId: string, isAdmin: boolean) => call<void>('admin_set_user_admin', { p_user_id: userId, p_is_admin: isAdmin })
 
+/** Autorise (`true`) ou non (`false`) un compte à créer des quiz (`admin_set_user_can_create_quizzes`, 052). Retirer l'autorisation ne retire aucun quiz déjà créé. */
+export const setUserCanCreateQuizzes = (userId: string, allowed: boolean) => call<void>('admin_set_user_can_create_quizzes', { p_user_id: userId, p_allowed: allowed })
+
 export const setUserQuizAccess = (userId: string, quizId: string, granted: boolean) => call<void>('admin_set_user_quiz_access', { p_user_id: userId, p_quiz_id: quizId, p_granted: granted })
 
 /** Ce que `admin_reset_user_progress` a effacé. */
@@ -144,7 +147,7 @@ export function userDataFilename(pseudo: string, date: Date): string {
 
 export type AuditAction =
   | 'disable' | 'enable' | 'update_profile' | 'set_admin' | 'reset_progress' | 'delete_user' | 'grant_access' | 'revoke_access'
-  | 'invite_user' | 'resend_invite' | 'send_password_reset' | 'change_email' | 'export_user_data'
+  | 'invite_user' | 'resend_invite' | 'send_password_reset' | 'change_email' | 'export_user_data' | 'set_can_create_quizzes'
 
 /** Une ligne du journal d'audit : qui a fait quoi, sur qui, quand — avec les pseudos de l'époque, jamais d'email. */
 export interface AuditEntry {
@@ -190,6 +193,7 @@ export function describeAuditEntry(entry: AuditEntry, t: Translate): string {
     case 'send_password_reset': return t('audit.sendReset', admin)
     case 'change_email': return t('audit.changeEmail', admin)
     case 'export_user_data': return t('audit.exportUserData', admin)
+    case 'set_can_create_quizzes': return details.allowed === true ? t('audit.allowCreateQuizzes', admin) : t('audit.denyCreateQuizzes', admin)
     case 'update_profile': {
       const pseudo = asChange(details.pseudo)
       const avatar = asChange(details.avatar)

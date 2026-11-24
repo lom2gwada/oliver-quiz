@@ -34,7 +34,7 @@ export interface QuizAccessUser {
 
 /** Pourquoi une action sur les administrateurs d'un quiz a été refusée : les garde-fous sont en base, ce sont leurs messages
  * qu'on reconnaît ici. */
-export type QuizAdminFailure = 'forbidden' | 'notFound' | 'lastOwner' | 'userDisabled' | 'invalidRole' | 'conflict' | 'soleOwner' | 'failed'
+export type QuizAdminFailure = 'forbidden' | 'notFound' | 'lastOwner' | 'userDisabled' | 'invalidRole' | 'conflict' | 'soleOwner' | 'titleUnavailable' | 'limitReached' | 'tooLarge' | 'failed'
 
 export function classifyQuizAdminError(message: string | undefined): QuizAdminFailure {
   const text = message ?? ''
@@ -43,6 +43,9 @@ export function classifyQuizAdminError(message: string | undefined): QuizAdminFa
   if (text.includes('user_disabled')) return 'userDisabled'
   if (text.includes('invalid_role')) return 'invalidRole'
   if (text.includes('conflict')) return 'conflict'
+  if (text.includes('title_unavailable')) return 'titleUnavailable'
+  if (text.includes('quiz_limit_reached')) return 'limitReached'
+  if (text.includes('quiz_too_large')) return 'tooLarge'
   if (text.includes('not_found')) return 'notFound'
   if (text.includes('forbidden') || text.includes('row-level security')) return 'forbidden'
   return 'failed'
@@ -57,6 +60,9 @@ export const QUIZ_ADMIN_ERROR_KEYS: Record<QuizAdminFailure, TranslationKey> = {
   invalidRole: 'quizAdmin.errorInvalidRole',
   conflict: 'quizAdmin.errorConflict',
   soleOwner: 'quizAdmin.errorSoleOwner',
+  titleUnavailable: 'quizAdmin.errorTitleUnavailable',
+  limitReached: 'quizAdmin.errorLimitReached',
+  tooLarge: 'quizAdmin.errorTooLarge',
   failed: 'quizAdmin.errorFailed',
 }
 

@@ -19,6 +19,7 @@ export function UserDetailView({ detail }: { detail: AdminUserDetail }) {
     <div className="users-detail-head">
       {detail.is_self && <span className="overview-badge users-badge-info">{t('users.badgeSelf')}</span>}
       {detail.is_admin && <span className="overview-badge">{t('users.badgeAdmin')}</span>}
+      {detail.can_create_quizzes && !detail.is_admin && <span className="overview-badge">{t('users.badgeCreator')}</span>}
       {status === 'disabled' && <span className="overview-badge users-badge-disabled">{t('users.badgeDisabled')}</span>}
       {status === 'never' && <span className="overview-badge users-badge-never">{t('users.badgeNever')}</span>}
     </div>

@@ -185,3 +185,19 @@ describe('UserDetailView', () => {
     expect(html).toContain('Désactivé')
   })
 })
+
+describe('UserListView — quiz creators', () => {
+  it('badges a player who may create quizzes, not an administrator who always can', () => {
+    const html = render({ users: [user('Dana', { can_create_quizzes: true }), user('Alice', { is_admin: true, can_create_quizzes: true }), user('Bob')] })
+    const badge = 'overview-badge">Créateur<'
+    expect(html.split(badge)).toHaveLength(2)
+    expect(html.indexOf('Dana')).toBeLessThan(html.indexOf(badge))
+  })
+
+  it('offers the creators filter', () => {
+    expect(render()).toContain('Créateurs de quiz')
+    const filtered = render({ users: [user('Dana', { can_create_quizzes: true }), user('Bob')], filter: 'creators' })
+    expect(filtered).toContain('Dana')
+    expect(filtered).not.toContain('Bob')
+  })
+})
