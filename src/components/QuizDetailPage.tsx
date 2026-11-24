@@ -43,7 +43,7 @@ interface QuizDetailPageProps {
   onAddTheme: (label: string) => Promise<void>
   quizLoadError: string
   onUpdateQuizMeta: (title: string, author: string, description: string, language: string, extras: QuizMetaExtras) => Promise<void>
-  onDeleteQuiz: (id: string, title: string, deleteHistoryToo: boolean) => Promise<void>
+  onDeleteQuiz: (id: string, deleteHistoryToo: boolean) => Promise<void>
   deleteQuizError: string
 }
 
@@ -126,7 +126,7 @@ export function QuizDetailPage({ quiz, hostedQuizId, isPublic, onTogglePublic, o
           />}
           {isAdmin && <button type="button" className="secondary" onClick={onExport}>{t('admin.exportButton')}</button>}
         </div>
-        {canEditQuiz && <DangerZone key={hostedQuizId} title={quiz.metadata.title} onExport={onExport} onDelete={(deleteHistoryToo) => onDeleteQuiz(hostedQuizId, quiz.metadata.title, deleteHistoryToo)} error={deleteQuizError} />}
+        {canEditQuiz && <DangerZone key={hostedQuizId} title={quiz.metadata.title} onExport={onExport} onDelete={(deleteHistoryToo) => onDeleteQuiz(hostedQuizId, deleteHistoryToo)} error={deleteQuizError} />}
       </div>
 
       {activeTab === 'stats' && <>

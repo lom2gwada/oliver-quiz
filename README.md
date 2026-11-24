@@ -37,6 +37,25 @@ L'accès au site est protégé par [Supabase Auth](https://supabase.com/docs/gui
 
 La clé `anon` est prévue pour être publique (elle finit de toute façon dans le bundle JS envoyé au navigateur) ; elle n'accorde par elle-même aucun accès aux données, elle sert uniquement à parler à l'API Supabase.
 
+## Qui peut administrer un quiz
+
+Deux niveaux, tous contrôlés **dans la base** (migration `051_quiz_admins.sql` : RLS et fonctions `security definer`), jamais seulement dans l'interface :
+
+- **Administrateur global** (`profiles.is_admin`) : tous les quiz, la page Utilisateurs.
+- **Par quiz** (`quiz_admins`) : le **propriétaire** (le créateur, plus ceux qu'un propriétaire promeut) et l'**administrateur**.
+
+| Droit | Global | Propriétaire | Administrateur |
+|---|---|---|---|
+| Contenu (questions, thèmes, titre, couverture, liens, import et export JSON) | ✅ | ✅ | ✅ |
+| Accès des joueurs, liens invités et leurs résultats | ✅ | ✅ | ✅ |
+| Rendre le quiz public | ✅ | ✅ | ❌ |
+| Ajouter, retirer, promouvoir, rétrograder des administrateurs | ✅ | ✅ | ❌ |
+| Supprimer le quiz (et, au choix, l'historique des joueurs) | ✅ | ✅ | ❌ |
+
+Pour qu'aucun droit ne se contourne depuis un client modifié : un administrateur de quiz n'a **aucune policy d'écriture directe** sur `quizzes`. Créer, modifier, rendre public et supprimer passent par `upsert_quiz`, `update_quiz`, `set_quiz_public` et `delete_quiz`. `update_quiz` reçoit la version (`updated_at`) que l'appelant a chargée et refuse (`conflict`) si le quiz a changé depuis : deux administrateurs ne s'écrasent pas. Ni `last_owner` (jamais le dernier propriétaire) ni `sole_quiz_owner` (un compte seul propriétaire d'un quiz ne peut pas être supprimé) ne se contournent.
+
+Un administrateur de quiz ne lit pas `profiles` : il cherche un compte par **pseudo** (`quiz_search_users`), la réponse ne contient jamais d'email.
+
 ## Fonction Edge `admin-users` (inviter et gérer les comptes)
 
 Inviter une adresse, renvoyer une invitation, envoyer un lien de réinitialisation du mot de passe et changer l'adresse email d'un compte passent par l'API d'administration de l'authentification, qui exige la clé de service : ni le navigateur ni une fonction SQL ne peuvent s'en servir. D'où la fonction Edge [`supabase/functions/admin-users`](supabase/functions/admin-users) (logique dans `handler.ts`, testée avec Vitest ; `index.ts` la branche sur `supabase-js`). Les boutons « Inviter » et « Compte et connexion » de la page **Utilisateurs** (administration) l'appellent ; sans elle ils affichent « fonction injoignable ».
