@@ -41,13 +41,13 @@ import { TimedResultPage } from './components/TimedResultPage'
 import type { AnswersByQuestion, Difficulty, GameMode, Question, Quiz } from './types/quiz'
 import type { Profile } from './types/profile'
 import type { HostedQuizSummary } from './types/hostedQuiz'
-import { buildAttemptResultPayloads, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, deleteQuizHistory, saveQuestionResults, saveQuizResult, saveStreakResult, saveTimedResult } from './utils/quizHistory'
+import { buildAttemptResultPayloads, buildQuestionResultPayloads, buildQuizResultPayload, buildStreakResultPayload, buildTimedResultPayload, saveQuestionResults, saveQuizResult, saveStreakResult, saveTimedResult } from './utils/quizHistory'
 import { fetchProfile, saveProfile } from './utils/profile'
 import { fetchStreakTopScore, fetchTimedTopScore, fetchTopScore } from './utils/leaderboard'
 import { computeDueQuestions, createQuestionProgressJob, fetchQuestionProgress, selectReviewCards, type ReviewCard } from './utils/leitner'
 import { runSaveJobs, type SaveJob, type SaveStatus } from './utils/gameSave'
 import { canOfferUnseenOnly, coveragePercentTenths, fetchQuizCoverage, REVIEW_BATCH_SIZE, type QuizCoverage } from './utils/coverage'
-import { deleteQuiz, fetchAccessibleQuizzes, fetchAccessibleQuizzesWithRetry, fetchQuizContent, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
+import { deleteQuiz, fetchAccessibleQuizzes, fetchAccessibleQuizzesWithRetry, fetchQuizContent, fetchQuizWithVersion, QuizConflictError, updateQuiz, upsertQuiz } from './utils/hostedQuizzes'
 import { applyTheme } from './utils/theme'
 import { LanguageProvider, translate } from './i18n'
 import type { Language, TranslationKey } from './i18n'
@@ -193,6 +193,11 @@ export default function App({ onLogout }: { onLogout: () => void }) {
   // Met l'identifiant à jour immédiatement (et pas seulement au prochain rendu) : la navigation qui suit une sélection
   // construit son URL avec cet identifiant.
   const selectId = (id: string) => { selectedIdRef.current = id; setSelectedHostedQuizId(id) }
+  /** La version (`updated_at`) du quiz hébergé actif telle que chargée ou enregistrée en dernier : renvoyée à chaque enregistrement pour que
+   * deux administrateurs ne s'écrasent pas (`update_quiz`, 051). `null` tant qu'elle n'est pas connue : l'enregistrement n'est alors pas contrôlé. */
+  const quizVersionRef = useRef<string | null>(null)
+  /** Le message d'une erreur d'édition : celui d'un conflit de version est expliqué, les autres gardent leur texte. */
+  const editErrorMessage = (error: unknown, fallbackKey: TranslationKey) => error instanceof QuizConflictError ? t('quizAdmin.errorConflict') : error instanceof Error ? error.message : t(fallbackKey)
   const hostedQuizzesRef = useRef<HostedQuizSummary[]>([])
   hostedQuizzesRef.current = hostedQuizzes
   const loadQuizzes = () => {
@@ -407,10 +412,12 @@ export default function App({ onLogout }: { onLogout: () => void }) {
 
   const selectHostedQuiz = async (id: string, keepLanguage = false) => {
     selectId(id)
-    if (!id) { setQuiz(initialQuiz); setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setQuizLoadError(''); return true }
+    if (!id) { setQuiz(initialQuiz); quizVersionRef.current = null; setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setQuizLoadError(''); return true }
     try {
-      const loaded = parseQuiz(await fetchQuizContent(id))
+      const { content, updatedAt } = await fetchQuizWithVersion(id)
+      const loaded = parseQuiz(content)
       setQuiz(loaded)
+      if (selectedIdRef.current === id) quizVersionRef.current = updatedAt
       if (!keepLanguage) applyQuizLanguage(loaded)
       setSelectedThemes([]); setDifficulty(''); setSessionQuestions([]); setQuizLoadError('')
       return true
@@ -458,6 +465,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       setQuiz(newQuiz)
       applyQuizLanguage(newQuiz)
       selectId(id)
+      quizVersionRef.current = await fetchQuizWithVersion(id).then((created) => created.updatedAt).catch(() => null)
       setSelectedThemes([]); setDifficulty(''); setSessionQuestions([])
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
@@ -483,7 +491,8 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       let content: unknown
       try { content = JSON.parse(await file.text()) } catch { throw new Error(t('admin.errorInvalidJson')) }
       const parsed = parseQuiz(content)
-      await upsertQuiz(parsed.metadata.title, content)
+      const publishedId = await upsertQuiz(parsed.metadata.title, content)
+      if (publishedId === selectedIdRef.current) await selectHostedQuiz(publishedId, true)
       setPublishError('')
       setPublishSuccess(true)
       const importedLanguage = normalizeQuizLanguage(parsed.metadata.language ?? '')
@@ -498,7 +507,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
    * (mêmes accès `quiz_access` conservés, cf. upsert par titre). Partagé par édition/ajout/suppression. */
   const republishQuestions = async (questions: Question[]) => {
     const updatedQuiz = parseQuiz({ ...quiz, questions })
-    await upsertQuiz(updatedQuiz.metadata.title, serializeQuiz(updatedQuiz))
+    quizVersionRef.current = await updateQuiz(selectedHostedQuizId, updatedQuiz.metadata.title, serializeQuiz(updatedQuiz), quizVersionRef.current)
     setQuiz(updatedQuiz)
     fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
   }
@@ -509,7 +518,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     try {
       await republishQuestions(quiz.questions.map((existing) => (existing.id === updated.id ? updated : existing)))
     } catch (error) {
-      setEditError(error instanceof Error ? error.message : t('admin.errorSaveQuestion'))
+      setEditError(editErrorMessage(error, 'admin.errorSaveQuestion'))
       throw error
     }
   }
@@ -520,7 +529,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     try {
       await republishQuestions([...quiz.questions, created])
     } catch (error) {
-      setEditError(error instanceof Error ? error.message : t('admin.errorAddQuestion'))
+      setEditError(editErrorMessage(error, 'admin.errorAddQuestion'))
       throw error
     }
   }
@@ -532,7 +541,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     try {
       await republishQuestions(quiz.questions.filter((question) => question.id !== id))
     } catch (error) {
-      setEditError(error instanceof Error ? error.message : t('admin.errorDeleteQuestion'))
+      setEditError(editErrorMessage(error, 'admin.errorDeleteQuestion'))
     }
   }
 
@@ -547,11 +556,11 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     try {
       const usedIds = new Set(quiz.categories.map((theme) => theme.id))
       const updatedQuiz = parseQuiz({ ...quiz, categories: [...quiz.categories, { id: themeIdFrom(label, usedIds), label }] })
-      await upsertQuiz(updatedQuiz.metadata.title, serializeQuiz(updatedQuiz))
+      quizVersionRef.current = await updateQuiz(selectedHostedQuizId, updatedQuiz.metadata.title, serializeQuiz(updatedQuiz), quizVersionRef.current)
       setQuiz(updatedQuiz)
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
-      setEditError(error instanceof Error ? error.message : t('admin.errorAddTheme'))
+      setEditError(editErrorMessage(error, 'admin.errorAddTheme'))
       throw error
     }
   }
@@ -567,11 +576,11 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     }
     try {
       const updatedQuiz = parseQuiz({ ...quiz, metadata: { ...quiz.metadata, title, author, description: description || undefined, language: normalizeQuizLanguage(quizLanguage) || undefined, image: extras.image, links: extras.links } })
-      await updateQuiz(selectedHostedQuizId, updatedQuiz.metadata.title, serializeQuiz(updatedQuiz))
+      quizVersionRef.current = await updateQuiz(selectedHostedQuizId, updatedQuiz.metadata.title, serializeQuiz(updatedQuiz), quizVersionRef.current)
       setQuiz(updatedQuiz)
       fetchAccessibleQuizzes().then(setHostedQuizzes).catch(() => {})
     } catch (error) {
-      setEditError(error instanceof Error ? error.message : t('admin.errorUpdateQuiz'))
+      setEditError(editErrorMessage(error, 'admin.errorUpdateQuiz'))
       throw error
     }
   }
@@ -581,15 +590,12 @@ export default function App({ onLogout }: { onLogout: () => void }) {
    * (FK `on delete set null`) et reste visible sous son titre figé au moment de chaque partie — par défaut il
    * n'est pas affecté, `deleteHistoryToo` permet de le purger explicitement en plus. Si le quiz supprimé était
    * le quiz actif, retombe sur le placeholder de premier affichage le temps qu'un autre quiz soit sélectionné. */
-  const deleteHostedQuiz = async (id: string, title: string, deleteHistoryToo: boolean) => {
+  const deleteHostedQuiz = async (id: string, deleteHistoryToo: boolean) => {
     setDeleteQuizError('')
     try {
-      await deleteQuiz(id)
+      await deleteQuiz(id, deleteHistoryToo)
       setHostedQuizzes((current) => current.filter((existing) => existing.id !== id))
-      if (selectedHostedQuizId === id) { setQuiz(initialQuiz); selectId('') }
-      if (deleteHistoryToo) {
-        try { await deleteQuizHistory(title) } catch { setDeleteQuizError(t('admin.errorDeleteQuizHistory')); return }
-      }
+      if (selectedHostedQuizId === id) { setQuiz(initialQuiz); selectId(''); quizVersionRef.current = null }
       navigate('quizzes')
     } catch (error) {
       setDeleteQuizError(error instanceof Error ? error.message : t('admin.errorDeleteQuiz'))

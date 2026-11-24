@@ -27,37 +27,57 @@ export async function fetchQuizContent(id: string): Promise<unknown> {
   return data.content
 }
 
-/** Admin uniquement (RLS) : crée le quiz s'il n'existe pas, met à jour son contenu sinon (par `title`).
- * N'accorde jamais d'accès automatiquement — c'est à l'admin de le faire ensuite, question par question.
- * Renvoie l'id de la ligne (nouvelle ou existante), utile pour sélectionner un quiz venant d'être créé. */
+/** Le quiz a changé depuis que l'appelant l'a chargé (`update_quiz`, 051) : rien n'a été écrit, pour ne pas écraser le travail
+ * d'un autre administrateur. L'appelant doit recharger le quiz avant de recommencer. */
+export class QuizConflictError extends Error {
+  constructor() { super('conflict') }
+}
+
+/** Les fonctions d'écriture (051) refusent en levant `conflict` quand la version attendue n'est plus la bonne. */
+function rethrow(error: { message?: string }): never {
+  if (error.message?.includes('conflict')) throw new QuizConflictError()
+  throw error
+}
+
+/** Le contenu d'un quiz hébergé avec sa version (`updated_at`, telle que Postgres la rend, microsecondes comprises : ne pas la
+ * passer par un `Date`). La version est à renvoyer à `updateQuiz` pour que deux administrateurs ne s'écrasent pas. */
+export async function fetchQuizWithVersion(id: string): Promise<{ content: unknown; updatedAt: string }> {
+  const { data, error } = await supabase.from('quizzes').select('content, updated_at').eq('id', id).single()
+  if (error) throw error
+  return { content: data.content, updatedAt: data.updated_at }
+}
+
+/** Crée le quiz s'il n'existe pas (administrateur global pour l'instant), met à jour son contenu par `title` sinon (il faut alors
+ * administrer ce quiz) : `upsert_quiz`, 051. N'accorde jamais d'accès automatiquement. Renvoie l'id de la ligne (nouvelle ou
+ * existante), utile pour sélectionner un quiz venant d'être créé ; le créateur en devient propriétaire. */
 export async function upsertQuiz(title: string, content: unknown): Promise<string> {
-  const { data: userData } = await supabase.auth.getUser()
-  const { data, error } = await supabase.from('quizzes').upsert(
-    { title, content, created_by: userData.user?.id, updated_at: new Date().toISOString() },
-    { onConflict: 'title' },
-  ).select('id').single()
+  const { data, error } = await supabase.rpc('upsert_quiz', { p_title: title, p_content: content })
   if (error) throw error
-  return data.id
+  return data as string
 }
 
-/** Admin uniquement (RLS) : met à jour un quiz existant par `id` — nécessaire dès qu'on renomme un quiz,
- * puisque `upsertQuiz` (par `title`) fusionnerait sinon silencieusement avec la ligne portant l'ancien titre. */
-export async function updateQuiz(id: string, title: string, content: unknown): Promise<void> {
-  const { error } = await supabase.from('quizzes').update({ title, content, updated_at: new Date().toISOString() }).eq('id', id)
+/** Administrateur du quiz : met à jour un quiz existant par `id` (`update_quiz`, 051) — nécessaire dès qu'on renomme un quiz,
+ * puisque `upsertQuiz` (par `title`) fusionnerait sinon silencieusement avec la ligne portant l'ancien titre. `expectedVersion` est
+ * la version chargée (`fetchQuizWithVersion` ou le retour du dernier `updateQuiz`) : si le quiz a changé depuis, rien n'est écrit
+ * et `QuizConflictError` est levée. Renvoie la nouvelle version. */
+export async function updateQuiz(id: string, title: string, content: unknown, expectedVersion: string | null): Promise<string> {
+  const { data, error } = await supabase.rpc('update_quiz', { p_id: id, p_title: title, p_content: content, p_expected_updated_at: expectedVersion })
+  if (error) rethrow(error)
+  return data as string
+}
+
+/** Propriétaire du quiz : le supprime définitivement (`delete_quiz`, 051). `quiz_access`, les liens invités et la progression de
+ * révision partent avec ; l'historique déjà enregistré (parties, classement) reste sous son titre, sauf `purgeHistory`, qui l'efface
+ * dans la même opération (les parties des joueurs ne peuvent pas être effacées autrement par un propriétaire). */
+export async function deleteQuiz(id: string, purgeHistory = false): Promise<void> {
+  const { error } = await supabase.rpc('delete_quiz', { p_quiz_id: id, p_purge_history: purgeHistory })
   if (error) throw error
 }
 
-/** Admin uniquement (RLS) : supprime définitivement un quiz hébergé. `quiz_access` est nettoyé automatiquement
- * (FK `on delete cascade`) ; l'historique déjà enregistré (parties, classement) n'est pas affecté par défaut. */
-export async function deleteQuiz(id: string): Promise<void> {
-  const { error } = await supabase.from('quizzes').delete().eq('id', id)
-  if (error) throw error
-}
-
-/** Admin uniquement (RLS) : rend un quiz hébergé visible par tous les utilisateurs connectés sans octroi
- * d'accès individuel (ou retire cette visibilité par défaut) — cf. policy SELECT de `020_public_quizzes.sql`. */
+/** Propriétaire du quiz : le rend visible par tous les utilisateurs connectés sans octroi d'accès individuel (ou retire cette
+ * visibilité) — `set_quiz_public`, 051 ; cf. la policy SELECT de `020_public_quizzes.sql`. */
 export async function setQuizPublic(id: string, isPublic: boolean): Promise<void> {
-  const { error } = await supabase.from('quizzes').update({ is_public: isPublic }).eq('id', id)
+  const { error } = await supabase.rpc('set_quiz_public', { p_quiz_id: id, p_is_public: isPublic })
   if (error) throw error
 }
 
@@ -74,7 +94,7 @@ export async function fetchAllProfiles(): Promise<ProfileSummary[]> {
   return data ?? []
 }
 
-/** Admin uniquement (RLS) : les utilisateurs ayant déjà accès à ce quiz. */
+/** Administrateur du quiz (RLS) : les utilisateurs ayant déjà accès à ce quiz. */
 export async function fetchAccessGrants(quizId: string): Promise<string[]> {
   const { data, error } = await supabase.from('quiz_access').select('user_id').eq('quiz_id', quizId)
   if (error) throw error
